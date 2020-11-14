@@ -112,9 +112,9 @@ class Channels:
         self.reports    = None 
 
     async def init(self):
-        self.public      = self.settings.guilds.get(self.settings.guild_id).get('channels.public')
-        self.private     = self.settings.guilds.get(self.settings.guild_id).get('channels.private')
-        self.reports     = self.settings.guilds.get(self.settings.guild_id).get('channels.reports')
+        self.public      = int(self.settings.guilds.get(self.settings.guild_id).get('channels.public'))
+        self.private     = int(self.settings.guilds.get(self.settings.guild_id).get('channels.private'))
+        self.reports     = int(self.settings.guilds.get(self.settings.guild_id).get('channels.reports'))
 
 class Roles:
     def __init__(self, settings):

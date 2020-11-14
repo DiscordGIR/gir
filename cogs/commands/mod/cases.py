@@ -11,8 +11,8 @@ class Cases(commands.Cog):
 
     @commands.command(name="cases")
     async def cases(self, ctx):
-        for i in range (0, 9):
-            if self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, i):
-                await ctx.send(f"has {i}")
+        if self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            results = await self.bot.settings.db.get_with_key('users', 'cases')
+            print(results)
 def setup(bot):
     bot.add_cog(Cases(bot))
