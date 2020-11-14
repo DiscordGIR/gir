@@ -11,7 +11,7 @@ def get_prefix(bot, message):
 
 
 
-initial_extensions = ['cogs.utils.settings']
+initial_extensions = ['cogs.utils.settings', 'cogs.commands.mod.cases']
 
 bot = commands.Bot(command_prefix=get_prefix, description='A Rewrite Cog Example')
 
@@ -23,7 +23,8 @@ if __name__ == '__main__':
 
 @bot.event
 async def on_ready():
-
+    bot.owner_id = 109705860275539968
+    bot.settings = bot.get_cog("Settings")
     print(f'\n\nLogged in as: {bot.user.name} - {bot.user.id}\nVersion: {discord.__version__}\n')
 
     # Changes our bots Playing Status. type=1(streaming) for a standard game you could remove type and url.

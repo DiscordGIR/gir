@@ -5,10 +5,10 @@ import asyncio
 class Settings(commands.Cog):
     def __init__(self, bot):
         self.bot         = bot
-        self.guild_id    = '777155838849843200'
+        self.guild_id    = 777155838849843200
         self.guilds      = Guilds(self)
         self.users       = Users(self)
-        self.permissions = Permissions(self.bot, self.guild_id, self)
+        self.permissions = Permissions(self.bot, self)
         self.roles       = Roles(self)
         self.channels    = Channels(self)
         self.db          = Database()
@@ -24,26 +24,28 @@ class Settings(commands.Cog):
         print("done")
 
 class Permissions:
-    def __init__(self, bot, guild_id, settings):
+    def __init__(self, bot, settings):
+        self.bot = bot
         self.settings = settings
+        guild_id = self.settings.guild_id
         self.permissions = {
-            0: True,
+            0: lambda x, y: True,
             1: (lambda guild, m: guild.id == guild_id
-                and settings.roles.memplus in m.roles),
+                and discord.utils.get(guild.roles, id=settings.roles.memplus) in m.roles),
             2: (lambda guild, m: guild.id == guild_id
-                and settings.roles.mempro in m.roles),
+                and discord.utils.get(guild.roles, id=settings.roles.mempro) in m.roles),
             3: (lambda guild, m: guild.id == guild_id
-                and settings.roles.memed in m.roles),
+                and discord.utils.get(guild.roles, id=settings.roles.memed) in m.roles),
             4: (lambda guild, m: guild.id == guild_id
-                and settings.roles.genius in m.roles),
+                and discord.utils.get(guild.roles, id=settings.roles.genius) in m.roles),
             5: (lambda guild, m: guild.id == guild_id
                 and m.guild_permissions.manage_guild),
             6: (lambda guild, m: guild.id == guild_id
-                and settings.roles.moderator in m.roles),
+                and discord.utils.get(guild.roles, id=settings.roles.moderator) in m.roles),
             7: (lambda guild, m: guild.id == guild_id
                 and m == guild.owner),
             8: (lambda guild, m: guild.id == guild_id
-                and m == bot.owner)
+                and m.id == bot.owner_id)
         }
     
     def hasAtLeast(self, guild, member, level):
@@ -66,10 +68,10 @@ class Guilds:
     
     async def init(self):
         for record in await self.settings.db.get("guilds"):
-            self.guilds[record.get('id')] = { }
+            self.guilds[int(record.get('id'))] = { }
             for key in record.keys():
                 if key != "id":
-                    self.guilds[record.get('id')][key] = record[key]
+                    self.guilds[int(record.get('id'))][key] = record[key]
 class Users:
     class User:
         def __init__(self, user):
@@ -124,11 +126,11 @@ class Roles:
         self.settings  = settings
 
     async def init(self):
-        self.memplus   = self.settings.guilds.get(self.settings.guild_id).get("roles.memberplus")
-        self.mempro    = self.settings.guilds.get(self.settings.guild_id).get("roles.memberplus")
-        self.memed     = self.settings.guilds.get(self.settings.guild_id).get("roles.memberedition")
-        self.genius    = self.settings.guilds.get(self.settings.guild_id).get("roles.genius")
-        self.moderator = self.settings.guilds.get(self.settings.guild_id).get("roles.moderator")
+        self.memplus   = int(self.settings.guilds.get(self.settings.guild_id).get("roles.memberplus"))
+        self.mempro    = int(self.settings.guilds.get(self.settings.guild_id).get("roles.memberplus"))
+        self.memed     = int(self.settings.guilds.get(self.settings.guild_id).get("roles.memberedition"))
+        self.genius    = int(self.settings.guilds.get(self.settings.guild_id).get("roles.genius"))
+        self.moderator = int(self.settings.guilds.get(self.settings.guild_id).get("roles.moderator"))
 
 
 # insert into guilds VALUES ('777155838849843200', '!', 'enUS', 'FALSE', '{}', '777270186604101652', '777270163589693482', '777270163589693482', '777270542033092638', '777270554800422943', '777270579719569410', '777155838849843204', FALSE, FALSE, '{}', '{}', '777270242874359828', '777270206841880586', '777270222868185158', '{}', '777270914365784075');
@@ -144,6 +146,10 @@ class Database:
 
     async def get(self, table):
         stmt = await self.conn.prepare(f'SELECT * FROM {table}')
+        return await stmt.fetch()
+
+    async def get_with_key(self, table, key):
+        stmt = await self.conn.prepare(f'SELECT {key} FROM {table}')
         return await stmt.fetch()
 
 def setup(bot):
