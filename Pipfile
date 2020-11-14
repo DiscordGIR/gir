@@ -9,6 +9,8 @@ autopep8 = "*"
 
 [packages]
 "discord.py" = "*"
+psycopg2 = "*"
+asyncpg = "*"
 
 [requires]
 python_version = "3.8"
