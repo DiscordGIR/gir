@@ -1,0 +1,3 @@
+# bad words
+# spoiler
+# invites
