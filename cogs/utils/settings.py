@@ -17,7 +17,7 @@ class Settings(commands.Cog):
         self.logging_channel = guild.get_channel(688125770186489888)
         self.reports_channel = guild.get_channel(688125770186489888)
         self.permissions = Permissions(bot, self.guild_id, self.roles)
-
+        self.clemmed_users = []
 
 class Permissions:
     def __init__(self, bot, guild_id, roles):
