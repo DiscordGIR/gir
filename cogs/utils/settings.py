@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-from postgresql import Database
 import asyncio
 
 class Settings(commands.Cog):
@@ -13,13 +12,16 @@ class Settings(commands.Cog):
         self.roles       = Roles(self)
         self.channels    = Channels(self)
         self.db          = Database()
-    
-    async def setup(self):
+        
+        bot.loop.run_until_complete(self.cog_load())
+
+    async def cog_load(self):
         await self.db.init()
         await self.guilds.init()
         await self.users.init()
         await self.roles.init()
         await self.channels.init()
+        print("done")
 
 class Permissions:
     def __init__(self, bot, guild_id, settings):
@@ -130,3 +132,19 @@ class Roles:
 
 
 # insert into guilds VALUES ('777155838849843200', '!', 'enUS', 'FALSE', '{}', '777270186604101652', '777270163589693482', '777270163589693482', '777270542033092638', '777270554800422943', '777270579719569410', '777155838849843204', FALSE, FALSE, '{}', '{}', '777270242874359828', '777270206841880586', '777270222868185158', '{}', '777270914365784075');
+import asyncpg
+
+class Database:
+    async def init(self):
+        self.conn = await asyncpg.connect(
+            host     = "127.0.0.1",
+            database = "botty",
+            user     = "emy"
+        )
+
+    async def get(self, table):
+        stmt = await self.conn.prepare(f'SELECT * FROM {table}')
+        return await stmt.fetch()
+
+def setup(bot):
+    bot.add_cog(Settings(bot))
