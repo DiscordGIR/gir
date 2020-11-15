@@ -32,20 +32,19 @@ class ModActions(commands.Cog):
         log = await prepare_warn_log(ctx, user, case)
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.channels.public)
-        await public_chan.send(embed=log)  
+        if public_chan:
+            await public_chan.send(embed=log)  
 
         
         log.add_field(name="Current points", value=cur_points, inline=True)
         await ctx.send(embed=log)
 
-        if cur_points >= 400 and not results[0]["warnKicked"]:
+        if cur_points >= 600:
+            await ctx.invoke(self.ban, user=user, reason="600 or more points reached")
+        elif cur_points >= 400 and not results[0]["warnKicked"]:
             await self.bot.settings.db.set_with_key_and_id("users", "warnKicked", user.id, True)
             await user.send("You were kicked from r/Jailbreak for reaching 400 or more points.", embed=log)      
-            # await user.kick(reason="400 or more points reached")
             await ctx.invoke(self.kick, user=user, reason="400 or more points reached")
-        elif cur_points >= 600:
-            await user.send("You were banned from r/Jailbreak for reaching 600 or more points.", embed=log)      
-            await user.ban(reason="600 or more points reached.")
         else:
             await user.send("You were warned in r/Jailbreak.", embed=log)      
 
@@ -85,6 +84,32 @@ class ModActions(commands.Cog):
         await user.send("You were kicked from r/Jailbreak", embed=log)
 
         await user.kick(reason=reason)
+    
+    @commands.command(name="ban")
+    async def ban(self, ctx, user: discord.Member, *, reason: str = "No reason."):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+        if user.top_role >= ctx.author.top_role:
+            raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
+        case = Case(
+            _id = str((await self.bot.settings.db.increment_and_get("clientStorage", "caseID", ctx.guild.default_role.id, 1))[0]["caseID"]),
+            _type = "BAN",
+            date = datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+            until=str(None),
+            modID=str(ctx.author.id),
+            modTag = str(ctx.author),
+            reason=reason,
+            punishment="Banned"
+        )
+        await self.bot.settings.db.append_json("users", "cases", user.id, case.__dict__ )
+        log = await prepare_ban_log(ctx, user, case)
+
+        public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.channels.public)
+        await public_chan.send(embed=log)
+        await ctx.send(embed=log)
+        await user.send("You were banned from r/Jailbreak", embed=log)
+
+        await user.ban(reason=reason)
 
 def setup(bot):
     bot.add_cog(ModActions(bot))
