@@ -11,7 +11,7 @@ def get_prefix(bot, message):
 
 
 
-initial_extensions = ['cogs.utils.settings', 'cogs.commands.mod.cases']
+initial_extensions = ['cogs.utils.settings', 'cogs.commands.mod.cases', 'cogs.commands.mod.modactions']
 
 bot = commands.Bot(command_prefix=get_prefix, description='A Rewrite Cog Example')
 
