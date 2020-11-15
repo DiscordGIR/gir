@@ -26,7 +26,7 @@ class Cases(commands.Cog):
         if user.top_role >= ctx.author.top_role:
             raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
         case = Case(
-            _id = str(ctx.author.id),
+            _id = str((await self.bot.settings.db.increment_and_get("clientStorage", "caseID", ctx.guild.default_role.id, 1))[0]["caseID"]),
             _type = "WARN",
             date = datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
             until=str(None),
@@ -37,35 +37,47 @@ class Cases(commands.Cog):
         )
         await self.bot.settings.db.append_json("users", "cases", user.id, case.__dict__ )
         results = await self.bot.settings.db.increment_and_get("users", "warnPoints", user.id, case.punishment)
-        print(results)
-        embed=discord.Embed(title="Warned user")
-        embed.set_author(name=user, icon_url=user.avatar_url)
-        embed.add_field(name="Reason", value=reason, inline=False)
-        embed.add_field(name="Points", value=points, inline=True)
-        embed.add_field(name="Current points", value=results[0]['warnPoints'], inline=True)
-        embed.set_footer(text=f"Warned by {ctx.author}")
-        await ctx.send(embed=embed)  
+        cur_points = results[0]['warnPoints']
+        log = await self.prepare_log(ctx, user, case)
+
+        public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.channels.public)
+        await public_chan.send(embed=log)  
+
         
-        if results[0]['warnPoints'] >= 400 and not results[0]["warnKicked"]:
-            await user.send("You were kicked from r/Jailbreak for reaching 400 or more points.", embed=embed)      
-            await user.kick(reason="400 or more points reached")
+        log.add_field(name="Current points", value=cur_points, inline=True)
+        await ctx.send(embed=log)
+
+        if cur_points >= 400 and not results[0]["warnKicked"]:
             await self.bot.settings.db.set_with_key_and_id("users", "warnKicked", user.id, True)
-        elif results[0]['warnPoints'] >= 600:
-            await user.send("You were banned from r/Jailbreak for reaching 600 or more points.", embed=embed)      
+            await user.send("You were kicked from r/Jailbreak for reaching 400 or more points.", embed=log)      
+            await user.kick(reason="400 or more points reached")
+        elif cur_points >= 600:
+            await user.send("You were banned from r/Jailbreak for reaching 600 or more points.", embed=log)      
             await user.ban(reason="600 or more points reached.")
         else:
-            await user.send("You were warned in r/Jailbreak.", embed=embed)      
+            await user.send("You were warned in r/Jailbreak.", embed=log)      
 
-    @warn.error
-    async def info_error(self, ctx, error):
-        if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send(error)
-        if isinstance(error, commands.BadArgument):
-            await(ctx.send(error))
-        if isinstance(error, commands.MissingPermissions):
-            await(ctx.send(error))
-        else:
-            print(error)
+    # @warn.error
+    # async def info_error(self, ctx, error):
+    #     if isinstance(error, commands.MissingRequiredArgument):
+    #         await ctx.send(error)
+    #     if isinstance(error, commands.BadArgument):
+    #         await(ctx.send(error))
+    #     if isinstance(error, commands.MissingPermissions):
+    #         await(ctx.send(error))
+    #     else:
+    #         print(error)
+
+    async def prepare_log(self, ctx, user, case):
+        embed=discord.Embed(title="Member warned")
+        embed.set_author(name=user, icon_url=user.avatar_url)
+        embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
+        embed.add_field(name="Mod", value=f'{ctx.author} ({ctx.author.mention})', inline=True)
+        embed.add_field(name="Increase", value=case.punishment, inline=True)
+        embed.add_field(name="Reason", value=case.reason, inline=True)
+        embed.set_footer(text=f"Case #{case.id} | Warned by {ctx.author}")
+        return embed
+    
 class Case:
     def __init__(self, _id, _type, date, until, modID, modTag, reason, punishment):
         self.id         = _id
