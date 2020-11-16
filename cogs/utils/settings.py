@@ -10,7 +10,7 @@ class Settings(commands.Cog):
         self.bot         = bot
         self.guild_id    = int(os.environ.get("BOTTY_MAINGUILD"))
         self.guilds      = Guilds(self)
-        self.users       = Users(self)
+        # self.users       = Users(self)
         self.permissions = Permissions(self.bot, self)
         self.roles       = Roles(self)
         self.channels    = Channels(self)
@@ -21,7 +21,7 @@ class Settings(commands.Cog):
     async def cog_load(self):
         await self.db.init()
         await self.guilds.init()
-        await self.users.init()
+        # await self.users.init()
         await self.roles.init()
         await self.channels.init()
         print("Loaded settings from database!")
@@ -75,37 +75,37 @@ class Guilds:
             for key in record.keys():
                 if key != "id":
                     self.guilds[int(record.get('id'))][key] = record[key]
-class Users:
-    class User:
-        def __init__(self, user):
-            self.user = user
+# class Users:
+#     class User:
+#         def __init__(self, user):
+#             self.user = user
 
-        def get(self, key):
-            return self.user[key]
+#         def get(self, key):
+#             return self.user[key]
 
-        def _set(self, key, value):
-            self.user[key] = value  
+#         def _set(self, key, value):
+#             self.user[key] = value  
 
-        def increment(self, key, incr):
-            self.user[key] += incr
+#         def increment(self, key, incr):
+#             self.user[key] += incr
 
-        def increment_and_get(self, key, incr):
-            self.user[key] += incr
-            return self.user[key]  
+#         def increment_and_get(self, key, incr):
+#             self.user[key] += incr
+#             return self.user[key]  
     
-    def __init__(self, settings):
-        self.settings = settings
-        self.users = { }
+#     def __init__(self, settings):
+#         self.settings = settings
+#         self.users = { }
 
-    async def init(self):
-        for record in await self.settings.db.get("users"):
-            self.users[record.get('id')] = { }
-            for key in record.keys():
-                if key != "id":
-                    self.users[record.get('id')][key] = record[key]
+#     async def init(self):
+#         for record in await self.settings.db.get("users"):
+#             self.users[record.get('id')] = { }
+#             for key in record.keys():
+#                 if key != "id":
+#                     self.users[record.get('id')][key] = record[key]
             
-    def get(self, id):
-        return self.users[id]
+#     def get(self, id):
+#         return self.users[id]
 
 class Channels:
     def __init__(self, settings):
