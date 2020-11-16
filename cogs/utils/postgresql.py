@@ -1,12 +1,14 @@
 import asyncpg
 import json
+import os
 
 class Database:
     async def init(self):
         self.conn = await asyncpg.connect(
-            host     = "127.0.0.1",
-            database = "janet",
-            user     = "emy"
+            host     = os.environ.get("BOTTY_DBHOST"),
+            database = os.environ.get("BOTTY_DB"),
+            user     = os.environ.get("BOTTY_DBUSER"),
+            password = os.environ.get("BOTTY_DBPASSWORD"),
         )
 
     async def get(self, table):

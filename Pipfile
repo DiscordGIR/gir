@@ -11,6 +11,7 @@ autopep8 = "*"
 "discord.py" = "*"
 psycopg2 = "*"
 asyncpg = "*"
+python-dotenv = "*"
 
 [requires]
 python_version = "3.8"

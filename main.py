@@ -1,5 +1,9 @@
 import discord
 from discord.ext import commands
+import os
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
 
 def get_prefix(bot, message):
     """A callable Prefix for our bot. This could be edited to allow per server prefixes."""
@@ -23,12 +27,13 @@ if __name__ == '__main__':
 
 @bot.event
 async def on_ready():
-    bot.owner_id = 109705860275539968
+    bot.owner_id = os.environ.get("BOTTY_OWNER")
     bot.settings = bot.get_cog("Settings")
+    await bot.wait_until_ready()
     print(f'\n\nLogged in as: {bot.user.name} - {bot.user.id}\nVersion: {discord.__version__}\n')
 
     # Changes our bots Playing Status. type=1(streaming) for a standard game you could remove type and url.
     print(f'Successfully logged in and booted...!')
 
 
-bot.run('Nzc3MjgyNDQ0OTMxMTA0NzY5.X7BKsA.SZwCCsEafGdZDzhV6DY4nrdRErA', bot=True, reconnect=True)
+bot.run(os.environ.get("BOTTY_TOKEN"), bot=True, reconnect=True)
