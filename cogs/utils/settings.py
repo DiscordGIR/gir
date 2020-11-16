@@ -8,7 +8,7 @@ import os
 class Settings(commands.Cog):
     def __init__(self, bot):
         self.bot         = bot
-        self.guild_id    = os.environ.get("BOTTY_MAINGUILD")
+        self.guild_id    = int(os.environ.get("BOTTY_MAINGUILD"))
         self.guilds      = Guilds(self)
         self.users       = Users(self)
         self.permissions = Permissions(self.bot, self)
