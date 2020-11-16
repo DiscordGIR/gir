@@ -3,11 +3,12 @@ from discord.ext import commands
 import asyncio
 import json
 from cogs.utils.postgresql import Database
+import os
 
 class Settings(commands.Cog):
     def __init__(self, bot):
         self.bot         = bot
-        self.guild_id    = 777155838849843200
+        self.guild_id    = os.environ.get("BOTTY_MAINGUILD")
         self.guilds      = Guilds(self)
         self.users       = Users(self)
         self.permissions = Permissions(self.bot, self)
@@ -23,7 +24,7 @@ class Settings(commands.Cog):
         await self.users.init()
         await self.roles.init()
         await self.channels.init()
-        print("done")
+        print("Loaded settings from database!")
 
 class Permissions:
     def __init__(self, bot, settings):
