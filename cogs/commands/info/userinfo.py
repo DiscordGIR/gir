@@ -20,8 +20,8 @@ class UserInfo(commands.Cog):
                     roles += role.mention + " "
             results = (await self.bot.settings.db.get_with_id("users", user.id))[0]
             
-            joined = user.joined_at.strftime("%m/%d/%Y, %H:%M:%S")
-            created = user.created_at.strftime("%m/%d/%Y, %H:%M:%S")
+            joined = user.joined_at.strftime("%B %d, %Y, %I:%M %p")
+            created = user.created_at.strftime("%B %d, %Y, %I:%M %p")
 
             embed=discord.Embed(title="User Information")
             embed.color = user.color
@@ -35,7 +35,7 @@ class UserInfo(commands.Cog):
             embed.set_footer(text=f"Requested by {ctx.author}")
             await ctx.send(embed=embed)
             
-    @commands.command(name="xp")
+    @commands.command(name="xpstats")
     async def xp(self, ctx, user:discord.Member=None):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != 778233669881561088:
             pass
@@ -44,7 +44,6 @@ class UserInfo(commands.Cog):
 
             results = (await self.bot.settings.db.get_with_id("users", user.id))[0]
             rank = (await self.bot.settings.db.rank(user.id))[0]["xp_rank"]
-            print(rank)
             
             embed=discord.Embed(title="Level Statistics")
             embed.color = user.top_role.color
@@ -63,7 +62,7 @@ def xp_for_next_level(next):
         xp = xp + 45 * level * (floor(level / 10) + 1)
         level+= 1
 
-    return xp;
+    return xp
 
 def setup(bot):
     bot.add_cog(UserInfo(bot))

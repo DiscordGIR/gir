@@ -33,7 +33,7 @@ class Cases(commands.Cog):
                 elif result["type"] == "WARN":
                     extra = f'**Points**: {result["punishment"]}\n'
                 
-                timestamp=datetime.utcfromtimestamp(result["date"]/1000).strftime("%Y-%m-%d %H:%M:%S")
+                timestamp=datetime.utcfromtimestamp(result["date"]/1000).strftime("%B %d, %Y, %I:%M %p")
                 embed.add_field(name=f'{await self.determine_emoji(result["type"])} Case #{result["id"]}', 
                     value=f'{extra} **Reason**: {result["reason"]}\n**Moderator**: {result["modTag"]}\n**Time**: {timestamp}', inline=False)
             await ctx.send(embed=embed)

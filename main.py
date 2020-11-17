@@ -15,9 +15,16 @@ def get_prefix(bot, message):
 
 
 
-initial_extensions = ['cogs.utils.settings', 'cogs.commands.mod.cases', 'cogs.commands.mod.modactions', 'cogs.commands.info.userinfo']
+initial_extensions = ['cogs.utils.settings', 
+                    'cogs.commands.mod.cases', 
+                    'cogs.commands.mod.modactions', 
+                    'cogs.commands.info.userinfo',
+                    'cogs.commands.info.serverinfo',]
 
-bot = commands.Bot(command_prefix=get_prefix, description='A Rewrite Cog Example')
+intents = discord.Intents.default()
+intents.members = True
+
+bot = commands.Bot(command_prefix=get_prefix, description='A Rewrite Cog Example', intents=intents)
 
 # Here we load our extensions(cogs) listed above in [initial_extensions].
 if __name__ == '__main__':
