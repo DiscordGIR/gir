@@ -25,16 +25,16 @@ class Cases(commands.Cog):
             for result in results:
                 result = json.loads(result)
                 print(result)
+                
                 extra = ""
                 if result["type"] == "UNMUTE":
                     continue
                 elif result["type"] == "WARN":
                     extra = f'**Points**: {result["punishment"]}\n'
-            
-
+                
+                timestamp=datetime.utcfromtimestamp(result["date"]/1000).strftime("%Y-%m-%d %H:%M:%S")
                 embed.add_field(name=f'{await self.determine_emoji(result["type"])} Case #{result["id"]}', 
-                # 1587122879721
-                    value=f'{extra} **Reason**: {result["reason"]}\n**Moderator**: {result["modTag"]}\n**Time**: {datetime.utcfromtimestamp(result["date"]).strftime("%Y-%m-%d %H:%M:%S")}', inline=False)
+                    value=f'{extra} **Reason**: {result["reason"]}\n**Moderator**: {result["modTag"]}\n**Time**: {timestamp}', inline=False)
             await ctx.send(embed=embed)
     async def determine_emoji(self, type):
         emoji_dict = {
