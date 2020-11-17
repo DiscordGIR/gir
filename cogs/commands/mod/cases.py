@@ -20,8 +20,9 @@ class Cases(commands.Cog):
             results = await self.bot.settings.db.get_with_key_and_id('users', 'cases', str(user.id))
             embed=discord.Embed(title="Cases")
             embed.set_author(name=user, icon_url=user.avatar_url)
-            results = ((results[0]['cases']))
-            # results = json.loads([results[0])
+            embed.set_footer(text=f"Requested by {ctx.author}")
+            results = results[0]['cases']
+
             for result in results:
                 result = json.loads(result)
                 print(result)

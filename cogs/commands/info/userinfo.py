@@ -13,7 +13,7 @@ class UserInfo(commands.Cog):
             pass
         else:
             if user is None: user = ctx.author
-            
+
             roles = ""
             for role in user.roles:
                 if role != ctx.guild.default_role:
@@ -32,7 +32,7 @@ class UserInfo(commands.Cog):
             embed.add_field(name="Roles", value=roles if roles else "None", inline=False)
             embed.add_field(name="Join date", value=f"{joined} UTC", inline=True)
             embed.add_field(name="Account creation date", value=f"{created} UTC", inline=True)
-            # embed.set_footer(text=f"user.i | Warned by {ctx.author}")
+            embed.set_footer(text=f"Requested by {ctx.author}")
             await ctx.send(embed=embed)
 def setup(bot):
     bot.add_cog(UserInfo(bot))
