@@ -36,3 +36,6 @@ class Database:
 
     async def increment_and_get(self, table, key, _id, val):
         return await self.conn.fetch(f'UPDATE "{table}" SET "{key}" = "{key}" + $1 WHERE id = $2 RETURNING *', int(val), str(_id))
+
+    async def rank(self, _id):
+        return await self.conn.fetch("SELECT yes.xp_rank FROM (SELECT id, COUNT(users), xp, RANK() OVER (ORDER BY xp DESC) xp_rank FROM users GROUP BY id) AS yes WHERE id = $1;", str(_id))
