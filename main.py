@@ -19,12 +19,16 @@ initial_extensions = ['cogs.utils.settings',
                     'cogs.commands.mod.cases', 
                     'cogs.commands.mod.modactions', 
                     'cogs.commands.info.userinfo',
-                    'cogs.commands.info.serverinfo',]
+                    'cogs.commands.info.serverinfo',
+                    'cogs.monitors.logging',]
 
 intents = discord.Intents.default()
 intents.members = True
+intents.messages = True
 
-bot = commands.Bot(command_prefix=get_prefix, description='A Rewrite Cog Example', intents=intents)
+bot = commands.Bot(command_prefix=get_prefix, intents=intents)
+bot.max_messages = 1000000
+
 
 # Here we load our extensions(cogs) listed above in [initial_extensions].
 if __name__ == '__main__':
