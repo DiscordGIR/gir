@@ -111,7 +111,7 @@ class Logging(commands.Cog):
 
         embed=discord.Embed(title="Bulk Message Deleted")
         embed.color=discord.Color.red()
-        embed.add_field(name="Users", value=f'This batch included messages from {member_string}', inline=True)
+        embed.add_field(name="Users", value=f'This batch included {len(messages)} messages from {member_string}', inline=True)
         embed.add_field(name="Channel", value=message.channel.mention, inline=True)
         await channel.send(embed=embed)
         await channel.send(file=discord.File(output, 'message.txt'))
