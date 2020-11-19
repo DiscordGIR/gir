@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from datetime import datetime
+from io import BytesIO
 # logging
 # nsa
 
@@ -67,7 +68,7 @@ class Logging(commands.Cog):
             return
 
         channel = discord.utils.get(message.guild.channels, id=self.bot.settings.channels.private)
-
+       
         embed=discord.Embed(title="Message Deleted")
         embed.color=discord.Color.red()
         embed.set_thumbnail(url=message.author.avatar_url)
@@ -78,7 +79,45 @@ class Logging(commands.Cog):
         embed.timestamp = datetime.now()
         await channel.send(embed=embed)
 
-        
+    @commands.Cog.listener()
+    async def on_bulk_message_delete(self, messages):
+        if not messages[0].guild:
+            return
+        if messages[0].guild.id != self.bot.settings.guild_id:
+            return
+        members = set()
+        channel = discord.utils.get(messages[0].guild.channels, id=self.bot.settings.channels.private)
+        output = BytesIO()
+        for message in messages:
+            members.add(message.author)
 
+            string = f'{message.author} ({message.author.id}) [{message.created_at.strftime("%B %d, %Y, %I:%M %p")}]) UTC\n'
+            string += message.content
+            for attachment in message.attachments:
+                string += f'\n{attachment.url}'
+
+            string += "\n\n"
+            output.write(string.encode('UTF-8'))
+        output.seek(0)
+
+        member_string = ""
+        for i, member in enumerate(members):
+            if i == len(members) -1 and i == 0:
+                member_string += f"{member.mention}"
+            elif i == len(members) -1 and i != 0:
+                member_string += f"and {member.mention}"
+            else:
+                member_string += f"{member.mention}, "
+
+        embed=discord.Embed(title="Bulk Message Deleted")
+        embed.color=discord.Color.red()
+        embed.add_field(name="Users", value=f'This batch included messages from {member_string}', inline=True)
+        embed.add_field(name="Channel", value=message.channel.mention, inline=True)
+        await channel.send(embed=embed)
+        await channel.send(file=discord.File(output, 'message.txt'))
+
+    @commands.command(name="purge")
+    async def purge(self, ctx, limit:int):
+        await ctx.channel.purge(limit=limit)
 def setup(bot):
     bot.add_cog(Logging(bot))
