@@ -16,12 +16,12 @@ class PaginationSource(menus.GroupByPageSource):
         user = menu.ctx.args[2]
         embed = discord.Embed(
             title=f'Cases {menu.current_page +1}/{self.get_max_pages()}', color=discord.Color.blurple())
-        embed.set_author(name=user, icon_url=user.avatar_url if isinstance(user, discord.Member) else "")
+        embed.set_author(name=user, icon_url=user.avatar_url)
         for result in entry.items:        
             extra = ""
             if result["type"] == "WARN":
                 extra = f'**Points**: {result["punishment"]}\n'
-            
+            print(result["date"])
             timestamp=datetime.utcfromtimestamp(result["date"]/1000).strftime("%B %d, %Y, %I:%M %p")
             embed.add_field(name=f'{await determine_emoji(result["type"])} Case #{result["id"]}', 
                 value=f'{extra} **Reason**: {result["reason"]}\n**Moderator**: {result["modTag"]}\n**Time**: {timestamp} UTC', inline=True)
@@ -48,19 +48,25 @@ class Cases(commands.Cog):
     @commands.command(name="cases")
     async def cases(self, ctx, user:typing.Union[discord.Member,int]):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            pass
-        else:
-            results = await self.bot.settings.db.get_with_key_and_id('users', 'cases', str(user.id if isinstance(user, discord.Member) else user))
-            if len(results) == 0:
-                raise commands.BadArgument(f'User with ID {user.id if isinstance(user, discord.Member) else user} not found or had no cases.')
-            results = results[0]['cases']
-            results = [json.loads(case) for case in results]
-            results = [case for case in results if case["type"] != "UNMUTE"]
+            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+        
+        if isinstance(user, int):
+            user = await self.bot.fetch_user(user)
+            if user is None:
+                raise commands.BadArgument(f"Couldn't find user with ID {user}")
+            ctx.args[2] = user
 
-            menus = MenuPages(source=PaginationSource(
-                results, key=lambda t: 1, per_page=9), clear_reactions_after=True)
+        results = await self.bot.settings.db.get_with_key_and_id('users', 'cases', user.id)
+        if len(results) == 0:
+            raise commands.BadArgument(f'User with ID {user} had no cases.')
+        results = results[0]['cases']
+        results = [json.loads(case) for case in results]
+        results = [case for case in results if case["type"] != "UNMUTE"]
 
-            await menus.start(ctx)
+        menus = MenuPages(source=PaginationSource(
+            results, key=lambda t: 1, per_page=9), clear_reactions_after=True)
+
+        await menus.start(ctx)
     
     @cases.error
     async def info_error(self, ctx, error):

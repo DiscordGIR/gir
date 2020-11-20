@@ -4,6 +4,7 @@ from cogs.utils.logs import prepare_ban_log, prepare_warn_log, prepare_kick_log
 from cogs.utils.case import Case
 from datetime import datetime
 import traceback
+import typing
 
 class ModActions(commands.Cog):
     def __init__(self, bot):    
@@ -21,7 +22,7 @@ class ModActions(commands.Cog):
         case = Case(
             _id = str((await self.bot.settings.db.increment_and_get("clientStorage", "caseID", ctx.guild.default_role.id, 1))[0]["caseID"]),
             _type = "WARN",
-            date = datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+            date = datetime.now().timestamp()*1000,
             until=str(None),
             modID=str(ctx.author.id),
             modTag = str(ctx.author),
@@ -67,7 +68,7 @@ class ModActions(commands.Cog):
         case = Case(
             _id = str((await self.bot.settings.db.increment_and_get("clientStorage", "caseID", ctx.guild.default_role.id, 1))[0]["caseID"]),
             _type = "KICK",
-            date = datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+            date = datetime.now().timestamp()*1000,
             until=str(None),
             modID=str(ctx.author.id),
             modTag = str(ctx.author),
@@ -90,15 +91,22 @@ class ModActions(commands.Cog):
     
     @commands.guild_only()
     @commands.command(name="ban")
-    async def ban(self, ctx, user: discord.Member, *, reason: str = "No reason."):
+    async def ban(self, ctx, user: typing.Union[discord.Member, int], *, reason: str = "No reason."):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
-        if user.top_role >= ctx.author.top_role:
-            raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
+        if isinstance(user, discord.Member):
+            if user.top_role >= ctx.author.top_role:
+                raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
+        
+        if isinstance(user, int):
+            user = await self.bot.fetch_user(user)
+            if user is None:
+                raise commands.BadArgument(f"Couldn't find user with ID {user}")
+
         case = Case(
             _id = str((await self.bot.settings.db.increment_and_get("clientStorage", "caseID", ctx.guild.default_role.id, 1))[0]["caseID"]),
             _type = "BAN",
-            date = datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+            date = datetime.now().timestamp()*1000,
             until=str(None),
             modID=str(ctx.author.id),
             modTag = str(ctx.author),
@@ -110,15 +118,17 @@ class ModActions(commands.Cog):
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.channels.public)
         await public_chan.send(embed=log)
-        await ctx.send(embed=log, delete_after=5)
+        await ctx.send(embed=log)
         
         try:
             await user.send("You were banned from r/Jailbreak", embed=log)
         except Exception:
             pass
         
-        
-        await user.ban(reason=reason)
+        if isinstance(user, discord.Member):
+            await user.ban(reason=reason)
+        else:
+            await ctx.guild.ban(discord.Object(id=user.id))
 
     @commands.guild_only()
     @commands.command(name="purge")
