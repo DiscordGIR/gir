@@ -3,11 +3,13 @@ from discord.ext import commands
 from cogs.utils.logs import prepare_ban_log, prepare_warn_log, prepare_kick_log
 from cogs.utils.case import Case
 from datetime import datetime
+import traceback
 
 class ModActions(commands.Cog):
     def __init__(self, bot):    
         self.bot = bot
 
+    @commands.guild_only()
     @commands.command(name="warn")
     async def warn(self, ctx, user: discord.Member, points: int, *, reason: str = "No reason."):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
@@ -37,28 +39,25 @@ class ModActions(commands.Cog):
 
         
         log.add_field(name="Current points", value=cur_points, inline=True)
-        await ctx.send(embed=log)
+        await ctx.send(embed=log, delete_after=5)
 
         if cur_points >= 600:
             await ctx.invoke(self.ban, user=user, reason="600 or more points reached")
         elif cur_points >= 400 and not results[0]["warnKicked"]:
             await self.bot.settings.db.set_with_key_and_id("users", "warnKicked", user.id, True)
-            await user.send("You were kicked from r/Jailbreak for reaching 400 or more points.", embed=log)      
+            
+            try:
+                await user.send("You were kicked from r/Jailbreak for reaching 400 or more points.", embed=log)
+            except Exception:
+                pass
+            
             await ctx.invoke(self.kick, user=user, reason="400 or more points reached")
         else:
-            await user.send("You were warned in r/Jailbreak.", embed=log)      
-
-    # @warn.error
-    # async def info_error(self, ctx, error):
-    #     if isinstance(error, commands.MissingRequiredArgument):
-    #         await ctx.send(error)
-    #     if isinstance(error, commands.BadArgument):
-    #         await(ctx.send(error))
-    #     if isinstance(error, commands.MissingPermissions):
-    #         await(ctx.send(error))
-    #     else:
-    #         print(error)
-
+            try:
+                await user.send("You were warned in r/Jailbreak.", embed=log)      
+            except Exception:
+                pass
+    @commands.guild_only()
     @commands.command(name="kick")
     async def kick(self, ctx, user: discord.Member, *, reason: str = "No reason."):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
@@ -80,11 +79,16 @@ class ModActions(commands.Cog):
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.channels.public)
         await public_chan.send(embed=log)
-        await ctx.send(embed=log)
-        await user.send("You were kicked from r/Jailbreak", embed=log)
+        await ctx.send(embed=log, delete_after=5)
+        
+        try:
+            await user.send("You were kicked from r/Jailbreak", embed=log)
+        except Exception:
+            pass
 
         await user.kick(reason=reason)
     
+    @commands.guild_only()
     @commands.command(name="ban")
     async def ban(self, ctx, user: discord.Member, *, reason: str = "No reason."):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
@@ -106,10 +110,41 @@ class ModActions(commands.Cog):
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.channels.public)
         await public_chan.send(embed=log)
-        await ctx.send(embed=log)
-        await user.send("You were banned from r/Jailbreak", embed=log)
-
+        await ctx.send(embed=log, delete_after=5)
+        
+        try:
+            await user.send("You were banned from r/Jailbreak", embed=log)
+        except Exception:
+            pass
+        
+        
         await user.ban(reason=reason)
+
+    @commands.guild_only()
+    @commands.command(name="purge")
+    async def purge(self, ctx, limit: int = 0):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+        if limit <= 0:
+            raise commands.BadArgument("Number of messages to purge must be greater than 0")
+        await ctx.channel.purge(limit=limit)
+        await ctx.send(f'Purged {limit} messages.', delete_after=5)
+    
+    @ban.error
+    @warn.error
+    @purge.error
+    @kick.error
+    async def info_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await(ctx.send(error, delete_after=5))
+        elif isinstance(error, commands.BadArgument):
+            await(ctx.send(error, delete_after=5))
+        elif isinstance(error, commands.MissingPermissions):
+            await(ctx.send(error, delete_after=5))
+        elif isinstance(error, commands.NoPrivateMessage):
+            await(ctx.send(error, delete_after=5))
+        else:
+            traceback.print_exc()
 
 def setup(bot):
     bot.add_cog(ModActions(bot))

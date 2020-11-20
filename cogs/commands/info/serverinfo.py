@@ -2,11 +2,13 @@ import discord
 from discord.ext import commands
 from datetime import datetime
 from math import floor
+import traceback
 
 class UserInfo(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.guild_only()
     @commands.command(name="serverinfo")
     async def userinfo(self, ctx):
         guild = ctx.guild
@@ -24,6 +26,19 @@ class UserInfo(commands.Cog):
         
         embed.set_footer(text=f"Requested by {ctx.author}")
         await ctx.send(embed=embed)
+
+    @userinfo.error
+    async def info_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await(ctx.send(error, delete_after=5))
+        elif isinstance(error, commands.BadArgument):
+            await(ctx.send(error, delete_after=5))
+        elif isinstance(error, commands.MissingPermissions):
+            await(ctx.send(error, delete_after=5))
+        elif isinstance(error, commands.NoPrivateMessage):
+            await(ctx.send(error, delete_after=5))
+        else:
+            traceback.print_exc()
 
 def setup(bot):
     bot.add_cog(UserInfo(bot))

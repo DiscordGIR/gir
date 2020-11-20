@@ -12,6 +12,7 @@ autopep8 = "*"
 psycopg2 = "*"
 asyncpg = "*"
 python-dotenv = "*"
+discord-ext-menus = {git = "https://github.com/Rapptz/discord-ext-menus"}
 
 [requires]
 python_version = "3.8"

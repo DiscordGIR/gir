@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "5891617c5b88afa8de8ef2033a2d734448c0b3084287fd4ef6dcd564261e9643"
+            "sha256": "9afcdb10bfd358059a44d82a4cb2a24f776fb65ac50d45b1ead2562edeb33e78"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -89,6 +89,10 @@
             ],
             "version": "==3.0.4"
         },
+        "discord-ext-menus": {
+            "git": "https://github.com/Rapptz/discord-ext-menus",
+            "ref": "6f2b873bf0d28903eb752aa1166b3aac26dc9007"
+        },
         "discord.py": {
             "hashes": [
                 "sha256:2367359e31f6527f8a936751fc20b09d7495dd6a76b28c8fb13d4ca6c55b7563",
@@ -125,7 +129,7 @@
                 "sha256:fcfbb44c59af3f8ea984de67ec7c306f618a3ec771c2843804069917a8f2e255",
                 "sha256:feed85993dbdb1dbc29102f50bca65bdc68f2c0c8d352468c25b54874f23c39d"
             ],
-            "markers": "python_version >= '3.5'",
+            "markers": "python_full_version >= '3.5.0'",
             "version": "==4.7.6"
         },
         "psycopg2": {
@@ -177,7 +181,7 @@
                 "sha256:f18d68f2be6bf0e89f1521af2b1bb46e66ab0018faafa81d70f358153170a317",
                 "sha256:f379b7f83f23fe12823085cd6b906edc49df969eb99757f58ff382349a3303c6"
             ],
-            "markers": "python_version >= '3.5'",
+            "markers": "python_full_version >= '3.5.0'",
             "version": "==1.5.1"
         }
     },

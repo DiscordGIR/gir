@@ -2,11 +2,13 @@ import discord
 from discord.ext import commands
 from datetime import datetime
 from math import floor
+import traceback
 
 class UserInfo(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.guild_only()
     @commands.command(name="userinfo")
     async def userinfo(self, ctx, user:discord.Member=None):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != 778233669881561088:
@@ -34,7 +36,8 @@ class UserInfo(commands.Cog):
             embed.add_field(name="Account creation date", value=f"{created} UTC", inline=True)
             embed.set_footer(text=f"Requested by {ctx.author}")
             await ctx.send(embed=embed)
-            
+
+    @commands.guild_only()        
     @commands.command(name="xpstats")
     async def xp(self, ctx, user:discord.Member=None):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != 778233669881561088:
@@ -53,6 +56,20 @@ class UserInfo(commands.Cog):
             embed.add_field(name="Rank", value=f"{rank}/{ctx.guild.member_count}", inline=True)
             embed.set_footer(text=f"Requested by {ctx.author}")
             await ctx.send(embed=embed)
+
+    @userinfo.error
+    @xp.error
+    async def info_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await(ctx.send(error, delete_after=5))
+        elif isinstance(error, commands.BadArgument):
+            await(ctx.send(error, delete_after=5))
+        elif isinstance(error, commands.MissingPermissions):
+            await(ctx.send(error, delete_after=5))
+        elif isinstance(error, commands.NoPrivateMessage):
+            await(ctx.send(error, delete_after=5))
+        else:
+            traceback.print_exc()
 
 def xp_for_next_level(next):
     level = 0

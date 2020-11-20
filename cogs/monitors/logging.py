@@ -66,7 +66,9 @@ class Logging(commands.Cog):
             return
         if message.guild.id != self.bot.settings.guild_id:
             return
-
+        if message.author.id == self.bot.user.id:
+            return
+            
         channel = discord.utils.get(message.guild.channels, id=self.bot.settings.channels.private)
        
         embed=discord.Embed(title="Message Deleted")
@@ -116,8 +118,5 @@ class Logging(commands.Cog):
         await channel.send(embed=embed)
         await channel.send(file=discord.File(output, 'message.txt'))
 
-    @commands.command(name="purge")
-    async def purge(self, ctx, limit:int):
-        await ctx.channel.purge(limit=limit)
 def setup(bot):
     bot.add_cog(Logging(bot))
