@@ -2,138 +2,142 @@ import discord
 from discord.ext import commands
 import asyncio
 import json
+import data.mongo_setup as mongo_setup
 from cogs.utils.postgresql import Database
 import os
 
 class Settings(commands.Cog):
     def __init__(self, bot):
-        self.bot         = bot
-        self.guild_id    = int(os.environ.get("BOTTY_MAINGUILD"))
-        self.guilds      = Guilds(self)
-        # self.users       = Users(self)
-        self.permissions = Permissions(self.bot, self)
-        self.roles       = Roles(self)
-        self.channels    = Channels(self)
-        self.db          = Database()
+        mongo_setup.global_init()
+
+#     def __init__(self, bot):
+#         self.bot         = bot
+#         self.guild_id    = int(os.environ.get("BOTTY_MAINGUILD"))
+#         self.guilds      = Guilds(self)
+#         # self.users       = Users(self)
+#         self.permissions = Permissions(self.bot, self)
+#         self.roles       = Roles(self)
+#         self.channels    = Channels(self)
+#         self.db          = Database()
         
-        bot.loop.run_until_complete(self.cog_load())
+#         bot.loop.run_until_complete(self.cog_load())
 
-    async def cog_load(self):
-        await self.db.init()
-        await self.guilds.init()
-        # await self.users.init()
-        await self.roles.init()
-        await self.channels.init()
-        print("Loaded settings from database!")
+#     async def cog_load(self):
+#         await self.db.init()
+#         await self.guilds.init()
+#         # await self.users.init()
+#         await self.roles.init()
+#         await self.channels.init()
+#         print("Loaded settings from database!")
 
-class Permissions:
-    def __init__(self, bot, settings):
-        self.bot = bot
-        self.settings = settings
-        guild_id = self.settings.guild_id
-        self.permissions = {
-            0: lambda x, y: True,
-            1: (lambda guild, m: guild.id == guild_id
-                and discord.utils.get(guild.roles, id=settings.roles.memplus) in m.roles),
-            2: (lambda guild, m: guild.id == guild_id
-                and discord.utils.get(guild.roles, id=settings.roles.mempro) in m.roles),
-            3: (lambda guild, m: guild.id == guild_id
-                and discord.utils.get(guild.roles, id=settings.roles.memed) in m.roles),
-            4: (lambda guild, m: guild.id == guild_id
-                and discord.utils.get(guild.roles, id=settings.roles.genius) in m.roles),
-            5: (lambda guild, m: guild.id == guild_id
-                and m.guild_permissions.manage_guild),
-            6: (lambda guild, m: guild.id == guild_id
-                and discord.utils.get(guild.roles, id=settings.roles.moderator) in m.roles),
-            7: (lambda guild, m: guild.id == guild_id
-                and m == guild.owner),
-            8: (lambda guild, m: guild.id == guild_id
-                and m.id == bot.owner_id)
-        }
-    
-    def hasAtLeast(self, guild, member, level):
-        return self.permissions[level](guild, member)
-
-class Guilds:
-    class Guild:
-        def __init__(self, guild):
-            self.guild = guild
-        
-        def get(self, key):
-            return self.guild[key]
-
-    def __init__(self, settings):
-        self.guilds = { }
-        self.settings = settings
-    
-    def get(self, id):
-        return self.guilds[id]
-    
-    async def init(self):
-        for record in await self.settings.db.get("guilds"):
-            self.guilds[int(record.get('id'))] = { }
-            for key in record.keys():
-                if key != "id":
-                    self.guilds[int(record.get('id'))][key] = record[key]
-# class Users:
-#     class User:
-#         def __init__(self, user):
-#             self.user = user
-
-#         def get(self, key):
-#             return self.user[key]
-
-#         def _set(self, key, value):
-#             self.user[key] = value  
-
-#         def increment(self, key, incr):
-#             self.user[key] += incr
-
-#         def increment_and_get(self, key, incr):
-#             self.user[key] += incr
-#             return self.user[key]  
-    
-#     def __init__(self, settings):
+# class Permissions:
+#     def __init__(self, bot, settings):
+#         self.bot = bot
 #         self.settings = settings
-#         self.users = { }
+#         guild_id = self.settings.guild_id
+#         self.permissions = {
+#             0: lambda x, y: True,
+#             1: (lambda guild, m: guild.id == guild_id
+#                 and discord.utils.get(guild.roles, id=settings.roles.memplus) in m.roles),
+#             2: (lambda guild, m: guild.id == guild_id
+#                 and discord.utils.get(guild.roles, id=settings.roles.mempro) in m.roles),
+#             3: (lambda guild, m: guild.id == guild_id
+#                 and discord.utils.get(guild.roles, id=settings.roles.memed) in m.roles),
+#             4: (lambda guild, m: guild.id == guild_id
+#                 and discord.utils.get(guild.roles, id=settings.roles.genius) in m.roles),
+#             5: (lambda guild, m: guild.id == guild_id
+#                 and m.guild_permissions.manage_guild),
+#             6: (lambda guild, m: guild.id == guild_id
+#                 and discord.utils.get(guild.roles, id=settings.roles.moderator) in m.roles),
+#             7: (lambda guild, m: guild.id == guild_id
+#                 and m == guild.owner),
+#             8: (lambda guild, m: guild.id == guild_id
+#                 and m.id == bot.owner_id)
+#         }
+    
+#     def hasAtLeast(self, guild, member, level):
+#         return self.permissions[level](guild, member)
 
+# class Guilds:
+#     class Guild:
+#         def __init__(self, guild):
+#             self.guild = guild
+        
+#         def get(self, key):
+#             return self.guild[key]
+
+#     def __init__(self, settings):
+#         self.guilds = { }
+#         self.settings = settings
+    
+#     def get(self, id):
+#         return self.guilds[id]
+    
 #     async def init(self):
-#         for record in await self.settings.db.get("users"):
-#             self.users[record.get('id')] = { }
+#         for record in await self.settings.db.get("guilds"):
+#             self.guilds[int(record.get('id'))] = { }
 #             for key in record.keys():
 #                 if key != "id":
-#                     self.users[record.get('id')][key] = record[key]
+#                     self.guilds[int(record.get('id'))][key] = record[key]
+# # class Users:
+# #     class User:
+# #         def __init__(self, user):
+# #             self.user = user
+
+# #         def get(self, key):
+# #             return self.user[key]
+
+# #         def _set(self, key, value):
+# #             self.user[key] = value  
+
+# #         def increment(self, key, incr):
+# #             self.user[key] += incr
+
+# #         def increment_and_get(self, key, incr):
+# #             self.user[key] += incr
+# #             return self.user[key]  
+    
+# #     def __init__(self, settings):
+# #         self.settings = settings
+# #         self.users = { }
+
+# #     async def init(self):
+# #         for record in await self.settings.db.get("users"):
+# #             self.users[record.get('id')] = { }
+# #             for key in record.keys():
+# #                 if key != "id":
+# #                     self.users[record.get('id')][key] = record[key]
             
-#     def get(self, id):
-#         return self.users[id]
+# #     def get(self, id):
+# #         return self.users[id]
 
-class Channels:
-    def __init__(self, settings):
-        self.settings = settings
-        self.public     = None 
-        self.private    = None 
-        self.reports    = None 
+# class Channels:
+#     def __init__(self, settings):
+#         self.settings = settings
+#         self.public     = None 
+#         self.private    = None 
+#         self.reports    = None 
 
-    async def init(self):
-        self.public      = int(self.settings.guilds.get(self.settings.guild_id).get('channels.public'))
-        self.private     = int(self.settings.guilds.get(self.settings.guild_id).get('channels.private'))
-        self.reports     = int(self.settings.guilds.get(self.settings.guild_id).get('channels.reports'))
+#     async def init(self):
+#         self.public      = int(self.settings.guilds.get(self.settings.guild_id).get('channels.public'))
+#         self.private     = int(self.settings.guilds.get(self.settings.guild_id).get('channels.private'))
+#         self.reports     = int(self.settings.guilds.get(self.settings.guild_id).get('channels.reports'))
 
-class Roles:
-    def __init__(self, settings):
-        self.memplus   = None
-        self.mempro    = None
-        self.memed     = None
-        self.genius    = None
-        self.moderator = None
-        self.settings  = settings
+# class Roles:
+#     def __init__(self, settings):
+#         self.memplus   = None
+#         self.mempro    = None
+#         self.memed     = None
+#         self.genius    = None
+#         self.moderator = None
+#         self.settings  = settings
 
-    async def init(self):
-        self.memplus   = int(self.settings.guilds.get(self.settings.guild_id).get("roles.memberplus"))
-        self.mempro    = int(self.settings.guilds.get(self.settings.guild_id).get("roles.memberplus"))
-        self.memed     = int(self.settings.guilds.get(self.settings.guild_id).get("roles.memberedition"))
-        self.genius    = int(self.settings.guilds.get(self.settings.guild_id).get("roles.genius"))
-        self.moderator = int(self.settings.guilds.get(self.settings.guild_id).get("roles.moderator"))
+#     async def init(self):
+#         self.memplus   = int(self.settings.guilds.get(self.settings.guild_id).get("roles.memberplus"))
+#         self.mempro    = int(self.settings.guilds.get(self.settings.guild_id).get("roles.memberplus"))
+#         self.memed     = int(self.settings.guilds.get(self.settings.guild_id).get("roles.memberedition"))
+#         self.genius    = int(self.settings.guilds.get(self.settings.guild_id).get("roles.genius"))
+#         self.moderator = int(self.settings.guilds.get(self.settings.guild_id).get("roles.moderator"))
 
 
 # insert into guilds VALUES ('777155838849843200', '!', 'enUS', 'FALSE', '{}', '777270186604101652', '777270163589693482', '777270163589693482', '777270542033092638', '777270554800422943', '777270579719569410', '777155838849843204', FALSE, FALSE, '{}', '{}', '777270242874359828', '777270206841880586', '777270222868185158', '{}', '777270914365784075');
