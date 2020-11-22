@@ -3,6 +3,7 @@ import discord
 async def prepare_warn_log(ctx, user, case):
     embed=discord.Embed(title="Member warned")
     embed.set_author(name=user, icon_url=user.avatar_url)
+    embed.color = discord.Color.orange()
     embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
     embed.add_field(name="Mod", value=f'{ctx.author} ({ctx.author.mention})', inline=True)
     embed.add_field(name="Increase", value=case.punishment, inline=True)
@@ -12,6 +13,7 @@ async def prepare_warn_log(ctx, user, case):
 
 async def prepare_ban_log(ctx, user, case):
     embed=discord.Embed(title="Member banned")
+    embed.color = discord.Color.blue()
     embed.set_author(name=user, icon_url=user.avatar_url)
     embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
     embed.add_field(name="Mod", value=f'{ctx.author} ({ctx.author.mention})', inline=True)
@@ -21,6 +23,7 @@ async def prepare_ban_log(ctx, user, case):
 
 async def prepare_kick_log(ctx, user, case):
     embed=discord.Embed(title="Member kicked")
+    embed.color = discord.Color.green()
     embed.set_author(name=user, icon_url=user.avatar_url)
     embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
     embed.add_field(name="Mod", value=f'{ctx.author} ({ctx.author.mention})', inline=True)
