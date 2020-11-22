@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from cogs.utils.logs import prepare_ban_log, prepare_warn_log, prepare_kick_log, prepare_unban_log
+from cogs.utils.logs import prepare_ban_log, prepare_warn_log, prepare_kick_log, prepare_unban_log, prepare_liftwarn_log
 from data.case import Case
 import traceback
 import typing
@@ -42,7 +42,6 @@ class ModActions(commands.Cog):
         if public_chan:
             await public_chan.send(embed=log)  
 
-        
         log.add_field(name="Current points", value=cur_points, inline=True)
         await ctx.send(embed=log, delete_after=5)
 
@@ -63,6 +62,42 @@ class ModActions(commands.Cog):
             except Exception:
                 pass
     
+    @commands.guild_only()
+    @commands.command(name="liftwarn")
+    async def liftwarn(self, ctx, user: discord.Member, case_id: int, *, reason: str = "No reason."):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+        if user.top_role >= ctx.author.top_role:
+            raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
+
+        cases = await self.bot.settings.get_case(user.id, case_id)
+        case = cases.cases.filter(_id=case_id).first()
+        
+        if case is None:
+            raise commands.BadArgument(message=f"{user} has no case with ID {case_id}")
+        
+        if case._type != "WARN":
+            raise commands.BadArgument(message=f"{user}'s case with ID {case_id} is not a warn case.")
+        
+        if case.lifted:
+            raise commands.BadArgument(message=f"Case with ID {case_id} already lifted.")
+        
+        case.lifted = True
+        case.lifted_reason = reason
+        cases.save()
+
+        await self.bot.settings.inc_points(user.id, -1 * case.punishment_points)
+
+        log = await prepare_liftwarn_log(ctx, user, case)
+        try:
+            await user.send("Your warn was lifted in r/Jailbreak.", embed=log)      
+        except Exception:
+            pass
+        
+        public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
+        if public_chan:
+            await public_chan.send(embed=log)  
+        await ctx.send(embed=log, delete_after=5)
     @commands.guild_only()
     @commands.command(name="kick")
     async def kick(self, ctx, user: discord.Member, *, reason: str = "No reason."):
@@ -182,6 +217,7 @@ class ModActions(commands.Cog):
         await ctx.channel.purge(limit=limit)
         await ctx.send(f'Purged {limit} messages.', delete_after=5)
     
+    @liftwarn.error
     @unban.error
     @ban.error
     @warn.error

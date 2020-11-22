@@ -11,6 +11,17 @@ async def prepare_warn_log(ctx, user, case):
     embed.set_footer(text=f"Case #{case._id} | Warned by {ctx.author}")
     return embed
 
+async def prepare_liftwarn_log(ctx, user, case):
+    embed=discord.Embed(title="Member warn lifted")
+    embed.set_author(name=user, icon_url=user.avatar_url)
+    embed.color = discord.Color.blurple()
+    embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
+    embed.add_field(name="Mod", value=f'{ctx.author} ({ctx.author.mention})', inline=True)
+    embed.add_field(name="Decrease", value=case.punishment_points, inline=True)
+    embed.add_field(name="Reason", value=case.reason, inline=True)
+    embed.set_footer(text=f"Case #{case._id} | Lifted by {ctx.author}")
+    return embed
+
 async def prepare_ban_log(ctx, user, case):
     embed=discord.Embed(title="Member banned")
     embed.color = discord.Color.blue()

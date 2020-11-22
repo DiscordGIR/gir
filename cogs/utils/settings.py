@@ -34,6 +34,11 @@ class Settings(commands.Cog):
         await self.user(_id)
         User.objects(_id=_id).update_one(set__was_warn_kicked=True)
         
+    async def get_case(self, user_id, case_id):
+        await self.cases(user_id)
+        cases = Cases.objects(_id=user_id).first()
+        return cases
+
     async def user(self, id):
         # return User.objects(_id=id).modify(upsert=True, new=True, 
         #     set_on_insert___id=id,  set_on_insert__is_clem=False,
