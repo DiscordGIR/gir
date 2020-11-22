@@ -57,7 +57,7 @@ class Cases(commands.Cog):
             ctx.args[2] = user
 
         results = await self.bot.settings.cases(user.id)
-        if len(results) == 0:
+        if len(results.cases) == 0:
             raise commands.BadArgument(f'User with ID {user} had no cases.')
         cases = [case for case in results.cases if case._type != "UNMUTE"]
 
