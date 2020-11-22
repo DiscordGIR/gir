@@ -18,13 +18,17 @@ class PaginationSource(menus.GroupByPageSource):
             title=f'Cases {menu.current_page +1}/{self.get_max_pages()}', color=discord.Color.blurple())
         embed.set_author(name=user, icon_url=user.avatar_url)
         for case in entry.items:
-            extra = ""
-            if case._type == "WARN":
-                extra = f'**Points**: {case.punishment_points}\n'
-
             timestamp=case.date.strftime("%B %d, %Y, %I:%M %p")
-            embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}', 
-                value=f'{extra} **Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
+            if case._type == "WARN":
+                if case.lifted:
+                    embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id} [LIFTED]', 
+                        value=f'**Points**: {case.punishment_points}\n**Reason**: {case.reason}\n**Lifted by**: {case.lifted_by_tag}\n**Lift reason**: {case.lifted_reason}\n**Warned on**: {case.date}', inline=True)
+                else:
+                    embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}', 
+                        value=f'**Points**: {case.punishment_points}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
+            else:
+                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}', 
+                    value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
         
         return embed
 

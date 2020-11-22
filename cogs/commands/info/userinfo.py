@@ -56,6 +56,23 @@ class UserInfo(commands.Cog):
             # embed.add_field(name="Rank", value=f"{rank}/{ctx.guild.member_count}", inline=True)
             embed.set_footer(text=f"Requested by {ctx.author}")
             await ctx.send(embed=embed)
+    
+    @commands.guild_only()        
+    @commands.command(name="warnpoints")
+    async def warnpoints(self, ctx, user:discord.Member):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            pass
+
+        results = await self.bot.settings.user(user.id)
+        # rank = (await self.bot.settings.db.rank(user.id))[0]["xp_rank"]
+        
+        embed=discord.Embed(title="Warn Points")
+        embed.color = discord.Color.orange()
+        embed.set_thumbnail(url=user.avatar_url)
+        embed.add_field(name="Member", value=f'{user.mention}\n{user}\n({user.id})', inline=True)
+        embed.add_field(name="Warn Points", value=results.warn_points, inline=True)
+        embed.set_footer(text=f"Requested by {ctx.author}")
+        await ctx.send(embed=embed)
 
     @userinfo.error
     @xp.error

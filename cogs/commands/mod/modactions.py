@@ -4,6 +4,7 @@ from cogs.utils.logs import prepare_ban_log, prepare_warn_log, prepare_kick_log,
 from data.case import Case
 import traceback
 import typing
+import datetime
 
 class ModActions(commands.Cog):
     def __init__(self, bot):    
@@ -84,6 +85,9 @@ class ModActions(commands.Cog):
         
         case.lifted = True
         case.lifted_reason = reason
+        case.lifted_by_tag = str(ctx.author)
+        case.lifted_by_id = ctx.author.id
+        case.lifted_date = datetime.datetime.now()
         cases.save()
 
         await self.bot.settings.inc_points(user.id, -1 * case.punishment_points)
@@ -98,6 +102,7 @@ class ModActions(commands.Cog):
         if public_chan:
             await public_chan.send(embed=log)  
         await ctx.send(embed=log, delete_after=5)
+    
     @commands.guild_only()
     @commands.command(name="kick")
     async def kick(self, ctx, user: discord.Member, *, reason: str = "No reason."):

@@ -11,4 +11,7 @@ class Case(mongoengine.EmbeddedDocument):
     reason            = mongoengine.StringField(required=True)
     punishment_points = mongoengine.IntField(default=0)
     lifted            = mongoengine.BooleanField(default=False)
+    lifted_by_tag     = mongoengine.StringField()
+    lifted_by_id      = mongoengine.IntField()
     lifted_reason     = mongoengine.StringField()
+    lifted_date       = mongoengine.DateField()
