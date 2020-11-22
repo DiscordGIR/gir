@@ -19,15 +19,27 @@ class Settings(commands.Cog):
     def guild(self):
         return Guild.objects(_id=self.guild_id).first()
 
+    async def inc_caseid(self):
+        Guild.objects(_id=self.guild_id).update_one(inc__case_id=1)
+
+    async def add_case(self, _id, case):
+        await self.cases(_id)
+        Cases.objects(_id=_id).update_one(push__cases=case)
+
+    async def inc_points(self, _id, points):
+        await self.user(_id)
+        User.objects(_id=_id).update_one(inc__warn_points=points)
+
     async def user(self, id):
         return User.objects(_id=id).modify(upsert=True, new=True, 
             set_on_insert___id=id,  set_on_insert__is_clem=False,
              set_on_insert__was_warn_kicked=False,  set_on_insert__xp=0,
-              set_on_insert__level=0,  set_on_insert__offline_report_ping=False)
+              set_on_insert__level=0,  set_on_insert__offline_report_ping=False, 
+              set_on_insert__warn_points=0)
     
     async def cases(self, id):
         return Cases.objects(_id=id).modify(upsert=True, new=True,
-             set_on_insert___id=id, set_on_insert__cases=list)
+             set_on_insert___id=id, set_on_insert__cases=[])
     
 #     def __init__(self, bot):
 #         self.bot         = bot

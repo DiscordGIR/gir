@@ -14,7 +14,7 @@ class Logging(commands.Cog):
         if member.guild.id != self.bot.settings.guild_id:
             return
         
-        channel = discord.utils.get(member.guild.channels, id=self.bot.settings.channels.private)
+        channel = discord.utils.get(member.guild.channels, id=self.bot.settings.guild().channel_private)
 
         embed=discord.Embed(title="Member joined")
         embed.color=discord.Color.green()
@@ -31,7 +31,7 @@ class Logging(commands.Cog):
         if member.guild.id != self.bot.settings.guild_id:
             return
         
-        channel = discord.utils.get(member.guild.channels, id=self.bot.settings.channels.private)
+        channel = discord.utils.get(member.guild.channels, id=self.bot.settings.guild().channel_private)
 
         embed=discord.Embed(title="Member left")
         embed.color=discord.Color.purple()
@@ -48,7 +48,7 @@ class Logging(commands.Cog):
             return
         if before.content == after.content:
             return
-        channel = discord.utils.get(before.guild.channels, id=self.bot.settings.channels.private)
+        channel = discord.utils.get(member.guild.channels, id=self.bot.settings.guild().channel_private)
 
         embed=discord.Embed(title="Message Updated")
         embed.color=discord.Color.purple()

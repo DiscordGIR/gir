@@ -2,7 +2,7 @@ import mongoengine
 
 class Guild(mongoengine.Document):
     _id                       = mongoengine.IntField(required=True)
-    
+    case_id                   = mongoengine.IntField(min_value=1)
     role_mute                 = mongoengine.IntField()
     role_genius               = mongoengine.IntField()
     role_moderator            = mongoengine.IntField()

@@ -19,22 +19,26 @@ class ModActions(commands.Cog):
             raise commands.BadArgument(message="Points can't be lower than 1.")
         if user.top_role >= ctx.author.top_role:
             raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
+        guild = self.bot.settings.guild()
         case = Case(
-            _id = str((await self.bot.settings.db.increment_and_get("clientStorage", "caseID", ctx.guild.default_role.id, 1))[0]["caseID"]),
+            _id = guild.case_id,
             _type = "WARN",
-            date = datetime.now().timestamp()*1000,
-            until=str(None),
-            modID=str(ctx.author.id),
-            modTag = str(ctx.author),
+            # date = datetime.now().timestamp()*1000,
+            # until=str(None),
+            mod_id=ctx.author.id,
+            mod_tag = str(ctx.author),
             reason=reason,
-            punishment=str(points)
+            punishment=points
         )
-        await self.bot.settings.db.append_json("users", "cases", user.id, case.__dict__ )
-        results = await self.bot.settings.db.increment_and_get("users", "warnPoints", user.id, case.punishment)
-        cur_points = results[0]['warnPoints']
+        await self.bot.settings.inc_caseid()
+        await self.bot.settings.add_case(user.id, case)
+        await self.bot.settings.inc_points(user.id, points)
+
+        results = await self.bot.settings.user(user.id)
+        cur_points = results.warn_points
         log = await prepare_warn_log(ctx, user, case)
 
-        public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.channels.public)
+        public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         if public_chan:
             await public_chan.send(embed=log)  
 
@@ -44,8 +48,9 @@ class ModActions(commands.Cog):
 
         if cur_points >= 600:
             await ctx.invoke(self.ban, user=user, reason="600 or more points reached")
-        elif cur_points >= 400 and not results[0]["warnKicked"]:
-            await self.bot.settings.db.set_with_key_and_id("users", "warnKicked", user.id, True)
+        elif cur_points >= 400 and not results.was_warn_kicked:
+            results.warn_kicked = True
+            results.save()
             
             try:
                 await user.send("You were kicked from r/Jailbreak for reaching 400 or more points.", embed=log)
@@ -58,6 +63,7 @@ class ModActions(commands.Cog):
                 await user.send("You were warned in r/Jailbreak.", embed=log)      
             except Exception:
                 pass
+    
     @commands.guild_only()
     @commands.command(name="kick")
     async def kick(self, ctx, user: discord.Member, *, reason: str = "No reason."):
@@ -65,20 +71,23 @@ class ModActions(commands.Cog):
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
         if user.top_role >= ctx.author.top_role:
             raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
+        
         case = Case(
-            _id = str((await self.bot.settings.db.increment_and_get("clientStorage", "caseID", ctx.guild.default_role.id, 1))[0]["caseID"]),
+            _id = self.bot.settings.guild().case_id,
             _type = "KICK",
-            date = datetime.now().timestamp()*1000,
-            until=str(None),
-            modID=str(ctx.author.id),
-            modTag = str(ctx.author),
+            # date = datetime.now().timestamp()*1000,
+            # until=str(None),
+            mod_id=ctx.author.id,
+            mod_tag = str(ctx.author),
             reason=reason,
-            punishment="Kicked"
+            # punishment="Kicked"
         )
-        await self.bot.settings.db.append_json("users", "cases", user.id, case.__dict__ )
+        await self.bot.settings.inc_caseid()
+        await self.bot.settings.add_case(user.id, case)
+
         log = await prepare_kick_log(ctx, user, case)
 
-        public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.channels.public)
+        public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
         await ctx.send(embed=log, delete_after=5)
         
@@ -104,19 +113,21 @@ class ModActions(commands.Cog):
                 raise commands.BadArgument(f"Couldn't find user with ID {user}")
 
         case = Case(
-            _id = str((await self.bot.settings.db.increment_and_get("clientStorage", "caseID", ctx.guild.default_role.id, 1))[0]["caseID"]),
+            _id = self.bot.settings.guild().case_id,
             _type = "BAN",
-            date = datetime.now().timestamp()*1000,
-            until=str(None),
-            modID=str(ctx.author.id),
-            modTag = str(ctx.author),
+            # date = datetime.now().timestamp()*1000,
+            # until=str(None),
+            mod_id=str(ctx.author.id),
+            mod_tag = str(ctx.author),
             reason=reason,
-            punishment="Banned"
+            # punishment="Banned"
         )
-        await self.bot.settings.db.append_json("users", "cases", user.id, case.__dict__ )
+        await self.bot.settings.inc_caseid()
+        await self.bot.settings.add_case(user.id, case)
+
         log = await prepare_ban_log(ctx, user, case)
 
-        public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.channels.public)
+        public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
         await ctx.send(embed=log)
         

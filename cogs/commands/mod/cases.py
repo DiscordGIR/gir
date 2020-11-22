@@ -19,12 +19,12 @@ class PaginationSource(menus.GroupByPageSource):
         embed.set_author(name=user, icon_url=user.avatar_url)
         for result in entry.items:        
             extra = ""
-            if result["type"] == "WARN":
-                extra = f'**Points**: {result["punishment"]}\n'
-            print(result["date"])
-            timestamp=datetime.utcfromtimestamp(result["date"]/1000).strftime("%B %d, %Y, %I:%M %p")
-            embed.add_field(name=f'{await determine_emoji(result["type"])} Case #{result["id"]}', 
-                value=f'{extra} **Reason**: {result["reason"]}\n**Moderator**: {result["modTag"]}\n**Time**: {timestamp} UTC', inline=True)
+            if result._type == "WARN":
+                extra = f'**Points**: {result.punishment}\n'
+
+            timestamp=result.date.strftime("%B %d, %Y, %I:%M %p")
+            embed.add_field(name=f'{await determine_emoji(result._type)} Case #{result._id}', 
+                value=f'{extra} **Reason**: {result.reason}\n**Moderator**: {result.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
         
         return embed
 
@@ -56,12 +56,12 @@ class Cases(commands.Cog):
                 raise commands.BadArgument(f"Couldn't find user with ID {user}")
             ctx.args[2] = user
 
-        results = await self.bot.settings.db.get_with_key_and_id('users', 'cases', user.id)
+        results = await self.bot.settings.cases(user.id)
         if len(results) == 0:
             raise commands.BadArgument(f'User with ID {user} had no cases.')
-        results = results[0]['cases']
-        results = [json.loads(case) for case in results]
-        results = [case for case in results if case["type"] != "UNMUTE"]
+        results = results.cases
+        # results = [json.loads(case) for case in results]
+        results = [case for case in results if case._type != "UNMUTE"]
 
         menus = MenuPages(source=PaginationSource(
             results, key=lambda t: 1, per_page=9), clear_reactions_after=True)

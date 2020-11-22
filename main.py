@@ -3,7 +3,7 @@ from discord.ext import commands
 import os
 from dotenv import load_dotenv, find_dotenv
 import data.mongo_setup as mongo_setup
-
+from data.case import Case
 load_dotenv(find_dotenv())
 
 def get_prefix(bot, message):
@@ -44,6 +44,16 @@ async def on_ready():
     await bot.wait_until_ready()
     print(f'\n\nLogged in as: {bot.user.name} - {bot.user.id}\nVersion: {discord.__version__}\n')
 
+    # cases = await bot.settings.cases(109705860275539968)
+    # case = Case()
+    # case._id = 1
+    # case._type = "KICK"
+    # case.mod_id = 123
+    # case.mod_tag = "Slim#99"
+    # case.reason = "xd"
+    # case.punishment = "xd"
+    # cases.cases.append(case)
+    # cases.save()
     # Changes our bots Playing Status. type=1(streaming) for a standard game you could remove type and url.
     print(f'Successfully logged in and booted...!')
 

@@ -8,7 +8,7 @@ class User(mongoengine.Document):
     xp                  = mongoengine.IntField(default=lambda:0)
     level               = mongoengine.IntField(default=lambda:0)
     offline_report_ping = mongoengine.BooleanField(default=lambda:False)
-
+    warn_points = mongoengine.IntField(default=0)
     meta = {
         'db_alias': 'core',
         'collection': 'users'
