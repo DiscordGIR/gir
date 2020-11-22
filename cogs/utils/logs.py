@@ -6,7 +6,7 @@ async def prepare_warn_log(ctx, user, case):
     embed.color = discord.Color.orange()
     embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
     embed.add_field(name="Mod", value=f'{ctx.author} ({ctx.author.mention})', inline=True)
-    embed.add_field(name="Increase", value=case.punishment, inline=True)
+    embed.add_field(name="Increase", value=case.punishment_points, inline=True)
     embed.add_field(name="Reason", value=case.reason, inline=True)
     embed.set_footer(text=f"Case #{case._id} | Warned by {ctx.author}")
     return embed

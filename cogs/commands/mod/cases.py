@@ -20,7 +20,7 @@ class PaginationSource(menus.GroupByPageSource):
         for case in entry.items:
             extra = ""
             if case._type == "WARN":
-                extra = f'**Points**: {case.punishment}\n'
+                extra = f'**Points**: {case.punishment_points}\n'
 
             timestamp=case.date.strftime("%B %d, %Y, %I:%M %p")
             embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}', 

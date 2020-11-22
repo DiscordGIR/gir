@@ -35,15 +35,28 @@ class Settings(commands.Cog):
         User.objects(_id=_id).update_one(set__was_warn_kicked=True)
         
     async def user(self, id):
-        return User.objects(_id=id).modify(upsert=True, new=True, 
-            set_on_insert___id=id,  set_on_insert__is_clem=False,
-             set_on_insert__was_warn_kicked=False,  set_on_insert__xp=0,
-              set_on_insert__level=0,  set_on_insert__offline_report_ping=False, 
-              set_on_insert__warn_points=0)
+        # return User.objects(_id=id).modify(upsert=True, new=True, 
+        #     set_on_insert___id=id,  set_on_insert__is_clem=False,
+        #      set_on_insert__was_warn_kicked=False,  set_on_insert__xp=0,
+        #       set_on_insert__level=0,  set_on_insert__offline_report_ping=False, 
+        #       set_on_insert__warn_points=0)
+        user = User.objects(_id=id).first()
+        if not user:
+            user = User()
+            user._id = id
+            user.save()
+        return user
     
     async def cases(self, id):
-        return Cases.objects(_id=id).modify(upsert=True, new=True,
-             set_on_insert___id=id, set_on_insert__cases=[])
+        # return Cases.objects(_id=id).modify(upsert=True, new=True,
+        #      set_on_insert___id=id, set_on_insert__cases=[])
+
+        cases = Cases.objects(_id=id).first()
+        if not cases:
+            cases = Cases()
+            cases._id = id
+            cases.save()
+        return cases
 
 class Permissions:
     def __init__(self, bot, settings):
@@ -67,6 +80,7 @@ class Permissions:
                 and discord.utils.get(guild.roles, id=the_guild.role_moderator) in m.roles),
             7: (lambda guild, m: guild.id == guild_id
                 and m == guild.owner),
+        
             8: (lambda guild, m: guild.id == guild_id
                 and m.id == bot.owner_id)
         }

@@ -27,7 +27,7 @@ class ModActions(commands.Cog):
             mod_id=ctx.author.id,
             mod_tag = str(ctx.author),
             reason=reason,
-            punishment=points
+            punishment_points=points
         )
 
         await self.bot.settings.inc_caseid()
