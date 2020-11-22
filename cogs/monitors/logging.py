@@ -20,7 +20,7 @@ class Logging(commands.Cog):
         embed.color=discord.Color.green()
         embed.set_thumbnail(url=member.avatar_url)
         embed.add_field(name="User", value=f'{member} ({member.mention})', inline=True)
-        embed.add_field(name="Warnpoints", value=123, inline=True)
+        embed.add_field(name="Warnpoints", value=(await self.bot.settings.user(member.id)).warn_points, inline=True)
         embed.add_field(name="Joined", value=member.joined_at.strftime("%B %d, %Y, %I:%M %p") + " UTC", inline=False)
         embed.add_field(name="Created", value=member.created_at.strftime("%B %d, %Y, %I:%M %p") + " UTC", inline=True)
         embed.set_footer(text=member.id)
