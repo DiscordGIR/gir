@@ -3,7 +3,6 @@ from discord.ext import commands
 import asyncio
 import json
 import data.mongo_setup as mongo_setup
-# from cogs.utils.postgresql import Database
 import os
 from data.guild import Guild
 from data.cases import Cases
@@ -30,6 +29,10 @@ class Settings(commands.Cog):
         await self.user(_id)
         User.objects(_id=_id).update_one(inc__warn_points=points)
 
+    async def set_warn_kicked(self, _id):
+        await self.user(_id)
+        User.objects(_id=_id).update_one(set__was_warn_kicked=True)
+        
     async def user(self, id):
         return User.objects(_id=id).modify(upsert=True, new=True, 
             set_on_insert___id=id,  set_on_insert__is_clem=False,

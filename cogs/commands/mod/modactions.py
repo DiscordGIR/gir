@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 from cogs.utils.logs import prepare_ban_log, prepare_warn_log, prepare_kick_log
 from data.case import Case
-from datetime import datetime
 import traceback
 import typing
 
@@ -19,17 +18,18 @@ class ModActions(commands.Cog):
             raise commands.BadArgument(message="Points can't be lower than 1.")
         if user.top_role >= ctx.author.top_role:
             raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
+        
         guild = self.bot.settings.guild()
+        
         case = Case(
             _id = guild.case_id,
             _type = "WARN",
-            # date = datetime.now().timestamp()*1000,
-            # until=str(None),
             mod_id=ctx.author.id,
             mod_tag = str(ctx.author),
             reason=reason,
             punishment=points
         )
+
         await self.bot.settings.inc_caseid()
         await self.bot.settings.add_case(user.id, case)
         await self.bot.settings.inc_points(user.id, points)
@@ -49,8 +49,7 @@ class ModActions(commands.Cog):
         if cur_points >= 600:
             await ctx.invoke(self.ban, user=user, reason="600 or more points reached")
         elif cur_points >= 400 and not results.was_warn_kicked:
-            results.warn_kicked = True
-            results.save()
+            await self.bot.settings.set_warn_kicked(user.id)
             
             try:
                 await user.send("You were kicked from r/Jailbreak for reaching 400 or more points.", embed=log)
@@ -75,12 +74,9 @@ class ModActions(commands.Cog):
         case = Case(
             _id = self.bot.settings.guild().case_id,
             _type = "KICK",
-            # date = datetime.now().timestamp()*1000,
-            # until=str(None),
             mod_id=ctx.author.id,
             mod_tag = str(ctx.author),
             reason=reason,
-            # punishment="Kicked"
         )
         await self.bot.settings.inc_caseid()
         await self.bot.settings.add_case(user.id, case)
@@ -115,12 +111,9 @@ class ModActions(commands.Cog):
         case = Case(
             _id = self.bot.settings.guild().case_id,
             _type = "BAN",
-            # date = datetime.now().timestamp()*1000,
-            # until=str(None),
             mod_id=str(ctx.author.id),
             mod_tag = str(ctx.author),
             reason=reason,
-            # punishment="Banned"
         )
         await self.bot.settings.inc_caseid()
         await self.bot.settings.add_case(user.id, case)

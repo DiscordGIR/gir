@@ -17,14 +17,14 @@ class PaginationSource(menus.GroupByPageSource):
         embed = discord.Embed(
             title=f'Cases {menu.current_page +1}/{self.get_max_pages()}', color=discord.Color.blurple())
         embed.set_author(name=user, icon_url=user.avatar_url)
-        for result in entry.items:        
+        for case in entry.items:
             extra = ""
-            if result._type == "WARN":
-                extra = f'**Points**: {result.punishment}\n'
+            if case._type == "WARN":
+                extra = f'**Points**: {case.punishment}\n'
 
-            timestamp=result.date.strftime("%B %d, %Y, %I:%M %p")
-            embed.add_field(name=f'{await determine_emoji(result._type)} Case #{result._id}', 
-                value=f'{extra} **Reason**: {result.reason}\n**Moderator**: {result.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
+            timestamp=case.date.strftime("%B %d, %Y, %I:%M %p")
+            embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}', 
+                value=f'{extra} **Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
         
         return embed
 
@@ -59,12 +59,10 @@ class Cases(commands.Cog):
         results = await self.bot.settings.cases(user.id)
         if len(results) == 0:
             raise commands.BadArgument(f'User with ID {user} had no cases.')
-        results = results.cases
-        # results = [json.loads(case) for case in results]
-        results = [case for case in results if case._type != "UNMUTE"]
+        cases = [case for case in results.cases if case._type != "UNMUTE"]
 
         menus = MenuPages(source=PaginationSource(
-            results, key=lambda t: 1, per_page=9), clear_reactions_after=True)
+            cases, key=lambda t: 1, per_page=9), clear_reactions_after=True)
 
         await menus.start(ctx)
     
@@ -73,6 +71,8 @@ class Cases(commands.Cog):
         if isinstance(error, commands.MissingRequiredArgument):
             await(ctx.send(error, delete_after=5))
         elif isinstance(error, commands.BadArgument):
+            await(ctx.send(error, delete_after=5))
+        elif isinstance(error, commands.BadUnionArgument):
             await(ctx.send(error, delete_after=5))
         elif isinstance(error, commands.MissingPermissions):
             await(ctx.send(error, delete_after=5))
