@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from cogs.utils.logs import prepare_ban_log, prepare_warn_log, prepare_kick_log
-from cogs.utils.case import Case
+from data.case import Case
 from datetime import datetime
 import traceback
 import typing

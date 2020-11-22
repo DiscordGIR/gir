@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import os
 from dotenv import load_dotenv, find_dotenv
+import data.mongo_setup as mongo_setup
 
 load_dotenv(find_dotenv())
 
@@ -15,7 +16,7 @@ def get_prefix(bot, message):
 
 
 
-initial_extensions = ['cogs.utils.settings', 
+initial_extensions = ['cogs.utils.settings',
                     'cogs.commands.mod.cases', 
                     'cogs.commands.mod.modactions', 
                     'cogs.commands.info.userinfo',

@@ -1,7 +1,7 @@
 import mongoengine
 
 class Guild(mongoengine.Document):
-    _id                       = mongoengine.IntField(required=True, unique=True, primary_key=True)
+    _id                       = mongoengine.IntField(required=True)
     
     role_mute                 = mongoengine.IntField()
     role_genius               = mongoengine.IntField()
@@ -17,4 +17,9 @@ class Guild(mongoengine.Document):
     channel_botspam           = mongoengine.IntField()
     
     logging_excluded_channels = mongoengine.ListField(default=[])
+
+    meta = {
+        'db_alias': 'core',
+        'collection': 'guilds'
+    }
 

@@ -6,7 +6,7 @@
 import discord
 from discord.ext import commands, menus
 from datetime import datetime
-from cogs.utils.case import Case
+from data.case import Case
 import json
 import traceback
 import typing

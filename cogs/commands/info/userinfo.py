@@ -20,7 +20,7 @@ class UserInfo(commands.Cog):
             for role in user.roles:
                 if role != ctx.guild.default_role:
                     roles += role.mention + " "
-            results = (await self.bot.settings.db.get_with_id("users", user.id))[0]
+            results = (await self.bot.settings.user(user.id))
             
             joined = user.joined_at.strftime("%B %d, %Y, %I:%M %p")
             created = user.created_at.strftime("%B %d, %Y, %I:%M %p")
@@ -29,8 +29,8 @@ class UserInfo(commands.Cog):
             embed.color = user.color
             embed.set_author(name=user, icon_url=user.avatar_url)
             embed.add_field(name="Username", value=f'{user} ({user.mention})', inline=True)
-            embed.add_field(name="Level", value=results["level"] if not results["xpFrozen"] else "0", inline=True)
-            embed.add_field(name="XP", value=results["xp"] if not results["xpFrozen"] else "0/0", inline=True)
+            embed.add_field(name="Level", value=results.level if not results.is_xp_frozen else "0", inline=True)
+            embed.add_field(name="XP", value=results.xp if not results.is_xp_frozen else "0/0", inline=True)
             embed.add_field(name="Roles", value=roles if roles else "None", inline=False)
             embed.add_field(name="Join date", value=f"{joined} UTC", inline=True)
             embed.add_field(name="Account creation date", value=f"{created} UTC", inline=True)
@@ -45,15 +45,15 @@ class UserInfo(commands.Cog):
         else:
             if user is None: user = ctx.author
 
-            results = (await self.bot.settings.db.get_with_id("users", user.id))[0]
-            rank = (await self.bot.settings.db.rank(user.id))[0]["xp_rank"]
+            results = await self.bot.settings.user(user.id)
+            # rank = (await self.bot.settings.db.rank(user.id))[0]["xp_rank"]
             
             embed=discord.Embed(title="Level Statistics")
             embed.color = user.top_role.color
             embed.set_author(name=user, icon_url=user.avatar_url)
-            embed.add_field(name="Level", value=results["level"] if not results["xpFrozen"] else "0", inline=True)
-            embed.add_field(name="XP", value=f'{results["xp"]}/{xp_for_next_level(results["level"])}' if not results["xpFrozen"] else "0/0", inline=True)
-            embed.add_field(name="Rank", value=f"{rank}/{ctx.guild.member_count}", inline=True)
+            embed.add_field(name="Level", value=results.level if not results.is_xp_frozen else "0", inline=True)
+            embed.add_field(name="XP", value=f'{results.xp}/{xp_for_next_level(results.level)}' if not results.is_xp_frozen else "0/0", inline=True)
+            # embed.add_field(name="Rank", value=f"{rank}/{ctx.guild.member_count}", inline=True)
             embed.set_footer(text=f"Requested by {ctx.author}")
             await ctx.send(embed=embed)
 
