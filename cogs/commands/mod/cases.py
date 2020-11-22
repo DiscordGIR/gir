@@ -85,6 +85,7 @@ async def determine_emoji(type):
     emoji_dict = {
         "KICK": "👢",
         "BAN": "❌",
+        "UNBAN": "✅",
         "MUTE": "🔇",
         "WARN": "⚠️",
         "UNMUTE": "🔈",

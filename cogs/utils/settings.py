@@ -52,7 +52,7 @@ class Settings(commands.Cog):
         #      set_on_insert___id=id, set_on_insert__cases=[])
 
         cases = Cases.objects(_id=id).first()
-        if not cases:
+        if cases is None:
             cases = Cases()
             cases._id = id
             cases.save()

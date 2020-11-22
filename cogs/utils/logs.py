@@ -21,6 +21,16 @@ async def prepare_ban_log(ctx, user, case):
     embed.set_footer(text=f"Case #{case._id} | Banned by {ctx.author}")
     return embed
 
+async def prepare_unban_log(ctx, user, case):
+    embed=discord.Embed(title="Member unbanned")
+    embed.color = discord.Color.blurple()
+    embed.set_author(name=user, icon_url=user.avatar_url)
+    embed.add_field(name="Member", value=f'{user} ({user.id})', inline=True)
+    embed.add_field(name="Mod", value=f'{ctx.author} ({ctx.author.mention})', inline=True)
+    embed.add_field(name="Reason", value=case.reason, inline=True)
+    embed.set_footer(text=f"Case #{case._id} | Unbanned by {ctx.author}")
+    return embed
+
 async def prepare_kick_log(ctx, user, case):
     embed=discord.Embed(title="Member kicked")
     embed.color = discord.Color.green()

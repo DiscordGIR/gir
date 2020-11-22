@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from cogs.utils.logs import prepare_ban_log, prepare_warn_log, prepare_kick_log
+from cogs.utils.logs import prepare_ban_log, prepare_warn_log, prepare_kick_log, prepare_unban_log
 from data.case import Case
 import traceback
 import typing
@@ -104,9 +104,11 @@ class ModActions(commands.Cog):
                 raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
         
         if isinstance(user, int):
-            user = await self.bot.fetch_user(user)
-            if user is None:
+            try:
+                user = await self.bot.fetch_user(user)
+            except discord.NotFound:
                 raise commands.BadArgument(f"Couldn't find user with ID {user}")
+        
 
         case = Case(
             _id = self.bot.settings.guild().case_id,
@@ -135,6 +137,42 @@ class ModActions(commands.Cog):
             await ctx.guild.ban(discord.Object(id=user.id))
 
     @commands.guild_only()
+    @commands.command(name="unban")
+    async def unban(self, ctx, user: int, *, reason: str = "No reason."):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+        if isinstance(user, discord.Member):
+            if user.top_role >= ctx.author.top_role:
+                raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
+        
+        try:
+            user = await self.bot.fetch_user(user)
+        except discord.NotFound:
+            raise commands.BadArgument(f"Couldn't find user with ID {user}")
+        
+        try:
+            await ctx.guild.unban(discord.Object(id=user.id))
+        except discord.NotFound:
+            raise commands.BadArgument(f"{user} is not banned.")
+        
+        case = Case(
+            _id = self.bot.settings.guild().case_id,
+            _type = "UNBAN",
+            mod_id=str(ctx.author.id),
+            mod_tag = str(ctx.author),
+            reason=reason,
+        )
+        await self.bot.settings.inc_caseid()
+        await self.bot.settings.add_case(user.id, case)
+
+        log = await prepare_unban_log(ctx, user, case)
+
+        public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
+        await public_chan.send(embed=log)
+        await ctx.send(embed=log)
+                
+
+    @commands.guild_only()
     @commands.command(name="purge")
     async def purge(self, ctx, limit: int = 0):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
@@ -144,6 +182,7 @@ class ModActions(commands.Cog):
         await ctx.channel.purge(limit=limit)
         await ctx.send(f'Purged {limit} messages.', delete_after=5)
     
+    @unban.error
     @ban.error
     @warn.error
     @purge.error
