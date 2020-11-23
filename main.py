@@ -42,7 +42,6 @@ if __name__ == '__main__':
 async def on_ready():
     bot.owner_id = os.environ.get("BOTTY_OWNER")
     bot.settings = bot.get_cog("Settings")
-    bot.scheduler = Scheduler(bot)
     await bot.wait_until_ready()
     print(f'\n\nLogged in as: {bot.user.name} - {bot.user.id}\nVersion: {discord.__version__}\n')
 

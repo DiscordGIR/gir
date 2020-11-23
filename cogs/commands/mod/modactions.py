@@ -248,7 +248,7 @@ class ModActions(commands.Cog):
         await user.add_roles(mute_role)        
         
         try:
-            self.bot.scheduler.add_mute(user.id, time)
+            self.bot.settings.tasks.schedule_unmute(user.id, time)
         except Exception:
             raise commands.BadArgument("An error occured, this user is probably already muted")
 
@@ -286,7 +286,7 @@ class ModActions(commands.Cog):
         await user.remove_roles(mute_role)   
 
         try:
-            self.bot.scheduler.manual_unmute(user.id)
+            self.bot.settings.tasks.cancel_unmute(user.id)
         except Exception:
             pass
 

@@ -6,6 +6,8 @@ from data.guild import Guild
 from data.cases import Cases
 from data.case import Case
 from data.user import User
+from data.utils.tasks import Tasks
+
 import mongoengine
 
 class Settings(commands.Cog):
@@ -29,6 +31,7 @@ class Settings(commands.Cog):
         """
 
         mongoengine.register_connection(alias="core", name="botty")
+        self.tasks = Tasks()
         print("Loaded database")
         self.bot         = bot
         self.guild_id    = int(os.environ.get("BOTTY_MAINGUILD"))
