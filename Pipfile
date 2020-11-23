@@ -15,6 +15,7 @@ discord-ext-menus = {git = "https://github.com/Rapptz/discord-ext-menus"}
 mongoengine = "*"
 apscheduler = "*"
 humanize = "*"
+pytimeparse = "*"
 
 [requires]
 python_version = "3.8"

@@ -1,10 +1,11 @@
 import discord
 from discord.ext import commands
-from cogs.utils.logs import prepare_ban_log, prepare_warn_log, prepare_kick_log, prepare_unban_log, prepare_liftwarn_log, prepare_mute_log
+import cogs.utils.logs as logging
 from data.case import Case
 import traceback
 import typing
 import datetime
+import pytimeparse
 
 class ModActions(commands.Cog):
     def __init__(self, bot):    
@@ -37,7 +38,7 @@ class ModActions(commands.Cog):
 
         results = await self.bot.settings.user(user.id)
         cur_points = results.warn_points
-        log = await prepare_warn_log(ctx, user, case)
+        log = await logging.prepare_warn_log(ctx, user, case)
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         if public_chan:
@@ -92,7 +93,7 @@ class ModActions(commands.Cog):
 
         await self.bot.settings.inc_points(user.id, -1 * case.punishment_points)
 
-        log = await prepare_liftwarn_log(ctx, user, case)
+        log = await logging.prepare_liftwarn_log(ctx, user, case)
         try:
             await user.send("Your warn was lifted in r/Jailbreak.", embed=log)      
         except Exception:
@@ -121,7 +122,7 @@ class ModActions(commands.Cog):
         await self.bot.settings.inc_caseid()
         await self.bot.settings.add_case(user.id, case)
 
-        log = await prepare_kick_log(ctx, user, case)
+        log = await logging.prepare_kick_log(ctx, user, case)
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
@@ -160,7 +161,7 @@ class ModActions(commands.Cog):
         await self.bot.settings.inc_caseid()
         await self.bot.settings.add_case(user.id, case)
 
-        log = await prepare_ban_log(ctx, user, case)
+        log = await logging.prepare_ban_log(ctx, user, case)
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
@@ -205,7 +206,7 @@ class ModActions(commands.Cog):
         await self.bot.settings.inc_caseid()
         await self.bot.settings.add_case(user.id, case)
 
-        log = await prepare_unban_log(ctx, user, case)
+        log = await logging.prepare_unban_log(ctx, user, case)
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
@@ -224,17 +225,18 @@ class ModActions(commands.Cog):
     
     @commands.guild_only()
     @commands.command(name="mute")
-    async def mute(self, ctx, user:discord.Member, *, reason : str = "No reason."):
+    async def mute(self, ctx, user:discord.Member, dur:str, *, reason : str = "No reason."):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+        
+        delta = pytimeparse.parse(dur)
 
-        time = datetime.datetime.now() + datetime.timedelta(0,60)
+        time = datetime.datetime.now() + datetime.timedelta(seconds=delta)
         
         mute_role = self.bot.settings.guild().role_mute
         mute_role = ctx.guild.get_role(mute_role)
-        await user.add_roles(mute_role)
+        await user.add_roles(mute_role)        
         
-
         try:
             self.bot.scheduler.add_mute(user.id, time)
         except Exception:
@@ -251,13 +253,54 @@ class ModActions(commands.Cog):
         await self.bot.settings.inc_caseid()
         await self.bot.settings.add_case(user.id, case)
 
-        log = await prepare_mute_log(ctx, user, case)
+        log = await logging.prepare_mute_log(ctx, user, case)
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
         await ctx.send(embed=log, delete_after=5)
-                
 
+        try:
+            await user.send(embed=log)
+        except:
+            pass
+
+    @commands.guild_only()
+    @commands.command(name="unmute")
+    async def unmute(self, ctx, user:discord.Member, *, reason: str = "No reason."):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+        
+        mute_role = self.bot.settings.guild().role_mute
+        mute_role = ctx.guild.get_role(mute_role)
+        await user.remove_roles(mute_role)   
+
+        try:
+            self.bot.scheduler.manual_unmute(user.id)
+        except Exception:
+            pass
+
+        case = Case(
+            _id = self.bot.settings.guild().case_id,
+            _type = "UNMUTE",
+            mod_id=ctx.author.id,
+            mod_tag = str(ctx.author),
+            reason=reason,
+        )
+        await self.bot.settings.inc_caseid()
+        await self.bot.settings.add_case(user.id, case)
+
+        log = await logging.prepare_unmute_log(ctx, user, case)
+
+        public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
+        await public_chan.send(embed=log)
+        await ctx.send(embed=log, delete_after=5)
+
+        try:
+            await user.send(embed=log)
+        except:
+            pass
+
+    @unmute.error                    
     @mute.error
     @liftwarn.error
     @unban.error

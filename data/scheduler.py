@@ -37,13 +37,15 @@ class Scheduler():
         self.scheduler.start()
 
     def add_mute(self, id, date):
-        self.scheduler.add_job(remove_mute, 'date', id=str(id), next_run_time=date, args=[id])
+        self.scheduler.add_job(mute_callback, 'date', id=str(id), next_run_time=date, args=[id])
 
-def remove_mute(id):
-    loop = bot_global.loop
-    future = loop.create_task(remove_mute_2(id))
+    def manual_unmute(self, id):
+        self.scheduler.remove_job(str(id), 'default')
 
-async def remove_mute_2(id):
+def mute_callback(id):
+    bot_global.loop.create_task(remove_mute(id))
+
+async def remove_mute(id):
     guild = bot_global.get_guild(bot_global.settings.guild_id)
     if guild is not None:
         mute_role = bot_global.settings.guild().role_mute
