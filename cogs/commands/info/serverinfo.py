@@ -11,6 +11,7 @@ class UserInfo(commands.Cog):
     @commands.guild_only()
     @commands.command(name="serverinfo")
     async def userinfo(self, ctx):
+        await ctx.message.delete()
         guild = ctx.guild
 
         embed=discord.Embed(title="Server Information")

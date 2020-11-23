@@ -51,6 +51,7 @@ class Cases(commands.Cog):
 
     @commands.command(name="cases")
     async def cases(self, ctx, user:typing.Union[discord.Member,int]):
+        await ctx.message.delete()
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
         

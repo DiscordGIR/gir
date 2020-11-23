@@ -11,6 +11,7 @@ class UserInfo(commands.Cog):
     @commands.guild_only()
     @commands.command(name="userinfo")
     async def userinfo(self, ctx, user:discord.Member=None):
+        await ctx.message.delete()
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != 778233669881561088:
             pass
         else:
@@ -60,6 +61,7 @@ class UserInfo(commands.Cog):
     @commands.guild_only()        
     @commands.command(name="warnpoints")
     async def warnpoints(self, ctx, user:discord.Member):
+        await ctx.message.delete()
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             pass
 

@@ -14,6 +14,8 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.command(name="warn")
     async def warn(self, ctx, user: discord.Member, points: int, *, reason: str = "No reason."):
+        await ctx.message.delete()
+
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
         if points < 1:
@@ -45,7 +47,7 @@ class ModActions(commands.Cog):
             await public_chan.send(embed=log)  
 
         log.add_field(name="Current points", value=cur_points, inline=True)
-        await ctx.send(embed=log, delete_after=5)
+        await ctx.send(embed=log)
 
         if cur_points >= 600:
             await ctx.invoke(self.ban, user=user, reason="600 or more points reached")
@@ -67,6 +69,7 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.command(name="liftwarn")
     async def liftwarn(self, ctx, user: discord.Member, case_id: int, *, reason: str = "No reason."):
+        await ctx.message.delete()
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
         if user.top_role >= ctx.author.top_role:
@@ -102,11 +105,12 @@ class ModActions(commands.Cog):
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         if public_chan:
             await public_chan.send(embed=log)  
-        await ctx.send(embed=log, delete_after=5)
+        await ctx.send(embed=log)
     
     @commands.guild_only()
     @commands.command(name="kick")
     async def kick(self, ctx, user: discord.Member, *, reason: str = "No reason."):
+        await ctx.message.delete()
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
         if user.top_role >= ctx.author.top_role:
@@ -126,7 +130,7 @@ class ModActions(commands.Cog):
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
-        await ctx.send(embed=log, delete_after=5)
+        await ctx.send(embed=log)
         
         try:
             await user.send("You were kicked from r/Jailbreak", embed=log)
@@ -138,6 +142,7 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.command(name="ban")
     async def ban(self, ctx, user: typing.Union[discord.Member, int], *, reason: str = "No reason."):
+        await ctx.message.delete()
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
         if isinstance(user, discord.Member):
@@ -180,6 +185,7 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.command(name="unban")
     async def unban(self, ctx, user: int, *, reason: str = "No reason."):
+        await ctx.message.delete()
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
         if isinstance(user, discord.Member):
@@ -210,22 +216,24 @@ class ModActions(commands.Cog):
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
-        await ctx.send(embed=log, delete_after=5)
+        await ctx.send(embed=log)
                 
 
     @commands.guild_only()
     @commands.command(name="purge")
     async def purge(self, ctx, limit: int = 0):
+        await ctx.message.delete()
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
         if limit <= 0:
             raise commands.BadArgument("Number of messages to purge must be greater than 0")
         await ctx.channel.purge(limit=limit)
-        await ctx.send(f'Purged {limit} messages.', delete_after=5)
+        await ctx.send(f'Purged {limit} messages.')
     
     @commands.guild_only()
     @commands.command(name="mute")
     async def mute(self, ctx, user:discord.Member, dur:str, *, reason : str = "No reason."):
+        await ctx.message.delete()
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
         
@@ -259,7 +267,7 @@ class ModActions(commands.Cog):
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
-        await ctx.send(embed=log, delete_after=5)
+        await ctx.send(embed=log)
 
         try:
             await user.send("You have been muted in r/Jailbreak", embed=log)
@@ -269,6 +277,7 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.command(name="unmute")
     async def unmute(self, ctx, user:discord.Member, *, reason: str = "No reason."):
+        await ctx.message.delete()
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
         
@@ -295,7 +304,7 @@ class ModActions(commands.Cog):
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
-        await ctx.send(embed=log, delete_after=5)
+        await ctx.send(embed=log)
 
         try:
             await user.send("You have been unmuted in r/Jailbreak", embed=log)
