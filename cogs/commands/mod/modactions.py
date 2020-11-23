@@ -234,7 +234,11 @@ class ModActions(commands.Cog):
         mute_role = ctx.guild.get_role(mute_role)
         await user.add_roles(mute_role)
         
-        self.bot.scheduler.add_mute(user.id, time)
+
+        try:
+            self.bot.scheduler.add_mute(user.id, time)
+        except Exception:
+            raise commands.BadArgument("An error occured, this user is probably already muted")
 
         case = Case(
             _id = self.bot.settings.guild().case_id,
