@@ -42,7 +42,6 @@ class Scheduler():
 def remove_mute(id):
     loop = bot_global.loop
     future = loop.create_task(remove_mute_2(id))
-    # asyncio.run(future)
 
 async def remove_mute_2(id):
     guild = bot_global.get_guild(bot_global.settings.guild_id)

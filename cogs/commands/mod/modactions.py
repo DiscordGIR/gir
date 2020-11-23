@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from cogs.utils.logs import prepare_ban_log, prepare_warn_log, prepare_kick_log, prepare_unban_log, prepare_liftwarn_log
+from cogs.utils.logs import prepare_ban_log, prepare_warn_log, prepare_kick_log, prepare_unban_log, prepare_liftwarn_log, prepare_mute_log
 from data.case import Case
 import traceback
 import typing
@@ -153,7 +153,7 @@ class ModActions(commands.Cog):
         case = Case(
             _id = self.bot.settings.guild().case_id,
             _type = "BAN",
-            mod_id=str(ctx.author.id),
+            mod_id=ctx.author.id,
             mod_tag = str(ctx.author),
             reason=reason,
         )
@@ -198,7 +198,7 @@ class ModActions(commands.Cog):
         case = Case(
             _id = self.bot.settings.guild().case_id,
             _type = "UNBAN",
-            mod_id=str(ctx.author.id),
+            mod_id=ctx.author.id,
             mod_tag = str(ctx.author),
             reason=reason,
         )
@@ -209,7 +209,7 @@ class ModActions(commands.Cog):
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
-        await ctx.send(embed=log)
+        await ctx.send(embed=log, delete_after=5)
                 
 
     @commands.guild_only()
@@ -224,15 +224,35 @@ class ModActions(commands.Cog):
     
     @commands.guild_only()
     @commands.command(name="mute")
-    async def mute(self, ctx, member:discord.Member):
-        time = datetime.datetime.now() + datetime.timedelta(0,30)
+    async def mute(self, ctx, user:discord.Member, *, reason : str = "No reason."):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+
+        time = datetime.datetime.now() + datetime.timedelta(0,60)
+        
         mute_role = self.bot.settings.guild().role_mute
         mute_role = ctx.guild.get_role(mute_role)
-        await member.add_roles(mute_role)
+        await user.add_roles(mute_role)
         
-        await ctx.send("muted...")
+        self.bot.scheduler.add_mute(user.id, time)
 
-        self.bot.scheduler.add_mute(member.id, time)
+        case = Case(
+            _id = self.bot.settings.guild().case_id,
+            _type = "MUTE",
+            until=time,
+            mod_id=ctx.author.id,
+            mod_tag = str(ctx.author),
+            reason=reason,
+        )
+        await self.bot.settings.inc_caseid()
+        await self.bot.settings.add_case(user.id, case)
+
+        log = await prepare_mute_log(ctx, user, case)
+
+        public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
+        await public_chan.send(embed=log)
+        await ctx.send(embed=log, delete_after=5)
+                
 
     @mute.error
     @liftwarn.error

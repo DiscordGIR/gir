@@ -4,8 +4,8 @@ import datetime
 class Case(mongoengine.EmbeddedDocument):
     _id               = mongoengine.IntField(required=True, primary_key=True)
     _type             = mongoengine.StringField(required=True)
-    date              = mongoengine.DateField(default=datetime.datetime.now, required=True)
-    until             = mongoengine.DateField(default=None)
+    date              = mongoengine.DateTimeField(default=datetime.datetime.now, required=True)
+    until             = mongoengine.DateTimeField(default=None)
     mod_id            = mongoengine.IntField(required=True)
     mod_tag           = mongoengine.StringField(required=True)
     reason            = mongoengine.StringField(required=True)
