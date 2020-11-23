@@ -230,6 +230,8 @@ class ModActions(commands.Cog):
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
         
         delta = pytimeparse.parse(dur)
+        if delta is None:
+            raise commands.BadArgument("Failed to parse time duration.")
 
         time = datetime.datetime.now() + datetime.timedelta(seconds=delta)
         
@@ -260,7 +262,7 @@ class ModActions(commands.Cog):
         await ctx.send(embed=log, delete_after=5)
 
         try:
-            await user.send(embed=log)
+            await user.send("You have been muted in r/Jailbreak", embed=log)
         except:
             pass
 
@@ -296,7 +298,7 @@ class ModActions(commands.Cog):
         await ctx.send(embed=log, delete_after=5)
 
         try:
-            await user.send(embed=log)
+            await user.send("You have been unmuted in r/Jailbreak", embed=log)
         except:
             pass
 
