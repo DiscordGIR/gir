@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv, find_dotenv
 import data.mongo_setup as mongo_setup
 from data.case import Case
+from data.scheduler import Scheduler
 load_dotenv(find_dotenv())
 
 def get_prefix(bot, message):
@@ -41,6 +42,7 @@ if __name__ == '__main__':
 async def on_ready():
     bot.owner_id = os.environ.get("BOTTY_OWNER")
     bot.settings = bot.get_cog("Settings")
+    bot.scheduler = Scheduler(bot)
     await bot.wait_until_ready()
     print(f'\n\nLogged in as: {bot.user.name} - {bot.user.id}\nVersion: {discord.__version__}\n')
 

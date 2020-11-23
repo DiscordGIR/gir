@@ -13,6 +13,7 @@ psycopg2 = "*"
 python-dotenv = "*"
 discord-ext-menus = {git = "https://github.com/Rapptz/discord-ext-menus"}
 mongoengine = "*"
+apscheduler = "*"
 
 [requires]
 python_version = "3.8"

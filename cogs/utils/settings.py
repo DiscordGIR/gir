@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-import asyncio
 import json
 import data.mongo_setup as mongo_setup
 import os

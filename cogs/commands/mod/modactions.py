@@ -222,6 +222,19 @@ class ModActions(commands.Cog):
         await ctx.channel.purge(limit=limit)
         await ctx.send(f'Purged {limit} messages.', delete_after=5)
     
+    @commands.guild_only()
+    @commands.command(name="mute")
+    async def mute(self, ctx, member:discord.Member):
+        time = datetime.datetime.now() + datetime.timedelta(0,30)
+        mute_role = self.bot.settings.guild().role_mute
+        mute_role = ctx.guild.get_role(mute_role)
+        await member.add_roles(mute_role)
+        
+        await ctx.send("muted...")
+
+        self.bot.scheduler.add_mute(member.id, time)
+
+    @mute.error
     @liftwarn.error
     @unban.error
     @ban.error
