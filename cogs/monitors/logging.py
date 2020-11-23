@@ -69,7 +69,7 @@ class Logging(commands.Cog):
         if message.author.id == self.bot.user.id:
             return
             
-        channel = discord.utils.get(message.guild.channels, id=self.bot.settings.channels.private)
+        channel = discord.utils.get(message.guild.channels, id=self.bot.settings.guild().channel_private)
        
         embed=discord.Embed(title="Message Deleted")
         embed.color=discord.Color.red()
@@ -88,7 +88,7 @@ class Logging(commands.Cog):
         if messages[0].guild.id != self.bot.settings.guild_id:
             return
         members = set()
-        channel = discord.utils.get(messages[0].guild.channels, id=self.bot.settings.channels.private)
+        channel = discord.utils.get(messages[0].guild.channels, id=self.bot.settings.guild().channel_private)
         output = BytesIO()
         for message in messages:
             members.add(message.author)
