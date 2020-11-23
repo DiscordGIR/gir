@@ -22,7 +22,8 @@ class Settings(commands.Cog):
     """
 
     def __init__(self, bot: discord.Client):
-        """Initializes the state of the bot, including the connection with the MongoDB database.
+        """Initializes the state of the bot, including the connection with the MongoDB database,
+        and the task scheduler.
 
         Parameters
         ----------
@@ -31,11 +32,12 @@ class Settings(commands.Cog):
         """
 
         mongoengine.register_connection(alias="core", name="botty")
-        self.tasks = Tasks()
-        print("Loaded database")
+        self.tasks       = Tasks()
         self.bot         = bot
         self.guild_id    = int(os.environ.get("BOTTY_MAINGUILD"))
         self.permissions = Permissions(self.bot, self)
+
+        print("Loaded database")
 
     def guild(self) -> Guild:
         """Returns the state of the main guild from the database.
