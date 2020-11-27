@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv, find_dotenv
 import data.mongo_setup as mongo_setup
 from data.case import Case
-from data.scheduler import Scheduler
+# from data.scheduler import Scheduler
 load_dotenv(find_dotenv())
 
 def get_prefix(bot, message):

@@ -1,7 +1,7 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.mongodb import MongoDBJobStore
 from apscheduler.executors.pool import ThreadPoolExecutor
-import datetime.datetime
+from datetime import datetime
 import logging
 import asyncio
 
@@ -40,10 +40,10 @@ class Tasks():
         logging.basicConfig()
         logging.getLogger('apscheduler').setLevel(logging.DEBUG)
 
-        self.tasks = AsyncIOScheduler(jobstores=jobstores, executors=executors, job_defaults=job_defaults, event_loop=self.bot.loop)
+        self.tasks = AsyncIOScheduler(jobstores=jobstores, executors=executors, job_defaults=job_defaults, event_loop=bot.loop)
         self.tasks.start()
 
-    def schedule_unmute(self, id: int, date: datetime.datetime) -> None:
+    def schedule_unmute(self, id: int, date: datetime) -> None:
         """Create a task to unmute user given by ID `id`, at time `date`
 
         Parameters

@@ -7,24 +7,67 @@ import typing
 import datetime
 import pytimeparse
 
+# async def check_permissions(self, ctx, user: typing.Union[discord.Member, int]):
+async def check_permissions( ctx):
+    user = ctx.args[2]
+    if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least a mod
+        raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+    if isinstance(user, discord.Member): # 
+        if user.top_role >= ctx.author.top_role:
+            raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
+    
+    # return True
+
 class ModActions(commands.Cog):
+    """This cog handles all the possible moderator actions.
+    - Kick
+    - Ban
+    - Unban
+    - Warn
+    - Liftwarn
+    - Mute
+    - Unmute
+    - Purge
+    """
+
     def __init__(self, bot):    
         self.bot = bot
 
     @commands.guild_only()
+    @commands.check(check_permissions)
     @commands.command(name="warn")
-    async def warn(self, ctx, user: discord.Member, points: int, *, reason: str = "No reason."):
+    async def warn(self, ctx: commands.Context, user: discord.Member, points: int, *, reason: str = "No reason.") -> None:
+        """!warn <@user/ID> <points> <reason>
+
+        Parameters
+        ----------
+        ctx : commands.Context
+            Context in which the command was invoked
+        user : discord.Member
+            The member to warn
+        points : int
+            Number of points to warn far
+        reason : str, optional
+            Reason for warning, by default "No reason."
+
+        Raises
+        ------
+        commands.BadArgument
+            If one of the command arguments is not properly defined, lacking permissions, etc.
+        """        
+
         await ctx.message.delete()
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least a mod
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
-        if points < 1:
+        if points < 1: # can't warn for negative/0 points
             raise commands.BadArgument(message="Points can't be lower than 1.")
-        if user.top_role >= ctx.author.top_role:
+        if user.top_role >= ctx.author.top_role: # the punishee must have a lower top role than punisher
             raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
         
         guild = self.bot.settings.guild()
         
+        # prepare the case object for database
         case = Case(
             _id = guild.case_id,
             _type = "WARN",
@@ -34,24 +77,32 @@ class ModActions(commands.Cog):
             punishment_points=points
         )
 
+        # increment case ID in database for next available case ID
         await self.bot.settings.inc_caseid()
+        # add new case to DB
         await self.bot.settings.add_case(user.id, case)
+        # add warnpoints to the user in DB
         await self.bot.settings.inc_points(user.id, points)
 
+        # fetch latest document about user from DB
         results = await self.bot.settings.user(user.id)
         cur_points = results.warn_points
-        log = await logging.prepare_warn_log(ctx, user, case)
 
+        # prepare log embed, send to #public-mod-logs, user, channel where invoked
+        log = await logging.prepare_warn_log(ctx, user, case)
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         if public_chan:
             await public_chan.send(embed=log)  
 
         log.add_field(name="Current points", value=cur_points, inline=True)
+        # also send response in channel where command was called
         await ctx.send(embed=log)
 
-        if cur_points >= 600:
+        if cur_points >= 600: 
+            # automatically ban user if more than 600 points
             await ctx.invoke(self.ban, user=user, reason="600 or more points reached")
-        elif cur_points >= 400 and not results.was_warn_kicked:
+        elif cur_points >= 400 and not results.was_warn_kicked: 
+            # kick user if >= 400 points and wasn't previously kicked
             await self.bot.settings.set_warn_kicked(user.id)
             
             try:
@@ -68,25 +119,46 @@ class ModActions(commands.Cog):
     
     @commands.guild_only()
     @commands.command(name="liftwarn")
-    async def liftwarn(self, ctx, user: discord.Member, case_id: int, *, reason: str = "No reason."):
+    async def liftwarn(self, ctx: commands.Context, user: discord.Member, case_id: int, *, reason: str = "No reason.") -> None:
+        """!liftwarn <@user/ID> <case ID> <reason>
+
+        Parameters
+        ----------
+        ctx : commands.Context
+            Context in which command was invoked
+        user : discord.Member
+            User to remove warn from
+        case_id : int
+            The ID of the case for which we want to remove points
+        reason : str, optional
+            Reason for lifting warn, by default "No reason."
+
+        Raises
+        ------
+        commands.BadArgument
+            If one of the command arguments is not properly defined, lacking permissions, etc.
+        """        
+
         await ctx.message.delete()
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least a mod
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
-        if user.top_role >= ctx.author.top_role:
+        if user.top_role >= ctx.author.top_role: # punisher must have higher top role than punishee
             raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
 
+        # retrieve user's case with given ID
         cases = await self.bot.settings.get_case(user.id, case_id)
         case = cases.cases.filter(_id=case_id).first()
         
+        # sanity checks
         if case is None:
             raise commands.BadArgument(message=f"{user} has no case with ID {case_id}")
-        
-        if case._type != "WARN":
+        elif case._type != "WARN":
             raise commands.BadArgument(message=f"{user}'s case with ID {case_id} is not a warn case.")
-        
-        if case.lifted:
+        elif case.lifted:
             raise commands.BadArgument(message=f"Case with ID {case_id} already lifted.")
         
+        # passed sanity checks, so update the case in DB
         case.lifted = True
         case.lifted_reason = reason
         case.lifted_by_tag = str(ctx.author)
@@ -94,8 +166,10 @@ class ModActions(commands.Cog):
         case.lifted_date = datetime.datetime.now()
         cases.save()
 
+        # remove the warn points from the user in DB
         await self.bot.settings.inc_points(user.id, -1 * case.punishment_points)
 
+        # prepare log embed, send to #public-mod-logs, user, channel where invoked
         log = await logging.prepare_liftwarn_log(ctx, user, case)
         try:
             await user.send("Your warn was lifted in r/Jailbreak.", embed=log)      
@@ -105,17 +179,36 @@ class ModActions(commands.Cog):
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         if public_chan:
             await public_chan.send(embed=log)  
+        
         await ctx.send(embed=log)
     
     @commands.guild_only()
     @commands.command(name="kick")
-    async def kick(self, ctx, user: discord.Member, *, reason: str = "No reason."):
+    async def kick(self, ctx: commands.Context, user: discord.Member, *, reason: str = "No reason.") -> None:
+        """!kick <@user/ID> <reason>
+
+        Parameters
+        ----------
+        ctx : commands.Context
+            Context in which command was invoked
+        user : discord.Member
+            User to kick
+        reason : str, optional
+            Reason for kick, by default "No reason."
+
+        Raises
+        ------
+        commands.BadArgument
+            If one of the command arguments is not properly defined, lacking permissions, etc.
+        """        
+
         await ctx.message.delete()
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least a mod
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
-        if user.top_role >= ctx.author.top_role:
+        if user.top_role >= ctx.author.top_role: # make sure punisher has higher top role than punishee
             raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
         
+        # prepare case for DB
         case = Case(
             _id = self.bot.settings.guild().case_id,
             _type = "KICK",
@@ -123,15 +216,17 @@ class ModActions(commands.Cog):
             mod_tag = str(ctx.author),
             reason=reason,
         )
+
+        # increment max case ID for next case
         await self.bot.settings.inc_caseid()
+        # add new case to DB
         await self.bot.settings.add_case(user.id, case)
 
+        # prepare log embed, send to #public-mod-logs, user, context
         log = await logging.prepare_kick_log(ctx, user, case)
-
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
         await ctx.send(embed=log)
-        
         try:
             await user.send("You were kicked from r/Jailbreak", embed=log)
         except Exception:
@@ -140,22 +235,41 @@ class ModActions(commands.Cog):
         await user.kick(reason=reason)
     
     @commands.guild_only()
+    # @commands.check(self.ch)
     @commands.command(name="ban")
-    async def ban(self, ctx, user: typing.Union[discord.Member, int], *, reason: str = "No reason."):
+    async def ban(self, ctx: commands.Context, user: typing.Union[discord.Member, int], *, reason: str = "No reason."):
+        """!ban <@user/ID> <reason>
+
+        Parameters
+        ----------
+        ctx : commands.Context
+            Context where command was called
+        user : typing.Union[discord.Member, int]
+            The user to be banned, doesn't have to be part of the guild
+        reason : str, optional
+            Reason for ban, by default "No reason."
+
+        Raises
+        ------
+        commands.BadArgument
+            If one of the command arguments is not properly defined, lacking permissions, etc.
+        """        
+
         await ctx.message.delete()
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least a mod
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
-        if isinstance(user, discord.Member):
+        if isinstance(user, discord.Member): # punishee's top role must be lower than punisher's
             if user.top_role >= ctx.author.top_role:
                 raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
         
+        # if the ID given is of a user who isn't in the guild, try to fetch the profile
         if isinstance(user, int):
             try:
                 user = await self.bot.fetch_user(user)
             except discord.NotFound:
                 raise commands.BadArgument(f"Couldn't find user with ID {user}")
         
-
+        # prepare the case to store in DB
         case = Case(
             _id = self.bot.settings.guild().case_id,
             _type = "BAN",
@@ -163,11 +277,13 @@ class ModActions(commands.Cog):
             mod_tag = str(ctx.author),
             reason=reason,
         )
+
+        # increment DB's max case ID for next case
         await self.bot.settings.inc_caseid()
         await self.bot.settings.add_case(user.id, case)
 
+        # prepare log embed to send to #public-mod-logs, user and context
         log = await logging.prepare_ban_log(ctx, user, case)
-
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
         await ctx.send(embed=log)
@@ -180,17 +296,30 @@ class ModActions(commands.Cog):
         if isinstance(user, discord.Member):
             await user.ban(reason=reason)
         else:
+            # hackban for user not currently in guild
             await ctx.guild.ban(discord.Object(id=user.id))
 
     @commands.guild_only()
     @commands.command(name="unban")
-    async def unban(self, ctx, user: int, *, reason: str = "No reason."):
+    async def unban(self, ctx: commands.Context, user: int, *, reason: str = "No reason.") -> None:
+        """!unban <user ID> <reason> 
+
+        Parameters
+        ----------
+        ctx : commands.Context
+            Context where command was invoked
+        user : int
+            ID of the user to unban
+        reason : str, optional
+            Reason for unban, by default "No reason."
+
+        Raises
+        ------
+        commands.BadArgument
+            If one of the command arguments is not properly defined, lacking permissions, etc.
+        """        
+
         await ctx.message.delete()
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
-        if isinstance(user, discord.Member):
-            if user.top_role >= ctx.author.top_role:
-                raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
         
         try:
             user = await self.bot.fetch_user(user)
@@ -310,7 +439,7 @@ class ModActions(commands.Cog):
             await user.send("You have been unmuted in r/Jailbreak", embed=log)
         except:
             pass
-
+    
     @unmute.error                    
     @mute.error
     @liftwarn.error
