@@ -399,7 +399,6 @@ class ModActions(commands.Cog):
     @commands.command(name="unmute")
     async def unmute(self, ctx, user:discord.Member, *, reason: str = "No reason."):
         await ctx.message.delete()
-
         await self.check_permissions(ctx, user)
         
         mute_role = self.bot.settings.guild().role_mute
@@ -432,8 +431,19 @@ class ModActions(commands.Cog):
         except:
             pass
     
+    @commands.command(name="clem")
     async def clem(self, ctx: discord.Client, user: discord.Member):
-        pass
+        await ctx.message.delete()
+        await self.check_permissions(ctx, user)
+
+        results = await self.bot.settings.user(user.id)
+        results.is_clem = True
+        results.xp = 0
+        results.level = 0
+        results.is_xp_frozen = True
+        results.save()
+
+        await ctx.send(f"{user} was put on clem.")
 
     @unmute.error                    
     @mute.error
