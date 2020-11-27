@@ -7,16 +7,6 @@ import typing
 import datetime
 import pytimeparse
 
-# async def check_permissions(self, ctx, user: typing.Union[discord.Member, int]):
-async def check_permissions( ctx):
-    user = ctx.args[2]
-    if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least a mod
-        raise commands.BadArgument("You need to be a moderator or higher to use that command.")
-    if isinstance(user, discord.Member): # 
-        if user.top_role >= ctx.author.top_role:
-            raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
-    
-    # return True
 
 class ModActions(commands.Cog):
     """This cog handles all the possible moderator actions.
@@ -33,8 +23,17 @@ class ModActions(commands.Cog):
     def __init__(self, bot):    
         self.bot = bot
 
+    async def check_permissions(self, ctx, user: typing.Union[discord.Member, int] = None):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least a mod
+            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+        if user:
+            if isinstance(user, discord.Member): # 
+                if user.top_role >= ctx.author.top_role:
+                    raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
+        
+        # return True
+
     @commands.guild_only()
-    @commands.check(check_permissions)
     @commands.command(name="warn")
     async def warn(self, ctx: commands.Context, user: discord.Member, points: int, *, reason: str = "No reason.") -> None:
         """!warn <@user/ID> <points> <reason>
@@ -57,14 +56,11 @@ class ModActions(commands.Cog):
         """        
 
         await ctx.message.delete()
-
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least a mod
-            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+        await self.check_permissions(ctx, user)
+        
         if points < 1: # can't warn for negative/0 points
             raise commands.BadArgument(message="Points can't be lower than 1.")
-        if user.top_role >= ctx.author.top_role: # the punishee must have a lower top role than punisher
-            raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
-        
+
         guild = self.bot.settings.guild()
         
         # prepare the case object for database
@@ -141,10 +137,7 @@ class ModActions(commands.Cog):
 
         await ctx.message.delete()
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least a mod
-            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
-        if user.top_role >= ctx.author.top_role: # punisher must have higher top role than punishee
-            raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
+        await self.check_permissions(ctx, user)
 
         # retrieve user's case with given ID
         cases = await self.bot.settings.get_case(user.id, case_id)
@@ -203,10 +196,8 @@ class ModActions(commands.Cog):
         """        
 
         await ctx.message.delete()
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least a mod
-            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
-        if user.top_role >= ctx.author.top_role: # make sure punisher has higher top role than punishee
-            raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
+
+        await self.check_permissions(ctx, user)
         
         # prepare case for DB
         case = Case(
@@ -256,11 +247,8 @@ class ModActions(commands.Cog):
         """        
 
         await ctx.message.delete()
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least a mod
-            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
-        if isinstance(user, discord.Member): # punishee's top role must be lower than punisher's
-            if user.top_role >= ctx.author.top_role:
-                raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
+
+        await self.check_permissions(ctx, user)
         
         # if the ID given is of a user who isn't in the guild, try to fetch the profile
         if isinstance(user, int):
@@ -321,6 +309,8 @@ class ModActions(commands.Cog):
 
         await ctx.message.delete()
         
+        await self.check_permissions(ctx)
+
         try:
             user = await self.bot.fetch_user(user)
         except discord.NotFound:
@@ -352,10 +342,12 @@ class ModActions(commands.Cog):
     @commands.command(name="purge")
     async def purge(self, ctx, limit: int = 0):
         await ctx.message.delete()
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+
+        await self.check_permissions(ctx)
+
         if limit <= 0:
             raise commands.BadArgument("Number of messages to purge must be greater than 0")
+        
         await ctx.channel.purge(limit=limit)
         await ctx.send(f'Purged {limit} messages.')
     
@@ -363,8 +355,8 @@ class ModActions(commands.Cog):
     @commands.command(name="mute")
     async def mute(self, ctx, user:discord.Member, dur:str, *, reason : str = "No reason."):
         await ctx.message.delete()
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+        
+        await self.check_permissions(ctx, user)
         
         delta = pytimeparse.parse(dur)
         if delta is None:
@@ -407,8 +399,8 @@ class ModActions(commands.Cog):
     @commands.command(name="unmute")
     async def unmute(self, ctx, user:discord.Member, *, reason: str = "No reason."):
         await ctx.message.delete()
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+
+        await self.check_permissions(ctx, user)
         
         mute_role = self.bot.settings.guild().role_mute
         mute_role = ctx.guild.get_role(mute_role)
@@ -440,6 +432,9 @@ class ModActions(commands.Cog):
         except:
             pass
     
+    async def clem(self, ctx: discord.Client, user: discord.Member):
+        pass
+
     @unmute.error                    
     @mute.error
     @liftwarn.error
@@ -462,11 +457,3 @@ class ModActions(commands.Cog):
 
 def setup(bot):
     bot.add_cog(ModActions(bot))
-
-# !warn
-# !lfitwarn
-# !kick
-# !ban
-# !mute
-# !clem
-# !purge
