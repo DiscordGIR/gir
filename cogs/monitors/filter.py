@@ -31,5 +31,9 @@ class Filters(commands.Cog):
             if a.is_spoiler(): 
                 await msg.delete()
 
+    @commands.Cog.listener()
+    async def on_message_edit(self, before, after):
+        await self.on_message(after)
+
 def setup(bot):
     bot.add_cog(Filters(bot))
