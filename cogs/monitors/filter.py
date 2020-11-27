@@ -12,8 +12,12 @@ class Filters(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.spoiler_filter = r'\|\|(.*?)\|\|'
+    
     @commands.Cog.listener()
     async def on_message(self, msg):
+        if msg.author.bot:
+            return
+
         if msg.guild.id != self.bot.settings.guild_id:
             return
 
@@ -24,7 +28,8 @@ class Filters(commands.Cog):
             await msg.delete()
         
         for a in msg.attachments:
-            if a.is_spoiler(): await msg.delete()
+            if a.is_spoiler(): 
+                await msg.delete()
 
 def setup(bot):
     bot.add_cog(Filters(bot))
