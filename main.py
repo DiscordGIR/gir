@@ -22,7 +22,9 @@ initial_extensions = ['cogs.utils.settings',
                     'cogs.commands.mod.modactions', 
                     'cogs.commands.info.userinfo',
                     'cogs.commands.info.serverinfo',
-                    'cogs.monitors.logging',]
+                    'cogs.monitors.logging',
+                    'cogs.monitors.filter',
+                    ]
 
 intents = discord.Intents.default()
 intents.members = True

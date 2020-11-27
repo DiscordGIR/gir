@@ -48,7 +48,10 @@ class Logging(commands.Cog):
             return
         if before.content == after.content:
             return
-        channel = discord.utils.get(member.guild.channels, id=self.bot.settings.guild().channel_private)
+        if before.author.bot:
+            return
+
+        channel = discord.utils.get(before.guild.channels, id=self.bot.settings.guild().channel_private)
 
         embed=discord.Embed(title="Message Updated")
         embed.color=discord.Color.purple()
@@ -66,7 +69,9 @@ class Logging(commands.Cog):
             return
         if message.guild.id != self.bot.settings.guild_id:
             return
-        if message.author.id == self.bot.user.id:
+        if message.author.bot:
+            return
+        if message.content == "" or not message.content:
             return
             
         channel = discord.utils.get(message.guild.channels, id=self.bot.settings.guild().channel_private)
