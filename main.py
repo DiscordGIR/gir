@@ -4,7 +4,10 @@ import os
 from dotenv import load_dotenv, find_dotenv
 import data.mongo_setup as mongo_setup
 from data.case import Case
-# from data.scheduler import Scheduler
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
 load_dotenv(find_dotenv())
 
 def get_prefix(bot, message):
@@ -29,8 +32,9 @@ initial_extensions = ['cogs.utils.settings',
 intents = discord.Intents.default()
 intents.members = True
 intents.messages = True
+mentions = discord.AllowedMentions(everyone=False, users=True, roles=False)
 
-bot = commands.Bot(command_prefix=get_prefix, intents=intents)
+bot = commands.Bot(command_prefix=get_prefix, intents=intents, allowed_mentions=mentions)
 bot.max_messages = 1000000
 
 
@@ -39,11 +43,17 @@ if __name__ == '__main__':
     for extension in initial_extensions:
         bot.load_extension(extension)
 
+async def send_error(ctx, error):
+    embed=discord.Embed(title="An error occured")
+    embed.color = discord.Color.red()
+    embed.description = discord.utils.escape_markdown(f'{error}')
+    await ctx.send(embed=embed, delete_after=5)
 
 @bot.event
 async def on_ready():
     bot.owner_id = os.environ.get("BOTTY_OWNER")
     bot.settings = bot.get_cog("Settings")
+    bot.send_error = send_error
     await bot.wait_until_ready()
     print(f'\n\nLogged in as: {bot.user.name} - {bot.user.id}\nVersion: {discord.__version__}\n')
 

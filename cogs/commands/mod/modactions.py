@@ -443,7 +443,7 @@ class ModActions(commands.Cog):
         results.is_xp_frozen = True
         results.save()
 
-        await ctx.send(f"{user} was put on clem.")
+        await ctx.send(f"{user.mention} was put on clem.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
 
     @unmute.error                    
     @mute.error
@@ -453,15 +453,14 @@ class ModActions(commands.Cog):
     @warn.error
     @purge.error
     @kick.error
+    @clem.error
     async def info_error(self, ctx, error):
-        if isinstance(error, commands.MissingRequiredArgument):
-            await(ctx.send(error, delete_after=5))
-        elif isinstance(error, commands.BadArgument):
-            await(ctx.send(error, delete_after=5))
-        elif isinstance(error, commands.MissingPermissions):
-            await(ctx.send(error, delete_after=5))
-        elif isinstance(error, commands.NoPrivateMessage):
-            await(ctx.send(error, delete_after=5))
+        if (isinstance(error, commands.MissingRequiredArgument) 
+            or isinstance(error, commands.BadArgument)
+            or isinstance(error, commands.BadUnionArgument)
+            or isinstance(error, commands.MissingPermissions)
+            or isinstance(error, commands.NoPrivateMessage)):
+                await self.bot.send_error(ctx, error)
         else:
             traceback.print_exc()
 

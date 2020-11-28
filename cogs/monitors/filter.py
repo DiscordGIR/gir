@@ -46,6 +46,7 @@ class Filters(commands.Cog):
                 id = splat[-1] or splat[-2]
                 if id.lower() not in whitelist:
                     await msg.delete()
+                    break
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):

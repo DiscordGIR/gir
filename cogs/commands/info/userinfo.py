@@ -79,14 +79,12 @@ class UserInfo(commands.Cog):
     @userinfo.error
     @xp.error
     async def info_error(self, ctx, error):
-        if isinstance(error, commands.MissingRequiredArgument):
-            await(ctx.send(error, delete_after=5))
-        elif isinstance(error, commands.BadArgument):
-            await(ctx.send(error, delete_after=5))
-        elif isinstance(error, commands.MissingPermissions):
-            await(ctx.send(error, delete_after=5))
-        elif isinstance(error, commands.NoPrivateMessage):
-            await(ctx.send(error, delete_after=5))
+        if (isinstance(error, commands.MissingRequiredArgument) 
+            or isinstance(error, commands.BadArgument)
+            or isinstance(error, commands.BadUnionArgument)
+            or isinstance(error, commands.MissingPermissions)
+            or isinstance(error, commands.NoPrivateMessage)):
+                await self.bot.send_error(ctx, error)
         else:
             traceback.print_exc()
 

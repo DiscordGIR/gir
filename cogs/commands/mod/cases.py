@@ -63,7 +63,10 @@ class Cases(commands.Cog):
 
         results = await self.bot.settings.cases(user.id)
         if len(results.cases) == 0:
-            raise commands.BadArgument(f'User with ID {user} had no cases.')
+            if isinstance(user, int):
+                raise commands.BadArgument(f'User with ID {user.id} had no cases.')
+            else:
+                raise commands.BadArgument(f'{user.mention} had no cases.')
         cases = [case for case in results.cases if case._type != "UNMUTE"]
 
         menus = MenuPages(source=PaginationSource(
@@ -73,16 +76,13 @@ class Cases(commands.Cog):
     
     @cases.error
     async def info_error(self, ctx, error):
-        if isinstance(error, commands.MissingRequiredArgument):
-            await(ctx.send(error, delete_after=5))
-        elif isinstance(error, commands.BadArgument):
-            await(ctx.send(error, delete_after=5))
-        elif isinstance(error, commands.BadUnionArgument):
-            await(ctx.send(error, delete_after=5))
-        elif isinstance(error, commands.MissingPermissions):
-            await(ctx.send(error, delete_after=5))
-        elif isinstance(error, commands.NoPrivateMessage):
-            await(ctx.send(error, delete_after=5))
+        if (isinstance(error, commands.MissingRequiredArgument) 
+            or isinstance(error, commands.BadArgument)
+            or isinstance(error, commands.BadUnionArgument)
+            or isinstance(error, commands.MissingPermissions)
+            or isinstance(error, commands.NoPrivateMessage)):
+                await self.bot.send_error(ctx, error)
+            # await(ctx.send(error, delete_after=5, allowed_mentions=discord.AllowedMentions(user=False, everyone=False, )))
         else:
             traceback.print_exc()
 
