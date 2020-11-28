@@ -4,6 +4,7 @@
 
 import discord
 from discord.ext import commands
+from cogs.monitors.report import report
 import re
 # logging
 # nsa
@@ -46,11 +47,37 @@ class Filters(commands.Cog):
                 id = splat[-1] or splat[-2]
                 if id.lower() not in whitelist:
                     await msg.delete()
+                    await report(self.bot, msg, msg.author)
                     break
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         await self.on_message(after)
+
+    @commands.command(name="offlineping")
+    async def offlineping(self, ctx, val: bool):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least a mod
+            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+
+        cur = await self.bot.settings.user(ctx.author.id)
+        cur.offline_report_ping = val
+        cur.save()
+
+        if val:
+            await ctx.send("You will now be pinged for reports when offline")
+        else:
+            await ctx.send("You won't be pinged for reports when offline")
+
+    @offlineping.error
+    async def info_error(self, ctx, error):
+        if (isinstance(error, commands.MissingRequiredArgument) 
+            or isinstance(error, commands.BadArgument)
+            or isinstance(error, commands.BadUnionArgument)
+            or isinstance(error, commands.MissingPermissions)
+            or isinstance(error, commands.NoPrivateMessage)):
+                await self.bot.send_error(ctx, error)
+        else:
+            traceback.print_exc()
 
 def setup(bot):
     bot.add_cog(Filters(bot))

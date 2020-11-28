@@ -32,6 +32,7 @@ initial_extensions = ['cogs.utils.settings',
 intents = discord.Intents.default()
 intents.members = True
 intents.messages = True
+intents.presences = True
 mentions = discord.AllowedMentions(everyone=False, users=True, roles=False)
 
 bot = commands.Bot(command_prefix=get_prefix, intents=intents, allowed_mentions=mentions)
