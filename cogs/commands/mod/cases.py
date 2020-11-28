@@ -22,10 +22,10 @@ class PaginationSource(menus.GroupByPageSource):
             if case._type == "WARN":
                 if case.lifted:
                     embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id} [LIFTED]', 
-                        value=f'**Points**: {case.punishment_points}\n**Reason**: {case.reason}\n**Lifted by**: {case.lifted_by_tag}\n**Lift reason**: {case.lifted_reason}\n**Warned on**: {case.date}', inline=True)
+                        value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Lifted by**: {case.lifted_by_tag}\n**Lift reason**: {case.lifted_reason}\n**Warned on**: {case.date}', inline=True)
                 else:
                     embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}', 
-                        value=f'**Points**: {case.punishment_points}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
+                        value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
             else:
                 embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}', 
                     value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
@@ -80,7 +80,8 @@ class Cases(commands.Cog):
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
-            or isinstance(error, commands.NoPrivateMessage)):
+            or isinstance(error, commands.NoPrivateMessage)
+            or isinstance(error, commands.CommandInvokeError)):
                 await self.bot.send_error(ctx, error)
             # await(ctx.send(error, delete_after=5, allowed_mentions=discord.AllowedMentions(user=False, everyone=False, )))
         else:
@@ -94,6 +95,7 @@ async def determine_emoji(type):
         "MUTE": "🔇",
         "WARN": "⚠️",
         "UNMUTE": "🔈",
+        "LIFTWARN": "⚠️❌"
     }
     return emoji_dict[type]
 

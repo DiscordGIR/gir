@@ -6,6 +6,7 @@ import traceback
 import typing
 import datetime
 import pytimeparse
+import humanize
 
 
 class ModActions(commands.Cog):
@@ -70,7 +71,7 @@ class ModActions(commands.Cog):
             mod_id=ctx.author.id,
             mod_tag = str(ctx.author),
             reason=reason,
-            punishment_points=points
+            punishment=str(points)
         )
 
         # increment case ID in database for next available case ID
@@ -160,7 +161,7 @@ class ModActions(commands.Cog):
         cases.save()
 
         # remove the warn points from the user in DB
-        await self.bot.settings.inc_points(user.id, -1 * case.punishment_points)
+        await self.bot.settings.inc_points(user.id, -1 * int(case.punishment))
 
         # prepare log embed, send to #public-mod-logs, user, channel where invoked
         log = await logging.prepare_liftwarn_log(ctx, user, case)
@@ -263,6 +264,7 @@ class ModActions(commands.Cog):
             _type = "BAN",
             mod_id=ctx.author.id,
             mod_tag = str(ctx.author),
+            punishment="PERMANENT",
             reason=reason,
         )
 
@@ -379,6 +381,7 @@ class ModActions(commands.Cog):
             until=time,
             mod_id=ctx.author.id,
             mod_tag = str(ctx.author),
+            punishment = humanize.naturaldelta(time - datetime.datetime.now(), minimum_unit="seconds"),
             reason=reason,
         )
         await self.bot.settings.inc_caseid()

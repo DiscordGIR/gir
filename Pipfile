@@ -16,6 +16,7 @@ mongoengine = "*"
 apscheduler = "*"
 humanize = "*"
 pytimeparse = "*"
+asyncpg = "*"
 
 [requires]
 python_version = "3.8"

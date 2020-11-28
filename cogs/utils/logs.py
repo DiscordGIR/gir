@@ -1,7 +1,4 @@
 import discord
-from dateutil import relativedelta
-import humanize
-
 
 async def prepare_warn_log(ctx, user, case):
     embed=discord.Embed(title="Member warned")
@@ -9,7 +6,7 @@ async def prepare_warn_log(ctx, user, case):
     embed.color = discord.Color.orange()
     embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
     embed.add_field(name="Mod", value=f'{ctx.author} ({ctx.author.mention})', inline=True)
-    embed.add_field(name="Increase", value=case.punishment_points, inline=True)
+    embed.add_field(name="Increase", value=case.punishment, inline=True)
     embed.add_field(name="Reason", value=case.reason, inline=True)
     embed.set_footer(text=f"Case #{case._id} | Warned by {ctx.author}")
     return embed
@@ -20,7 +17,7 @@ async def prepare_liftwarn_log(ctx, user, case):
     embed.color = discord.Color.blurple()
     embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
     embed.add_field(name="Mod", value=f'{ctx.author} ({ctx.author.mention})', inline=True)
-    embed.add_field(name="Decrease", value=case.punishment_points, inline=True)
+    embed.add_field(name="Decrease", value=case.punishment, inline=True)
     embed.add_field(name="Reason", value=case.reason, inline=True)
     embed.set_footer(text=f"Case #{case._id} | Lifted by {ctx.author}")
     return embed
@@ -56,14 +53,12 @@ async def prepare_kick_log(ctx, user, case):
     return embed
 
 async def prepare_mute_log(ctx, user, case):
-    delta = case.until - case.date
-
     embed=discord.Embed(title="Member muted")
     embed.color = discord.Color.red()
     embed.set_author(name=user, icon_url=user.avatar_url)
     embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
     embed.add_field(name="Mod", value=f'{ctx.author} ({ctx.author.mention})', inline=True)
-    embed.add_field(name="Duration", value=humanize.naturaldelta(delta, minimum_unit="seconds"), inline=True)
+    embed.add_field(name="Duration", value=case.punishment, inline=True)
     embed.add_field(name="Reason", value=case.reason, inline=True)
     embed.set_footer(text=f"Case #{case._id} | Muted by {ctx.author}")
     return embed
