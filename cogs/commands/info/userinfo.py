@@ -8,7 +8,7 @@ import traceback
 class PaginationSource(menus.GroupByPageSource):
     async def format_page(self, menu, entry):
         embed = discord.Embed(
-            title=f'Leaderboard (page {menu.current_page +1}/{self.get_max_pages()})', color=discord.Color.blurple())
+            title=f'Leaderboard', color=discord.Color.blurple())
         # embed.set_author(name=user, icon_url=user.avatar_url)
         for i, user in entry.items:
             trophy = ''
@@ -19,6 +19,7 @@ class PaginationSource(menus.GroupByPageSource):
             if i == 2:
                 trophy = ':third_place:'
             embed.add_field(name=f"#{i+1} - Level {user.level}", value=f"{trophy} <@{user._id}>", inline=False)
+        embed.set_footer(text=f"Page {menu.current_page +1} of {self.get_max_pages()}")
         return embed
 
 class MenuPages(menus.MenuPages):
