@@ -28,6 +28,7 @@ class Port(commands.Cog):
                 user._id = int(record["id"])
                 user.is_clem = record["clem"]
                 user.is_xp_frozen = record["xpFrozen"]
+                user.warn_points = record["warnPoints"]
                 user.was_warn_kicked = record["warnKicked"]
                 user.xp = record["xp"]
                 user.level = record["level"]

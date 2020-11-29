@@ -14,6 +14,7 @@ class PaginationSource(menus.GroupByPageSource):
             trophy = ''
             if i == 0:
                 trophy = ':first_place:'
+                # embed.set_thumbnail(url=.user.avatar_url)
             if i == 1:
                 trophy = ':second_place:'
             if i == 2:

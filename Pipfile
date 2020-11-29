@@ -17,6 +17,7 @@ humanize = "*"
 pytimeparse = "*"
 asyncpg = "*"
 "discord.py" = {git = "https://github.com/Rapptz/discord.py"}
+psutil = "*"
 
 [requires]
 python_version = "3.8"
