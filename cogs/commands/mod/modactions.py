@@ -360,11 +360,12 @@ class ModActions(commands.Cog):
         
         await self.check_permissions(ctx, user)
         
+        now = datetime.datetime.now()
         delta = pytimeparse.parse(dur)
         if delta is None:
             raise commands.BadArgument("Failed to parse time duration.")
-
-        time = datetime.datetime.now() + datetime.timedelta(seconds=delta)
+        print(delta)
+        time = now + datetime.timedelta(seconds=delta)
         
         mute_role = self.bot.settings.guild().role_mute
         mute_role = ctx.guild.get_role(mute_role)
@@ -378,10 +379,11 @@ class ModActions(commands.Cog):
         case = Case(
             _id = self.bot.settings.guild().case_id,
             _type = "MUTE",
+            date=now,
             until=time,
             mod_id=ctx.author.id,
             mod_tag = str(ctx.author),
-            punishment = humanize.naturaldelta(time - datetime.datetime.now(), minimum_unit="seconds"),
+            punishment = humanize.naturaldelta(time - now, minimum_unit="seconds"),
             reason=reason,
         )
         await self.bot.settings.inc_caseid()
