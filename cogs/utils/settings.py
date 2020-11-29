@@ -150,6 +150,9 @@ class Settings(commands.Cog):
             user._id = id
             user.save()
         return user
+
+    async def leaderboard(self) -> list:
+        return User.objects[0:100].order_by('-xp')
     
     async def cases(self, id: int) -> Cases:
         """Return the Document representing the cases of a user, whose ID is given by `id`

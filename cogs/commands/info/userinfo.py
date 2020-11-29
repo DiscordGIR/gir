@@ -1,8 +1,39 @@
 import discord
 from discord.ext import commands
+from discord.ext import menus
 from datetime import datetime
 from math import floor
 import traceback
+
+class PaginationSource(menus.GroupByPageSource):
+    async def format_page(self, menu, entry):
+        embed = discord.Embed(
+            title=f'Leaderboard (page {menu.current_page +1}/{self.get_max_pages()})', color=discord.Color.blurple())
+        # embed.set_author(name=user, icon_url=user.avatar_url)
+        for i, user in entry.items:
+            trophy = ''
+            if i == 0:
+                trophy = ':first_place:'
+            if i == 1:
+                trophy = ':second_place:'
+            if i == 2:
+                trophy = ':third_place:'
+            embed.add_field(name=f"#{i+1} - Level {user.level}", value=f"{trophy} <@{user._id}>", inline=False)
+        return embed
+
+class MenuPages(menus.MenuPages):
+    async def update(self, payload):
+        if self._can_remove_reactions:
+            if payload.event_type == 'REACTION_ADD':
+                await self.bot.http.remove_reaction(
+                    payload.channel_id, payload.message_id,
+                    discord.Message._emoji_reaction(
+                        payload.emoji), payload.member.id
+                )
+            elif payload.event_type == 'REACTION_REMOVE':
+                return
+        await super().update(payload)
+
 
 class UserInfo(commands.Cog):
     def __init__(self, bot):
@@ -40,10 +71,10 @@ class UserInfo(commands.Cog):
             await ctx.message.reply(embed=embed)
     
     @commands.guild_only()        
-    @commands.command(name="xpstats")
+    @commands.command(name="xpstats", aliases=["xp"])
     async def xp(self, ctx, user:discord.Member=None):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != 778233669881561088:
-            pass
+            raise commands.BadArgument("Please use #bot-commands")
         else:
             if user is None: user = ctx.author
 
@@ -59,7 +90,16 @@ class UserInfo(commands.Cog):
             embed.set_footer(text=f"Requested by {ctx.author}")
             # await ctx.send(embed=embed)
             await ctx.message.reply(embed=embed)
-    
+
+    @commands.guild_only()
+    @commands.command(name="xptop", aliases=["leaderboard"])
+    async def xptop(self, ctx):
+        results = await self.bot.settings.leaderboard()
+        menus = MenuPages(source=PaginationSource(
+            enumerate(results), key=lambda t: 1, per_page=10), clear_reactions_after=True)
+
+        await menus.start(ctx)
+
     @commands.guild_only()        
     @commands.command(name="warnpoints")
     async def warnpoints(self, ctx, user:discord.Member):
