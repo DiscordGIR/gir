@@ -56,7 +56,7 @@ class ModActions(commands.Cog):
             If one of the command arguments is not properly defined, lacking permissions, etc.
         """        
 
-        await ctx.message.delete()
+        # await ctx.message.delete()
         await self.check_permissions(ctx, user)
         
         if points < 1: # can't warn for negative/0 points
@@ -93,7 +93,8 @@ class ModActions(commands.Cog):
 
         log.add_field(name="Current points", value=cur_points, inline=True)
         # also send response in channel where command was called
-        await ctx.send(embed=log)
+        # await ctx.send(embed=log)
+        await ctx.message.reply(embed=log)
 
         if cur_points >= 600: 
             # automatically ban user if more than 600 points
@@ -136,7 +137,7 @@ class ModActions(commands.Cog):
             If one of the command arguments is not properly defined, lacking permissions, etc.
         """        
 
-        await ctx.message.delete()
+        # await ctx.message.delete()
 
         await self.check_permissions(ctx, user)
 
@@ -174,7 +175,8 @@ class ModActions(commands.Cog):
         if public_chan:
             await public_chan.send(embed=log)  
         
-        await ctx.send(embed=log)
+        # await ctx.send(embed=log)
+        await ctx.message.reply(embed=log)
     
     @commands.guild_only()
     @commands.command(name="kick")
@@ -196,7 +198,10 @@ class ModActions(commands.Cog):
             If one of the command arguments is not properly defined, lacking permissions, etc.
         """        
 
-        await ctx.message.delete()
+        # try:
+        #     await ctx.message.delete()
+        # except Exception:
+        #     pass
 
         await self.check_permissions(ctx, user)
         
@@ -218,7 +223,9 @@ class ModActions(commands.Cog):
         log = await logging.prepare_kick_log(ctx, user, case)
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
-        await ctx.send(embed=log)
+        # await ctx.send(embed=log)
+        await ctx.message.reply(embed=log)
+        
         try:
             await user.send("You were kicked from r/Jailbreak", embed=log)
         except Exception:
@@ -247,7 +254,10 @@ class ModActions(commands.Cog):
             If one of the command arguments is not properly defined, lacking permissions, etc.
         """        
 
-        await ctx.message.delete()
+        # try:
+        #     await ctx.message.delete()
+        # except Exception:
+        #     pass
 
         await self.check_permissions(ctx, user)
         
@@ -276,7 +286,8 @@ class ModActions(commands.Cog):
         log = await logging.prepare_ban_log(ctx, user, case)
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
-        await ctx.send(embed=log)
+        # await ctx.send(embed=log)
+        await ctx.message.reply(embed=log)
         
         try:
             await user.send("You were banned from r/Jailbreak", embed=log)
@@ -309,7 +320,7 @@ class ModActions(commands.Cog):
             If one of the command arguments is not properly defined, lacking permissions, etc.
         """        
 
-        await ctx.message.delete()
+        # await ctx.message.delete()
         
         await self.check_permissions(ctx)
 
@@ -337,13 +348,13 @@ class ModActions(commands.Cog):
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
-        await ctx.send(embed=log)
-                
+        # await ctx.send(embed=log)
+        await ctx.message.reply(embed=log)
 
     @commands.guild_only()
     @commands.command(name="purge")
     async def purge(self, ctx, limit: int = 0):
-        await ctx.message.delete()
+        # await ctx.message.delete()
 
         await self.check_permissions(ctx)
 
@@ -352,6 +363,7 @@ class ModActions(commands.Cog):
         
         await ctx.channel.purge(limit=limit)
         await ctx.send(f'Purged {limit} messages.')
+        # await ctx.message.reply(f'Purged {limit} messages.')
     
     @commands.guild_only()
     @commands.command(name="mute")
@@ -393,7 +405,8 @@ class ModActions(commands.Cog):
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
-        await ctx.send(embed=log)
+        # await ctx.send(embed=log)
+        await ctx.message.reply(embed=log)
 
         try:
             await user.send("You have been muted in r/Jailbreak", embed=log)
@@ -403,7 +416,7 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.command(name="unmute")
     async def unmute(self, ctx, user:discord.Member, *, reason: str = "No reason."):
-        await ctx.message.delete()
+        # await ctx.message.delete()
         await self.check_permissions(ctx, user)
         
         mute_role = self.bot.settings.guild().role_mute
@@ -429,7 +442,8 @@ class ModActions(commands.Cog):
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
-        await ctx.send(embed=log)
+        # await ctx.send(embed=log)
+        await ctx.message.reply(embed=log)
 
         try:
             await user.send("You have been unmuted in r/Jailbreak", embed=log)
@@ -438,7 +452,7 @@ class ModActions(commands.Cog):
     
     @commands.command(name="clem")
     async def clem(self, ctx: discord.Client, user: discord.Member):
-        await ctx.message.delete()
+        # await ctx.message.delete()
         await self.check_permissions(ctx, user)
 
         results = await self.bot.settings.user(user.id)
@@ -448,7 +462,8 @@ class ModActions(commands.Cog):
         results.is_xp_frozen = True
         results.save()
 
-        await ctx.send(f"{user.mention} was put on clem.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
+        # await ctx.send(f"{user.mention} was put on clem.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
+        await ctx.message.reply(f"{user.mention} was put on clem.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
 
     @unmute.error                    
     @mute.error
@@ -467,6 +482,7 @@ class ModActions(commands.Cog):
             or isinstance(error, commands.NoPrivateMessage)):
                 await self.bot.send_error(ctx, error)
         else:
+            await self.bot.send_error(ctx, error)
             traceback.print_exc()
 
 def setup(bot):

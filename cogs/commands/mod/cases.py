@@ -15,7 +15,7 @@ class PaginationSource(menus.GroupByPageSource):
     async def format_page(self, menu, entry):
         user = menu.ctx.args[2]
         embed = discord.Embed(
-            title=f'Cases {menu.current_page +1}/{self.get_max_pages()}', color=discord.Color.blurple())
+            title=f'Cases (page {menu.current_page +1}/{self.get_max_pages()})', color=discord.Color.blurple())
         embed.set_author(name=user, icon_url=user.avatar_url)
         for case in entry.items:
             timestamp=case.date.strftime("%B %d, %Y, %I:%M %p")
@@ -26,6 +26,9 @@ class PaginationSource(menus.GroupByPageSource):
                 else:
                     embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}', 
                         value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
+            elif case._type == "MUTE":
+                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}', 
+                    value=f'**Duration**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
             else:
                 embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}', 
                     value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)

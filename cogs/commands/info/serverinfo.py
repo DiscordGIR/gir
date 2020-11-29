@@ -11,7 +11,7 @@ class UserInfo(commands.Cog):
     @commands.guild_only()
     @commands.command(name="serverinfo")
     async def userinfo(self, ctx):
-        await ctx.message.delete()
+        # await ctx.message.delete()
         guild = ctx.guild
 
         embed=discord.Embed(title="Server Information")
@@ -26,7 +26,8 @@ class UserInfo(commands.Cog):
         embed.add_field(name="Created", value=guild.created_at.strftime("%B %d, %Y, %I:%M %p"), inline=True)
         
         embed.set_footer(text=f"Requested by {ctx.author}")
-        await ctx.send(embed=embed)
+        # await ctx.send(embed=embed)
+        await ctx.message.reply(embed=log)
 
     @userinfo.error
     async def info_error(self, ctx, error):

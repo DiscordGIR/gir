@@ -8,7 +8,6 @@ pylint = "*"
 autopep8 = "*"
 
 [packages]
-"discord.py" = "*"
 psycopg2 = "*"
 python-dotenv = "*"
 discord-ext-menus = {git = "https://github.com/Rapptz/discord-ext-menus"}
@@ -17,6 +16,7 @@ apscheduler = "*"
 humanize = "*"
 pytimeparse = "*"
 asyncpg = "*"
+"discord.py" = {git = "https://github.com/Rapptz/discord.py"}
 
 [requires]
 python_version = "3.8"

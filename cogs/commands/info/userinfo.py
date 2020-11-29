@@ -11,7 +11,7 @@ class UserInfo(commands.Cog):
     @commands.guild_only()
     @commands.command(name="userinfo")
     async def userinfo(self, ctx, user:discord.Member=None):
-        await ctx.message.delete()
+        # await ctx.message.delete()
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != 778233669881561088:
             pass
         else:
@@ -36,8 +36,9 @@ class UserInfo(commands.Cog):
             embed.add_field(name="Join date", value=f"{joined} UTC", inline=True)
             embed.add_field(name="Account creation date", value=f"{created} UTC", inline=True)
             embed.set_footer(text=f"Requested by {ctx.author}")
-            await ctx.send(embed=embed)
-
+            # await ctx.send(embed=embed)
+            await ctx.message.reply(embed=embed)
+    
     @commands.guild_only()        
     @commands.command(name="xpstats")
     async def xp(self, ctx, user:discord.Member=None):
@@ -56,12 +57,13 @@ class UserInfo(commands.Cog):
             embed.add_field(name="XP", value=f'{results.xp}/{xp_for_next_level(results.level)}' if not results.is_xp_frozen else "0/0", inline=True)
             # embed.add_field(name="Rank", value=f"{rank}/{ctx.guild.member_count}", inline=True)
             embed.set_footer(text=f"Requested by {ctx.author}")
-            await ctx.send(embed=embed)
+            # await ctx.send(embed=embed)
+            await ctx.message.reply(embed=embed)
     
     @commands.guild_only()        
     @commands.command(name="warnpoints")
     async def warnpoints(self, ctx, user:discord.Member):
-        await ctx.message.delete()
+        # await ctx.message.delete()
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             pass
 
@@ -74,7 +76,8 @@ class UserInfo(commands.Cog):
         embed.add_field(name="Member", value=f'{user.mention}\n{user}\n({user.id})', inline=True)
         embed.add_field(name="Warn Points", value=results.warn_points, inline=True)
         embed.set_footer(text=f"Requested by {ctx.author}")
-        await ctx.send(embed=embed)
+        # await ctx.send(embed=embed)
+        await ctx.message.reply(embed=embed)
 
     @userinfo.error
     @xp.error
