@@ -1,5 +1,7 @@
 import discord
 import asyncio
+import humanize
+import datetime
 
 async def report(bot, msg, user):
     role = discord.utils.get(msg.guild.roles, id=bot.settings.guild().role_moderator)
@@ -19,7 +21,7 @@ async def report(bot, msg, user):
     for r in rd:
         if r._type == "WARN":
             r.punishment += " points"
-        rd_text += f"{r._type} - {r.punishment} - {r.reason} - {r.date.strftime('%B %d, %Y, %I:%M %p')} UTC\n"
+        rd_text += f"**{r._type}** - {r.punishment} - {r.reason} - {humanize.naturaltime(datetime.datetime.now() - r.date)}\n"
 
     embed = discord.Embed(title="Word filter")
     embed.color = discord.Color.red()
