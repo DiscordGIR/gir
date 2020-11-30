@@ -358,7 +358,7 @@ class ModActions(commands.Cog):
 
     @commands.guild_only()
     @commands.command(name="mute")
-    async def mute(self, ctx: commands.Context, user:discord.Member, dur:str, *, reason : str = "No reason.") -> None:
+    async def mute(self, ctx: commands.Context, user:discord.Member, dur:str = "", *, reason : str = "No reason.") -> None:
         """!mute <@user/ID> <duration> <reason (optional)>
 
         Mute a user.
@@ -382,31 +382,45 @@ class ModActions(commands.Cog):
         
         now = datetime.datetime.now()
         delta = pytimeparse.parse(dur)
+
         if delta is None:
-            raise commands.BadArgument("Failed to parse time duration.")
-        print(delta)
-        time = now + datetime.timedelta(seconds=delta)
+            if reason == "No reason." and dur == "":
+                reason = "No reason."
+            elif reason == "No reason.":
+                reason = dur
+            else:
+                reason = f"{dur} {reason}"
+        
+        print(reason)
         
         mute_role = self.bot.settings.guild().role_mute
         mute_role = ctx.guild.get_role(mute_role)
-        await user.add_roles(mute_role)        
-        
-        try:
-            self.bot.settings.tasks.schedule_unmute(user.id, time)
-        except Exception:
-            raise commands.BadArgument("An error occured, this user is probably already muted")
+
+        if mute_role in user.roles:
+            raise commands.BadArgument("This user is already muted.")
 
         case = Case(
             _id = self.bot.settings.guild().case_id,
             _type = "MUTE",
             date=now,
-            until=time,
             mod_id=ctx.author.id,
             mod_tag = str(ctx.author),
-            punishment = humanize.naturaldelta(time - now, minimum_unit="seconds"),
             reason=reason,
         )
+
+        if delta:
+            try:
+                time = now + datetime.timedelta(seconds=delta)
+                case.until = time
+                case.punishment = humanize.naturaldelta(time - now, minimum_unit="seconds")
+                self.bot.settings.tasks.schedule_unmute(user.id, time)
+            except Exception:
+                raise commands.BadArgument("An error occured, this user is probably already muted")
+        else:
+            case.punishment = "PERMANENT"
+        
         await self.bot.settings.inc_caseid()
+        print(str(case.punishment))
         await self.bot.settings.add_case(user.id, case)
 
         log = await logging.prepare_mute_log(ctx, user, case)
