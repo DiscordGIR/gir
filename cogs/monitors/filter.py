@@ -25,8 +25,6 @@ class Filters(commands.Cog):
         if msg.guild.id != self.bot.settings.guild_id:
             return
 
-        print(guild.filter_excluded_channels)
-        print(msg.channel.id)
         if msg.channel.id in guild.filter_excluded_channels:
             return
 
@@ -43,17 +41,7 @@ class Filters(commands.Cog):
                         break
         if delete:
             await msg.delete()
-
-        """
-        SPOILER FILTER
-        """
-        if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, 6):
-            if re.search(self.spoiler_filter, msg.content, flags=re.S):
-                await msg.delete()
-            
-            for a in msg.attachments:
-                if a.is_spoiler(): 
-                    await msg.delete()
+            return
 
         """
         INVITE FILTER
@@ -69,6 +57,19 @@ class Filters(commands.Cog):
                         await msg.delete()
                         await report(self.bot, msg, msg.author)
                         break
+
+        """
+        SPOILER FILTER
+        """
+        if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, 6):
+            if re.search(self.spoiler_filter, msg.content, flags=re.S):
+                await msg.delete()
+                return
+            
+            for a in msg.attachments:
+                if a.is_spoiler(): 
+                    await msg.delete()
+                    return
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
