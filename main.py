@@ -27,6 +27,7 @@ initial_extensions = ['cogs.utils.settings',
                     'cogs.monitors.filter',
                     'cogs.commands.info.port',
                     'cogs.commands.info.stats',
+                    'cogs.commands.info.devices',
                     ]
 
 intents = discord.Intents.default()
