@@ -27,7 +27,7 @@ class ModActions(commands.Cog):
     async def check_permissions(self, ctx, user: typing.Union[discord.Member, int] = None):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least a mod
             await ctx.message.delete()
-            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+            raise commands.BadArgument("You do not have permission to use this command.")
         if user:
             if isinstance(user, discord.Member):
                 if user.top_role >= ctx.author.top_role:

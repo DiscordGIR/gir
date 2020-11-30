@@ -11,13 +11,31 @@ async def report(bot, msg, user):
         if member.status == discord.Status.online or offline_ping:
             ping_string += f"{member.mention} "
 
+    user_info = await bot.settings.user(user.id)
+    joined = user.joined_at.strftime("%B %d, %Y, %I:%M %p")
+    created = user.created_at.strftime("%B %d, %Y, %I:%M %p")
+    rd = await bot.settings.rundown(user.id)
+    rd_text = ""
+    for r in rd:
+        if r._type == "WARN":
+            r.punishment += " points"
+        rd_text += f"{r._type} - {r.punishment} - {r.reason} - {r.date.strftime('%B %d, %Y, %I:%M %p')} UTC\n"
+
     embed = discord.Embed(title="Word filter")
     embed.color = discord.Color.red()
-    embed.description = ":warning:: Warn for 50 points\n:100:: Warn for 100 points"
+    # embed.description = ":warning:: Warn for 50 points\n:100:: Warn for 100 points"
     embed.add_field(name="Member", value=f"{user} ({user.mention})")
     embed.add_field(name="Channel", value=msg.channel.mention)
     embed.add_field(name="Message", value=discord.utils.escape_markdown(msg.content), inline=False)
+    embed.add_field(name="Join date", value=f"{joined} UTC", inline=True)
+    embed.add_field(name="Account creation date", value=f"{created} UTC", inline=True)
+    embed.add_field(name="Warn points", value=user_info.warn_points, inline=True)
+    if len(rd) > 0:
+        embed.add_field(name=f"{len(rd)} most recent cases", value=rd_text, inline=True)
+    else:
+        embed.add_field(name=f"Recent cases", value="This user has no cases.", inline=True)
     
+
     report_msg = await channel.send(ping_string, embed=embed)
     # report_reactions = ['⚠️', '💯']
 

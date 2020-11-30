@@ -176,6 +176,34 @@ class Settings(commands.Cog):
             cases._id = id
             cases.save()
         return cases
+    
+    async def rundown(self, id: int) -> list:
+        """Return the 3 most recent cases of a user, whose ID is given by `id`
+        If the user doesn't have a Cases document in the database, first create that.
+
+        Parameters
+        ----------
+        id : int
+            The user whose cases we want to look up.
+
+        Returns
+        -------
+        Cases
+            [description]
+        """
+
+        cases = Cases.objects(_id=id).first()
+        # first we ensure this user has a Cases document in the database before continuing
+        if cases is None:
+            cases = Cases()
+            cases._id = id
+            cases.save()
+
+        cases = cases.cases
+        cases = filter(lambda x: x._type != "UNMUTE", cases)
+        cases = sorted(cases, key = lambda i: i['date'])
+        cases.reverse()
+        return cases[0:3]
 
 class Permissions:
     """A way of calculating a user's permissions.
