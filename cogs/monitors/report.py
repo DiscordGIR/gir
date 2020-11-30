@@ -26,6 +26,7 @@ async def report(bot, msg, user):
     embed = discord.Embed(title="Word filter")
     embed.color = discord.Color.red()
     # embed.description = ":warning:: Warn for 50 points\n:100:: Warn for 100 points"
+    embed.set_thumbnail(url=user.avatar_url)
     embed.add_field(name="Member", value=f"{user} ({user.mention})")
     embed.add_field(name="Channel", value=msg.channel.mention)
     embed.add_field(name="Message", value=discord.utils.escape_markdown(msg.content), inline=False)

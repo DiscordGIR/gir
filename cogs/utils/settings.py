@@ -198,6 +198,7 @@ class Settings(commands.Cog):
             cases = Cases()
             cases._id = id
             cases.save()
+            return []
 
         cases = cases.cases
         cases = filter(lambda x: x._type != "UNMUTE", cases)
