@@ -37,12 +37,12 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.command(name="warn")
     async def warn(self, ctx: commands.Context, user: discord.Member, points: int, *, reason: str = "No reason.") -> None:
-        """!warn <@user/ID> <points> <reason>
+        """!warn <@user/ID> <points> <reason (optional)>
+
+        Warn a user.
 
         Parameters
         ----------
-        ctx : commands.Context
-            Context in which the command was invoked
         user : discord.Member
             The member to warn
         points : int
@@ -56,7 +56,6 @@ class ModActions(commands.Cog):
             If one of the command arguments is not properly defined, lacking permissions, etc.
         """        
 
-        # await ctx.message.delete()
         await self.check_permissions(ctx, user)
         
         if points < 1: # can't warn for negative/0 points
@@ -118,12 +117,12 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.command(name="liftwarn")
     async def liftwarn(self, ctx: commands.Context, user: discord.Member, case_id: int, *, reason: str = "No reason.") -> None:
-        """!liftwarn <@user/ID> <case ID> <reason>
+        """!liftwarn <@user/ID> <case ID> <reason (optional)>
+
+        Lift the user's warn of the given case ID. Removes the points of that warn as well.
 
         Parameters
         ----------
-        ctx : commands.Context
-            Context in which command was invoked
         user : discord.Member
             User to remove warn from
         case_id : int
@@ -136,8 +135,6 @@ class ModActions(commands.Cog):
         commands.BadArgument
             If one of the command arguments is not properly defined, lacking permissions, etc.
         """        
-
-        # await ctx.message.delete()
 
         await self.check_permissions(ctx, user)
 
@@ -175,18 +172,17 @@ class ModActions(commands.Cog):
         if public_chan:
             await public_chan.send(embed=log)  
         
-        # await ctx.send(embed=log)
         await ctx.message.reply(embed=log)
     
     @commands.guild_only()
     @commands.command(name="kick")
     async def kick(self, ctx: commands.Context, user: discord.Member, *, reason: str = "No reason.") -> None:
-        """!kick <@user/ID> <reason>
+        """!kick <@user/ID> <reason (optional)>
+
+        Kick a user.
 
         Parameters
         ----------
-        ctx : commands.Context
-            Context in which command was invoked
         user : discord.Member
             User to kick
         reason : str, optional
@@ -197,11 +193,6 @@ class ModActions(commands.Cog):
         commands.BadArgument
             If one of the command arguments is not properly defined, lacking permissions, etc.
         """        
-
-        # try:
-        #     await ctx.message.delete()
-        # except Exception:
-        #     pass
 
         await self.check_permissions(ctx, user)
         
@@ -223,7 +214,6 @@ class ModActions(commands.Cog):
         log = await logging.prepare_kick_log(ctx, user, case)
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
-        # await ctx.send(embed=log)
         await ctx.message.reply(embed=log)
         
         try:
@@ -234,15 +224,14 @@ class ModActions(commands.Cog):
         await user.kick(reason=reason)
     
     @commands.guild_only()
-    # @commands.check(self.ch)
     @commands.command(name="ban")
     async def ban(self, ctx: commands.Context, user: typing.Union[discord.Member, int], *, reason: str = "No reason."):
-        """!ban <@user/ID> <reason>
+        """!ban <@user/ID> <reason (optional)>
+
+        Ban a user.
 
         Parameters
         ----------
-        ctx : commands.Context
-            Context where command was called
         user : typing.Union[discord.Member, int]
             The user to be banned, doesn't have to be part of the guild
         reason : str, optional
@@ -253,11 +242,6 @@ class ModActions(commands.Cog):
         commands.BadArgument
             If one of the command arguments is not properly defined, lacking permissions, etc.
         """        
-
-        # try:
-        #     await ctx.message.delete()
-        # except Exception:
-        #     pass
 
         await self.check_permissions(ctx, user)
         
@@ -286,7 +270,6 @@ class ModActions(commands.Cog):
         log = await logging.prepare_ban_log(ctx, user, case)
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
-        # await ctx.send(embed=log)
         await ctx.message.reply(embed=log)
         
         try:
@@ -303,12 +286,12 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.command(name="unban")
     async def unban(self, ctx: commands.Context, user: int, *, reason: str = "No reason.") -> None:
-        """!unban <user ID> <reason> 
+        """!unban <user ID> <reason (optional)> 
+
+        Unban a user (must be using ID, not @mention)
 
         Parameters
         ----------
-        ctx : commands.Context
-            Context where command was invoked
         user : int
             ID of the user to unban
         reason : str, optional
@@ -320,8 +303,6 @@ class ModActions(commands.Cog):
             If one of the command arguments is not properly defined, lacking permissions, etc.
         """        
 
-        # await ctx.message.delete()
-        
         await self.check_permissions(ctx)
 
         try:
@@ -348,13 +329,23 @@ class ModActions(commands.Cog):
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
-        # await ctx.send(embed=log)
         await ctx.message.reply(embed=log)
 
     @commands.guild_only()
     @commands.command(name="purge")
-    async def purge(self, ctx, limit: int = 0):
-        # await ctx.message.delete()
+    async def purge(self, ctx: commands.Context, limit: int = 0) -> None:
+        """!purge <number of messages>
+
+        Parameters
+        ----------
+        limit : int, optional
+            Number of messages to purge, must be > 0, by default 0 for error handling
+
+        Raises
+        ------
+        commands.BadArgument
+            If one of the command arguments is not properly defined, lacking permissions, etc.
+        """
 
         await self.check_permissions(ctx)
 
@@ -363,13 +354,29 @@ class ModActions(commands.Cog):
         
         await ctx.channel.purge(limit=limit)
         await ctx.send(f'Purged {limit} messages.')
-        # await ctx.message.reply(f'Purged {limit} messages.')
-    
+
     @commands.guild_only()
     @commands.command(name="mute")
-    async def mute(self, ctx, user:discord.Member, dur:str, *, reason : str = "No reason."):
-        await ctx.message.delete()
-        
+    async def mute(self, ctx: commands.Context, user:discord.Member, dur:str, *, reason : str = "No reason.") -> None:
+        """!mute <@user/ID> <duration> <reason (optional)>
+
+        Mute a user.
+
+        Parameters
+        ----------
+        user : discord.Member
+            Member to mute
+        dur : str
+            Duration of mute (i.e 1h, 10m, 1d)
+        reason : str, optional
+            Reason for mute, by default "No reason."
+
+        Raises
+        ------
+        commands.BadArgument
+            If one of the command arguments is not properly defined, lacking permissions, etc.
+        """
+
         await self.check_permissions(ctx, user)
         
         now = datetime.datetime.now()
@@ -405,7 +412,6 @@ class ModActions(commands.Cog):
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
-        # await ctx.send(embed=log)
         await ctx.message.reply(embed=log)
 
         try:
@@ -415,8 +421,24 @@ class ModActions(commands.Cog):
 
     @commands.guild_only()
     @commands.command(name="unmute")
-    async def unmute(self, ctx, user:discord.Member, *, reason: str = "No reason."):
-        # await ctx.message.delete()
+    async def unmute(self, ctx: commands.Context, user:discord.Member, *, reason: str = "No reason.") -> None:
+        """!unmute <@user/ID> <reason (optional)>
+
+        Unmute a user.
+
+        Parameters
+        ----------
+        user : discord.Member
+            Member to unmute
+        reason : str, optional
+            Reason for unmute, by default "No reason."
+
+        Raises
+        ------
+        commands.BadArgument
+            If one of the command arguments is not properly defined, lacking permissions, etc.
+        """
+
         await self.check_permissions(ctx, user)
         
         mute_role = self.bot.settings.guild().role_mute
@@ -442,7 +464,6 @@ class ModActions(commands.Cog):
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
-        # await ctx.send(embed=log)
         await ctx.message.reply(embed=log)
 
         try:
@@ -451,18 +472,32 @@ class ModActions(commands.Cog):
             pass
     
     @commands.command(name="clem")
-    async def clem(self, ctx: discord.Client, user: discord.Member):
-        # await ctx.message.delete()
-        await self.check_permissions(ctx, user)
+    async def clem(self, ctx: commands.Context, user: discord.Member) -> None:
+        """!clem <@user/ID>
+
+        Sets user's XP and Level to 0, freezes XP, sets warn points to 599
+
+        Parameters
+        ----------
+        user : discord.Member
+            User to put on clem
+
+        Raises
+        ------
+        commands.BadArgument
+            If one of the command arguments is not properly defined, lacking permissions, etc.
+        """
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 8): # must be owner
+            raise commands.BadArgument("You need to be Aaron to use that command.")
 
         results = await self.bot.settings.user(user.id)
         results.is_clem = True
         results.xp = 0
         results.level = 0
         results.is_xp_frozen = True
+        results.warn_points = 599
         results.save()
 
-        # await ctx.send(f"{user.mention} was put on clem.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
         await ctx.message.reply(f"{user.mention} was put on clem.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
 
     @unmute.error                    

@@ -3,9 +3,11 @@ from discord.ext import commands
 from discord.ext import menus
 from datetime import datetime
 from math import floor
+from data.case import Case
+import typing
 import traceback
 
-class PaginationSource(menus.GroupByPageSource):
+class LeaderboardSource(menus.GroupByPageSource):
     async def format_page(self, menu, entry):
         embed = discord.Embed(
             title=f'Leaderboard', color=discord.Color.blurple())
@@ -20,6 +22,30 @@ class PaginationSource(menus.GroupByPageSource):
             if i == 2:
                 trophy = ':third_place:'
             embed.add_field(name=f"#{i+1} - Level {user.level}", value=f"{trophy} <@{user._id}>", inline=False)
+        embed.set_footer(text=f"Page {menu.current_page +1} of {self.get_max_pages()}")
+        return embed
+
+class CasesSource(menus.GroupByPageSource):
+    async def format_page(self, menu, entry):
+        user = menu.ctx.args[2]
+        embed = discord.Embed(
+            title=f'Cases', color=discord.Color.blurple())
+        embed.set_author(name=user, icon_url=user.avatar_url)
+        for case in entry.items:
+            timestamp=case.date.strftime("%B %d, %Y, %I:%M %p")
+            if case._type == "WARN":
+                if case.lifted:
+                    embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id} [LIFTED]', 
+                        value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Lifted by**: {case.lifted_by_tag}\n**Lift reason**: {case.lifted_reason}\n**Warned on**: {case.date}', inline=True)
+                else:
+                    embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}', 
+                        value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
+            elif case._type == "MUTE":
+                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}', 
+                    value=f'**Duration**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
+            else:
+                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}', 
+                    value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
         embed.set_footer(text=f"Page {menu.current_page +1} of {self.get_max_pages()}")
         return embed
 
@@ -97,7 +123,7 @@ class UserInfo(commands.Cog):
     @commands.command(name="xptop", aliases=["leaderboard"])
     async def xptop(self, ctx):
         results = await self.bot.settings.leaderboard()
-        menus = MenuPages(source=PaginationSource(
+        menus = MenuPages(source=LeaderboardSource(
             enumerate(results), key=lambda t: 1, per_page=10), clear_reactions_after=True)
 
         await menus.start(ctx)
@@ -120,7 +146,33 @@ class UserInfo(commands.Cog):
         embed.set_footer(text=f"Requested by {ctx.author}")
         # await ctx.send(embed=embed)
         await ctx.message.reply(embed=embed)
+    
+    @commands.command(name="cases")
+    async def cases(self, ctx, user:typing.Union[discord.Member,int]):
+        await ctx.message.delete()
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+        
+        if isinstance(user, int):
+            user = await self.bot.fetch_user(user)
+            if user is None:
+                raise commands.BadArgument(f"Couldn't find user with ID {user}")
+            ctx.args[2] = user
 
+        results = await self.bot.settings.cases(user.id)
+        if len(results.cases) == 0:
+            if isinstance(user, int):
+                raise commands.BadArgument(f'User with ID {user.id} had no cases.')
+            else:
+                raise commands.BadArgument(f'{user.mention} had no cases.')
+        cases = [case for case in results.cases if case._type != "UNMUTE"]
+
+        menus = MenuPages(source=PaginationSource(
+            cases, key=lambda t: 1, per_page=9), clear_reactions_after=True)
+
+        await menus.start(ctx)
+
+    @cases.error
     @userinfo.error
     @xp.error
     async def info_error(self, ctx, error):
