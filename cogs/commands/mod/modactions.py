@@ -390,12 +390,10 @@ class ModActions(commands.Cog):
                 reason = dur
             else:
                 reason = f"{dur} {reason}"
-        
-        print(reason)
-        
+                
         mute_role = self.bot.settings.guild().role_mute
         mute_role = ctx.guild.get_role(mute_role)
-
+        
         if mute_role in user.roles:
             raise commands.BadArgument("This user is already muted.")
 
@@ -420,8 +418,9 @@ class ModActions(commands.Cog):
             case.punishment = "PERMANENT"
         
         await self.bot.settings.inc_caseid()
-        print(str(case.punishment))
         await self.bot.settings.add_case(user.id, case)
+
+        await user.add_roles(mute_role)        
 
         log = await logging.prepare_mute_log(ctx, user, case)
 
