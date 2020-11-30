@@ -2,6 +2,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.mongodb import MongoDBJobStore
 from apscheduler.executors.pool import ThreadPoolExecutor
 from datetime import datetime
+from cogs.utils.logs import prepare_unmute_log
+from data.case import Case
 import logging
 import asyncio
 
@@ -96,3 +98,19 @@ async def remove_mute(id: int) -> None:
             user = guild.get_member(id)
             if user is not None:
                 await user.remove_roles(mute_role)
+                case = Case(
+                    _id = bot_global.settings.guild().case_id,
+                    _type = "UNMUTE",
+                    mod_id=bot_global.user.id,
+                    mod_tag = str(bot_global.user),
+                    reason="Temporary mute expired.",
+                )
+                await bot_global.settings.inc_caseid()
+                await bot_global.settings.add_case(user.id, case)
+
+                log = await prepare_unmute_log(bot_global.user, user, case)
+                public_chan = discord.utils.get(guild.channels, id=bot_global.settings.guild().channel_public)
+                try:
+                    await public_chan.send(embed=log)
+                except:
+                    pass

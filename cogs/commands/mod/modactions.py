@@ -86,7 +86,7 @@ class ModActions(commands.Cog):
         cur_points = results.warn_points
 
         # prepare log embed, send to #public-mod-logs, user, channel where invoked
-        log = await logging.prepare_warn_log(ctx, user, case)
+        log = await logging.prepare_warn_log(ctx.author, user, case)
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         if public_chan:
             await public_chan.send(embed=log)  
@@ -163,7 +163,7 @@ class ModActions(commands.Cog):
         await self.bot.settings.inc_points(user.id, -1 * int(case.punishment))
 
         # prepare log embed, send to #public-mod-logs, user, channel where invoked
-        log = await logging.prepare_liftwarn_log(ctx, user, case)
+        log = await logging.prepare_liftwarn_log(ctx.author, user, case)
         try:
             await user.send("Your warn was lifted in r/Jailbreak.", embed=log)      
         except Exception:
@@ -212,7 +212,7 @@ class ModActions(commands.Cog):
         await self.bot.settings.add_case(user.id, case)
 
         # prepare log embed, send to #public-mod-logs, user, context
-        log = await logging.prepare_kick_log(ctx, user, case)
+        log = await logging.prepare_kick_log(ctx.author, user, case)
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
         await ctx.message.reply(embed=log)
@@ -268,7 +268,7 @@ class ModActions(commands.Cog):
         await self.bot.settings.add_case(user.id, case)
 
         # prepare log embed to send to #public-mod-logs, user and context
-        log = await logging.prepare_ban_log(ctx, user, case)
+        log = await logging.prepare_ban_log(ctx.author, user, case)
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
         await ctx.message.reply(embed=log)
@@ -326,7 +326,7 @@ class ModActions(commands.Cog):
         await self.bot.settings.inc_caseid()
         await self.bot.settings.add_case(user.id, case)
 
-        log = await logging.prepare_unban_log(ctx, user, case)
+        log = await logging.prepare_unban_log(ctx.author, user, case)
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
@@ -422,7 +422,7 @@ class ModActions(commands.Cog):
 
         await user.add_roles(mute_role)        
 
-        log = await logging.prepare_mute_log(ctx, user, case)
+        log = await logging.prepare_mute_log(ctx.author, user, case)
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
@@ -474,7 +474,7 @@ class ModActions(commands.Cog):
         await self.bot.settings.inc_caseid()
         await self.bot.settings.add_case(user.id, case)
 
-        log = await logging.prepare_unmute_log(ctx, user, case)
+        log = await logging.prepare_unmute_log(ctx.author, user, case)
 
         public_chan = discord.utils.get(ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         await public_chan.send(embed=log)
