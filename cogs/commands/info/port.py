@@ -5,6 +5,7 @@ from data.case import Case
 from data.cases import Cases
 from data.guild import Guild
 from data.user import User
+from data.filterword import FilterWord
 import dateutil.parser
 import traceback
 import asyncpg
@@ -14,6 +15,43 @@ import pytz
 class Port(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.guild_only()
+    @commands.command(name="portfilter")
+    async def printfilter(self, ctx):
+        word_list = []
+        filter_excluded_channel_list = []
+        logging_excluded_channel_list = []
+        conn = await asyncpg.connect('postgresql://emy@localhost/janet')
+        async with conn.transaction():
+            async for record in conn.cursor('SELECT * from guilds'):
+                if record["id"] == "349243932447604736":
+                    for word in record["filter.words"]:
+                        word = json.loads(word)
+                        new_word = FilterWord()
+                        new_word.bypass = word["bypass"]
+                        new_word.notify = word["notify"]
+                        new_word.word = word["word"]
+
+                        word_list.append(new_word)
+
+                    for channel in record["filter.excludedChannels"]:
+                        filter_excluded_channel_list.append(int(channel))
+                    for channel in record["logging.excludedChannels"]:
+                        logging_excluded_channel_list.append(int(channel))
+        g = Guild.objects(_id=self.bot.settings.guild_id).first()
+        g.filtered_words = word_list
+        g.logging_excluded_channels = logging_excluded_channel_list
+        g.filter_excluded_channels = filter_excluded_channel_list
+        g.save()
+        g = Guild.objects(_id=349243932447604736).first()
+        g.filtered_words = word_list
+        g.logging_excluded_channels = logging_excluded_channel_list
+        g.filter_excluded_channels = filter_excluded_channel_list
+        g.save()
+
+        await ctx.send(f"Ported {len(word_list)} filtered words, {len(logging_excluded_channel_list)} logging excluded channels, {len(filter_excluded_channel_list)} filter excluded channels")
+
 
     @commands.guild_only()
     @commands.command(name="port")

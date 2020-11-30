@@ -1,4 +1,5 @@
 import mongoengine
+from data.filterword import FilterWord
 
 class Guild(mongoengine.Document):
     _id                       = mongoengine.IntField(required=True)
@@ -17,6 +18,8 @@ class Guild(mongoengine.Document):
     channel_botspam           = mongoengine.IntField()
     
     logging_excluded_channels = mongoengine.ListField(default=[])
+    filter_words              = mongoengine.EmbeddedDocumentListField(FilterWord, default=[])
+    filter_excluded_channels  = mongoengine.ListField(default=[])
 
     meta = {
         'db_alias': 'core',

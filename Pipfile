@@ -8,7 +8,6 @@ pylint = "*"
 autopep8 = "*"
 
 [packages]
-psycopg2 = "*"
 python-dotenv = "*"
 discord-ext-menus = {git = "https://github.com/Rapptz/discord-ext-menus"}
 mongoengine = "*"
