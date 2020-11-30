@@ -233,7 +233,11 @@ class Permissions:
                 and m == guild.owner) 
                 or self.hasAtLeast(guild, m, 8)),        
             8: (lambda guild, m: guild.id == guild_id
-                and m.id == bot.owner_id)
+                and m.id == bot.owner_id),
+            9: (lambda guild, m: guild.id == guild_id
+                and m.id == bot.owner_id),
+            10: (lambda guild, m: guild.id == guild_id
+                and m.id == bot.owner_id),
         }
     
     def hasAtLeast(self, guild: discord.Guild, member: discord.Member, level: int) -> bool:

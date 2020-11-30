@@ -40,12 +40,12 @@ class Port(commands.Cog):
                     for channel in record["logging.excludedChannels"]:
                         logging_excluded_channel_list.append(int(channel))
         g = Guild.objects(_id=self.bot.settings.guild_id).first()
-        g.filtered_words = word_list
-        g.logging_excluded_channels = logging_excluded_channel_list
-        g.filter_excluded_channels = filter_excluded_channel_list
+        g.filter_words = word_list
+        # g.logging_excluded_channels = logging_excluded_channel_list
+        # g.filter_excluded_channels = filter_excluded_channel_list
         g.save()
         g = Guild.objects(_id=349243932447604736).first()
-        g.filtered_words = word_list
+        g.filter_words = word_list
         g.logging_excluded_channels = logging_excluded_channel_list
         g.filter_excluded_channels = filter_excluded_channel_list
         g.save()
