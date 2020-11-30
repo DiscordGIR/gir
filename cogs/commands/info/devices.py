@@ -116,12 +116,12 @@ class Devices(commands.Cog):
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
         
         devices_dict = {
-            'iPhone': [],
-            'iPod': [],
-            'iPad': [],
-            'Apple TV': [],
-            'Apple Watch': [],
-            'HomePod': [],
+            'iPhone': set(),
+            'iPod': set(),
+            'iPad': set(),
+            'Apple TV': set(),
+            'Apple Watch': set(),
+            'HomePod': set(),
         }    
 
         async with aiohttp.ClientSession() as session:
@@ -133,14 +133,17 @@ class Devices(commands.Cog):
                         name = re.sub(r'\((.*?)\)', "", d["name"])
                         name = name.replace('[', '')
                         name = name.replace(']', '')
+                        name = name.strip()
                         for key in devices_dict.keys():
                             if key in name:
-                                devices_dict[key].append(name)
+                                devices_dict[key].add(name)
 
         embed=discord.Embed(title="Devices list")
         embed.color=discord.Color.blurple()
         for key in devices_dict.keys():
-            embed.add_field(name=key, value=', '.join(map(str, devices_dict[key])), inline=False)
+            temp = list(devices_dict[key])
+            temp.sort()
+            embed.add_field(name=key, value=', '.join(map(str, temp)), inline=False)
         
         embed.set_footer(text=f"Requested by {ctx.author}")
         
