@@ -11,12 +11,16 @@ class LeaderboardSource(menus.GroupByPageSource):
     async def format_page(self, menu, entry):
         embed = discord.Embed(
             title=f'Leaderboard', color=discord.Color.blurple())
-        # embed.set_author(name=user, icon_url=user.avatar_url)
         for i, user in entry.items:
             trophy = ''
             if i == 0:
                 trophy = ':first_place:'
-                # embed.set_thumbnail(url=.user.avatar_url)
+                # try:
+                #     obj = await self.bot.fetch_user(user._id)
+                #     embed.set_thumbnail(url=obj.avatar_url)
+                # except discord.NotFound:
+                #     pass
+               
             if i == 1:
                 trophy = ':second_place:'
             if i == 2:
@@ -69,59 +73,75 @@ class UserInfo(commands.Cog):
 
     @commands.guild_only()
     @commands.command(name="userinfo")
-    async def userinfo(self, ctx, user:discord.Member=None):
-        # await ctx.message.delete()
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != 778233669881561088:
-            pass
-        else:
-            if user is None: user = ctx.author
+    async def userinfo(self, ctx: commands.Context, user:discord.Member=None) -> None:
+        """!userinfo <@user/ID (optional)>
 
-            roles = ""
-            for role in user.roles:
-                if role != ctx.guild.default_role:
-                    roles += role.mention + " "
-            results = (await self.bot.settings.user(user.id))
-            
-            joined = user.joined_at.strftime("%B %d, %Y, %I:%M %p")
-            created = user.created_at.strftime("%B %d, %Y, %I:%M %p")
+        Get information about a user (join/creation date, xp, etc.), defaults to command invoker.
 
-            embed=discord.Embed(title="User Information")
-            embed.color = user.color
-            embed.set_author(name=user, icon_url=user.avatar_url)
-            embed.add_field(name="Username", value=f'{user} ({user.mention})', inline=True)
-            embed.add_field(name="Level", value=results.level if not results.is_xp_frozen else "0", inline=True)
-            embed.add_field(name="XP", value=results.xp if not results.is_xp_frozen else "0/0", inline=True)
-            embed.add_field(name="Roles", value=roles if roles else "None", inline=False)
-            embed.add_field(name="Join date", value=f"{joined} UTC", inline=True)
-            embed.add_field(name="Account creation date", value=f"{created} UTC", inline=True)
-            embed.set_footer(text=f"Requested by {ctx.author}")
-            # await ctx.send(embed=embed)
-            await ctx.message.reply(embed=embed)
+        Parameters
+        ----------
+        user : discord.Member, optional
+            User to get info about, by default the author of command, by default None
+        """
+        bot_chan = self.bot.settings.guild().channel_botspam
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != bot_chan:
+            await ctx.message.delete()
+            raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
+
+        if user is None: user = ctx.author
+
+        roles = ""
+        for role in user.roles:
+            if role != ctx.guild.default_role:
+                roles += role.mention + " "
+        results = (await self.bot.settings.user(user.id))
+        
+        joined = user.joined_at.strftime("%B %d, %Y, %I:%M %p")
+        created = user.created_at.strftime("%B %d, %Y, %I:%M %p")
+
+        embed=discord.Embed(title="User Information")
+        embed.color = user.color
+        embed.set_author(name=user, icon_url=user.avatar_url)
+        embed.add_field(name="Username", value=f'{user} ({user.mention})', inline=True)
+        embed.add_field(name="Level", value=results.level if not results.is_xp_frozen else "0", inline=True)
+        embed.add_field(name="XP", value=results.xp if not results.is_xp_frozen else "0/0", inline=True)
+        embed.add_field(name="Roles", value=roles if roles else "None", inline=False)
+        embed.add_field(name="Join date", value=f"{joined} UTC", inline=True)
+        embed.add_field(name="Account creation date", value=f"{created} UTC", inline=True)
+        embed.set_footer(text=f"Requested by {ctx.author}")
+
+        await ctx.message.reply(embed=embed)
     
     @commands.guild_only()        
     @commands.command(name="xpstats", aliases=["xp"])
     async def xp(self, ctx, user:discord.Member=None):
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != 778233669881561088:
-            raise commands.BadArgument("Please use #bot-commands")
-        else:
-            if user is None: user = ctx.author
+        bot_chan = self.bot.settings.guild().channel_botspam
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != bot_chan:
+            await ctx.message.delete()
+            raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
 
-            results = await self.bot.settings.user(user.id)
-            # rank = (await self.bot.settings.db.rank(user.id))[0]["xp_rank"]
-            
-            embed=discord.Embed(title="Level Statistics")
-            embed.color = user.top_role.color
-            embed.set_author(name=user, icon_url=user.avatar_url)
-            embed.add_field(name="Level", value=results.level if not results.is_xp_frozen else "0", inline=True)
-            embed.add_field(name="XP", value=f'{results.xp}/{xp_for_next_level(results.level)}' if not results.is_xp_frozen else "0/0", inline=True)
-            # embed.add_field(name="Rank", value=f"{rank}/{ctx.guild.member_count}", inline=True)
-            embed.set_footer(text=f"Requested by {ctx.author}")
-            # await ctx.send(embed=embed)
-            await ctx.message.reply(embed=embed)
+        if user is None: user = ctx.author
+
+        results = await self.bot.settings.user(user.id)
+        
+        embed=discord.Embed(title="Level Statistics")
+        embed.color = user.top_role.color
+        embed.set_author(name=user, icon_url=user.avatar_url)
+        embed.add_field(name="Level", value=results.level if not results.is_xp_frozen else "0", inline=True)
+        embed.add_field(name="XP", value=f'{results.xp}/{xp_for_next_level(results.level)}' if not results.is_xp_frozen else "0/0", inline=True)
+        # embed.add_field(name="Rank", value=f"{rank}/{ctx.guild.member_count}", inline=True)
+        embed.set_footer(text=f"Requested by {ctx.author}")
+
+        await ctx.message.reply(embed=embed)
 
     @commands.guild_only()
     @commands.command(name="xptop", aliases=["leaderboard"])
     async def xptop(self, ctx):
+        bot_chan = self.bot.settings.guild().channel_botspam
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != bot_chan:
+            await ctx.message.delete()
+            raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
+
         results = await self.bot.settings.leaderboard()
         menus = MenuPages(source=LeaderboardSource(
             enumerate(results), key=lambda t: 1, per_page=10), clear_reactions_after=True)
@@ -131,9 +151,9 @@ class UserInfo(commands.Cog):
     @commands.guild_only()        
     @commands.command(name="warnpoints")
     async def warnpoints(self, ctx, user:discord.Member):
-        # await ctx.message.delete()
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            pass
+            await ctx.message.delete()
+            raise commands.BadArgument("You do not have permission to use this command.")
 
         results = await self.bot.settings.user(user.id)
         # rank = (await self.bot.settings.db.rank(user.id))[0]["xp_rank"]
@@ -144,14 +164,15 @@ class UserInfo(commands.Cog):
         embed.add_field(name="Member", value=f'{user.mention}\n{user}\n({user.id})', inline=True)
         embed.add_field(name="Warn Points", value=results.warn_points, inline=True)
         embed.set_footer(text=f"Requested by {ctx.author}")
-        # await ctx.send(embed=embed)
+
         await ctx.message.reply(embed=embed)
     
     @commands.command(name="cases")
     async def cases(self, ctx, user:typing.Union[discord.Member,int]):
         await ctx.message.delete()
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+            await ctx.message.delete()
+            raise commands.BadArgument("You do not have permission to use this command.")
         
         if isinstance(user, int):
             user = await self.bot.fetch_user(user)

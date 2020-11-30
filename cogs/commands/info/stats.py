@@ -22,6 +22,12 @@ class Stats(commands.Cog):
         ----------
         None
         """
+
+        bot_chan = self.bot.settings.guild().channel_botspam
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != bot_chan:
+            await ctx.message.delete()
+            raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
+
         process = psutil.Process(os.getpid())
         diff = datetime.datetime.now() - self.start_time
         diff = humanize.naturaldelta(diff)
@@ -45,6 +51,11 @@ class Stats(commands.Cog):
         ----------
         None
         """
+        bot_chan = self.bot.settings.guild().channel_botspam
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != bot_chan:
+            await ctx.message.delete()
+            raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
+
         guild = ctx.guild
 
         embed=discord.Embed(title="Server Information")
