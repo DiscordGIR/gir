@@ -8,6 +8,17 @@ from io import BytesIO
 class Logging(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.nsa_guild_id = 783116252842819604
+        self.channel_map = {
+            777886186655055903: 783116252842819608, #general
+            777270542033092638: 783116711024394290, #public
+            777270554800422943: 783116725021442048, #private
+            777270579719569410: 783116739205398558, #report
+            778233669881561088: 783116754183520268, #bot-commands
+            779762542704722040: 783116763919286303, #todo
+            782765012510965781: 783116773460279316, #ignore-1
+            782765029735923722: 783116783929786429, #ignore-2
+        }
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -48,8 +59,6 @@ class Logging(commands.Cog):
             return
         if before.content == after.content:
             return
-        if before.author.bot:
-            return
 
         channel = discord.utils.get(before.guild.channels, id=self.bot.settings.guild().channel_private)
 
@@ -69,6 +78,7 @@ class Logging(commands.Cog):
             return
         if message.guild.id != self.bot.settings.guild_id:
             return
+        
         if message.author.bot:
             return
         if message.content == "" or not message.content:
@@ -123,5 +133,37 @@ class Logging(commands.Cog):
         await channel.send(embed=embed)
         await channel.send(file=discord.File(output, 'message.txt'))
 
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.guild.id != self.bot.settings.guild_id:
+            return
+
+        nsa = self.bot.get_guild(id=self.nsa_guild_id)
+        channel = discord.utils.get(nsa.channels, id=self.channel_map[message.channel.id])
+
+        embed=discord.Embed()
+        embed.color = message.author.color
+        embed.set_author(name=str(message.author), icon_url=message.author.avatar_url)
+        embed.add_field(name="Body", value=message.content if message.content else "Message has no body.", inline=False)
+        embed.add_field(name="Message ID", value=message.id, inline=False)
+        embed.add_field(name="Message link", value=f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}", inline=False)
+        embed.set_footer(text="User ID: " + str(message.author.id))
+        embed.timestamp = message.created_at
+
+        log = await channel.send(embed=embed)
+        for embed in message.embeds:
+            await log.reply("Message contained embed", embed=embed)
+        for attachment in message.attachments:
+            await log.reply(file=(await attachment.to_file()))
+
+    async def info_error(self, ctx, error):
+        if (isinstance(error, commands.MissingRequiredArgument) 
+            or isinstance(error, commands.BadArgument)
+            or isinstance(error, commands.BadUnionArgument)
+            or isinstance(error, commands.MissingPermissions)
+            or isinstance(error, commands.NoPrivateMessage)):
+                await self.bot.send_error(ctx, error)
+        else:
+            traceback.print_exc()
 def setup(bot):
     bot.add_cog(Logging(bot))

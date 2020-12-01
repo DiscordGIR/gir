@@ -138,6 +138,8 @@ class Devices(commands.Cog):
                             if key in name:
                                 devices_dict[key].add(name)
 
+        devices_dict["iPhone"].add("iPhone SE (2020)")
+
         embed=discord.Embed(title="Devices list")
         embed.color=discord.Color.blurple()
         for key in devices_dict.keys():
