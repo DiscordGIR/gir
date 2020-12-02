@@ -16,6 +16,22 @@ class Devices(commands.Cog):
     @commands.guild_only()
     @commands.command(name="adddevice")
     async def adddevice(self, ctx: commands.Context, *, device: str) -> None:
+        """Add device name to your nickname, i.e `SlimShadyIAm [iPhone 12, 14.2]`. See !listdevices to see the list of possible devices.
+        
+        Example usage:
+        `!adddevice <device name>`
+
+        Parameters
+        ----------
+        device : str
+            device user wants to use
+
+        Raises
+        ------
+        commands.BadArgument
+            Error message if permissions error or command error
+        """
+
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != bot_chan:
             await ctx.message.delete()
@@ -98,6 +114,16 @@ class Devices(commands.Cog):
     @commands.guild_only()
     @commands.command(name="removedevice")
     async def removedevice(self, ctx: commands.Context) -> None:
+        """Removes device from your nickname
+        
+        Example usage:
+        `!removedevice`
+
+        Raises
+        ------
+        commands.BadArgument
+            Error message if permissions error or command error
+        """
         
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != bot_chan:
@@ -117,6 +143,17 @@ class Devices(commands.Cog):
     @commands.guild_only()
     @commands.command(name="listdevices")
     async def listdevices(self, ctx) -> None:
+        """List all possible devices you can set your nickname to.
+
+        Example usage:
+        `!listdevices`
+
+        Raises
+        ------
+        commands.BadArgument
+            Error message if permissions error or command error
+        """
+
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != bot_chan:
             await ctx.message.delete()

@@ -74,9 +74,11 @@ class UserInfo(commands.Cog):
     @commands.guild_only()
     @commands.command(name="userinfo")
     async def userinfo(self, ctx: commands.Context, user:discord.Member=None) -> None:
-        """!userinfo <@user/ID (optional)>
+        """Get information about a user (join/creation date, xp, etc.), defaults to command invoker.
 
-        Get information about a user (join/creation date, xp, etc.), defaults to command invoker.
+        Example usage:
+        --------------
+        `!userinfo <@user/ID (optional)>`
 
         Parameters
         ----------
@@ -115,6 +117,19 @@ class UserInfo(commands.Cog):
     @commands.guild_only()        
     @commands.command(name="xpstats", aliases=["xp"])
     async def xp(self, ctx, user:discord.Member=None):
+        """Show your or another user's XP
+
+        Example usage:
+        --------------
+        `!xp <@user/ID (optional)`
+
+        Parameters
+        ----------
+        user : discord.Member, optional
+            User to get XP of, by default None
+
+        """
+
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != bot_chan:
             await ctx.message.delete()
@@ -137,6 +152,14 @@ class UserInfo(commands.Cog):
     @commands.guild_only()
     @commands.command(name="xptop", aliases=["leaderboard"])
     async def xptop(self, ctx):
+        """Show XP leaderboard for top 100, ranked highest to lowest.
+
+        Example usage:
+        --------------
+        `!xptop`
+
+        """
+
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != bot_chan:
             await ctx.message.delete()
@@ -151,12 +174,24 @@ class UserInfo(commands.Cog):
     @commands.guild_only()        
     @commands.command(name="warnpoints")
     async def warnpoints(self, ctx, user:discord.Member):
+        """Show a user's warnpoints (mod only)
+
+        Example usage:
+        --------------
+        `!warnpoints <@user/ID>`
+
+        Parameters
+        ----------
+        user : discord.Member
+            User whose warnpoints to show
+
+        """
+
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             await ctx.message.delete()
             raise commands.BadArgument("You do not have permission to use this command.")
 
         results = await self.bot.settings.user(user.id)
-        # rank = (await self.bot.settings.db.rank(user.id))[0]["xp_rank"]
         
         embed=discord.Embed(title="Warn Points")
         embed.color = discord.Color.orange()
@@ -169,6 +204,19 @@ class UserInfo(commands.Cog):
     
     @commands.command(name="cases")
     async def cases(self, ctx, user:typing.Union[discord.Member,int]):
+        """Show list of cases of a user (mod only)
+
+        Example usage:
+        --------------
+        `!cases <@user/ID>`
+
+        Parameters
+        ----------
+        user : typing.Union[discord.Member,int]
+            User we want to get cases of, doesn't have to be in guild
+
+        """
+
         await ctx.message.delete()
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             await ctx.message.delete()

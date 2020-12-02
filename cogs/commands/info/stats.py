@@ -14,13 +14,11 @@ class Stats(commands.Cog):
     @commands.guild_only()
     @commands.command(name="stats")
     async def stats(self, ctx: commands.Context) -> None:
-        """!stats
+        """Statistics about the bot
 
-        Statistics about the bot
+        Example usage:
+        `!stats`
 
-        Parameters
-        ----------
-        None
         """
 
         bot_chan = self.bot.settings.guild().channel_botspam
@@ -43,13 +41,11 @@ class Stats(commands.Cog):
     @commands.guild_only()
     @commands.command(name="serverinfo")
     async def serverinfo(self, ctx: discord.Client) -> None:
-        """!serverinfo
+        """Displays info about the server
+        
+        Example usage:
+        `!serverinfo`
 
-        Displays info about the server
-
-        Parameters
-        ----------
-        None
         """
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != bot_chan:

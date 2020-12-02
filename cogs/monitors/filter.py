@@ -77,6 +77,22 @@ class Filters(commands.Cog):
 
     @commands.command(name="offlineping")
     async def offlineping(self, ctx, val: bool):
+        """Bot will ping for reports when offline (mod only)
+
+        Example usage:
+        --------------
+        `!offlineping <true/false>`
+
+        Parameters
+        ----------
+        ctx : [type]
+            [description]
+        val : bool
+            True or False, if you want pings or not
+
+        """
+
+
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least a mod
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
 

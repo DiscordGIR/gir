@@ -38,10 +38,12 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.command(name="warn")
     async def warn(self, ctx: commands.Context, user: discord.Member, points: int, *, reason: str = "No reason.") -> None:
-        """!warn <@user/ID> <points> <reason (optional)>
-
-        Warn a user.
-
+        """Warn a user (mod only)
+        
+        Example usage:
+        --------------
+        `!warn <@user/ID> <points> <reason (optional)>
+`
         Parameters
         ----------
         user : discord.Member
@@ -51,10 +53,6 @@ class ModActions(commands.Cog):
         reason : str, optional
             Reason for warning, by default "No reason."
 
-        Raises
-        ------
-        commands.BadArgument
-            If one of the command arguments is not properly defined, lacking permissions, etc.
         """        
 
         await self.check_permissions(ctx, user)
@@ -118,9 +116,11 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.command(name="liftwarn")
     async def liftwarn(self, ctx: commands.Context, user: discord.Member, case_id: int, *, reason: str = "No reason.") -> None:
-        """!liftwarn <@user/ID> <case ID> <reason (optional)>
-
-        Lift the user's warn of the given case ID. Removes the points of that warn as well.
+        """Mark a warn as lifted and remove points. (mod only)
+       
+        Example usage:
+        --------------
+        `!liftwarn <@user/ID> <case ID> <reason (optional)>`
 
         Parameters
         ----------
@@ -131,10 +131,6 @@ class ModActions(commands.Cog):
         reason : str, optional
             Reason for lifting warn, by default "No reason."
 
-        Raises
-        ------
-        commands.BadArgument
-            If one of the command arguments is not properly defined, lacking permissions, etc.
         """        
 
         await self.check_permissions(ctx, user)
@@ -178,9 +174,11 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.command(name="kick")
     async def kick(self, ctx: commands.Context, user: discord.Member, *, reason: str = "No reason.") -> None:
-        """!kick <@user/ID> <reason (optional)>
-
-        Kick a user.
+        """Kick a user (mod only)
+        
+        Example usage:
+        --------------
+        `!kick <@user/ID> <reason (optional)>`
 
         Parameters
         ----------
@@ -189,10 +187,6 @@ class ModActions(commands.Cog):
         reason : str, optional
             Reason for kick, by default "No reason."
 
-        Raises
-        ------
-        commands.BadArgument
-            If one of the command arguments is not properly defined, lacking permissions, etc.
         """        
 
         await self.check_permissions(ctx, user)
@@ -227,9 +221,11 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.command(name="ban")
     async def ban(self, ctx: commands.Context, user: typing.Union[discord.Member, int], *, reason: str = "No reason."):
-        """!ban <@user/ID> <reason (optional)>
-
-        Ban a user.
+        """Ban a user (mod only)
+        
+        Example usage:
+        --------------
+        `!ban <@user/ID> <reason (optional)>`
 
         Parameters
         ----------
@@ -238,10 +234,6 @@ class ModActions(commands.Cog):
         reason : str, optional
             Reason for ban, by default "No reason."
 
-        Raises
-        ------
-        commands.BadArgument
-            If one of the command arguments is not properly defined, lacking permissions, etc.
         """        
 
         await self.check_permissions(ctx, user)
@@ -287,9 +279,11 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.command(name="unban")
     async def unban(self, ctx: commands.Context, user: int, *, reason: str = "No reason.") -> None:
-        """!unban <user ID> <reason (optional)> 
-
-        Unban a user (must be using ID, not @mention)
+        """Unban a user (must use ID) (mod only)
+        
+        Example usage:
+        --------------
+        `!unban <user ID> <reason (optional)> `
 
         Parameters
         ----------
@@ -298,10 +292,6 @@ class ModActions(commands.Cog):
         reason : str, optional
             Reason for unban, by default "No reason."
 
-        Raises
-        ------
-        commands.BadArgument
-            If one of the command arguments is not properly defined, lacking permissions, etc.
         """        
 
         await self.check_permissions(ctx)
@@ -335,17 +325,17 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.command(name="purge")
     async def purge(self, ctx: commands.Context, limit: int = 0) -> None:
-        """!purge <number of messages>
+        """Purge messages from current channel (mod only)
+        
+        Example usage:
+        --------------
+        `!purge <number of messages>`
 
         Parameters
         ----------
         limit : int, optional
             Number of messages to purge, must be > 0, by default 0 for error handling
 
-        Raises
-        ------
-        commands.BadArgument
-            If one of the command arguments is not properly defined, lacking permissions, etc.
         """
 
         await self.check_permissions(ctx)
@@ -359,9 +349,11 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.command(name="mute")
     async def mute(self, ctx: commands.Context, user:discord.Member, dur:str = "", *, reason : str = "No reason.") -> None:
-        """!mute <@user/ID> <duration> <reason (optional)>
-
-        Mute a user.
+        """Mute a user (mod only)
+        
+        Example usage:
+        --------------
+        `!mute <@user/ID> <duration> <reason (optional)>`
 
         Parameters
         ----------
@@ -372,10 +364,6 @@ class ModActions(commands.Cog):
         reason : str, optional
             Reason for mute, by default "No reason."
 
-        Raises
-        ------
-        commands.BadArgument
-            If one of the command arguments is not properly defined, lacking permissions, etc.
         """
 
         await self.check_permissions(ctx, user)
@@ -436,9 +424,11 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.command(name="unmute")
     async def unmute(self, ctx: commands.Context, user:discord.Member, *, reason: str = "No reason.") -> None:
-        """!unmute <@user/ID> <reason (optional)>
-
-        Unmute a user.
+        """Unmute a user (mod only)
+        
+        Example usage:
+        --------------
+       ` !unmute <@user/ID> <reason (optional)>`
 
         Parameters
         ----------
@@ -447,10 +437,6 @@ class ModActions(commands.Cog):
         reason : str, optional
             Reason for unmute, by default "No reason."
 
-        Raises
-        ------
-        commands.BadArgument
-            If one of the command arguments is not properly defined, lacking permissions, etc.
         """
 
         await self.check_permissions(ctx, user)
@@ -487,19 +473,17 @@ class ModActions(commands.Cog):
     
     @commands.command(name="clem")
     async def clem(self, ctx: commands.Context, user: discord.Member) -> None:
-        """!clem <@user/ID>
-
-        Sets user's XP and Level to 0, freezes XP, sets warn points to 599
+        """Sets user's XP and Level to 0, freezes XP, sets warn points to 599 (AARON ONLY)
+        
+        Example usage:
+        --------------
+        `!clem <@user/ID>`
 
         Parameters
         ----------
         user : discord.Member
             User to put on clem
 
-        Raises
-        ------
-        commands.BadArgument
-            If one of the command arguments is not properly defined, lacking permissions, etc.
         """
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 8): # must be owner
             raise commands.BadArgument("You need to be Aaron to use that command.")
