@@ -32,6 +32,9 @@ class Devices(commands.Cog):
                 if resp.status == 200:
                     data = await resp.text()
                     devices = json.loads(data)
+                    # devices.append({'name': 'Apple Watch Series 6', 'identifier': 'Watch6,4'})
+                    # devices.append({'name': 'Apple Watch SE', 'identifier': 'Watch5,12'})
+                    devices.append({'name': 'iPhone SE 2', 'identifier': 'iPhone12,8'})
                     for d in devices:
                         # if "Apple Watch" in d["name"]:
                         # print(d["name"])
@@ -40,6 +43,8 @@ class Devices(commands.Cog):
                         name = name.replace(']', '')
                         if name.lower() == device.lower():
                             the_device = d
+
+        
 
         if not the_device:
             raise commands.BadArgument("Device doesn't exist!")
@@ -140,7 +145,9 @@ class Devices(commands.Cog):
                             if key in name:
                                 devices_dict[key].add(name)
 
-        devices_dict["iPhone"].add("iPhone SE (2020)")
+        devices_dict["iPhone"].add("iPhone SE 2")
+        devices_dict["Apple Watch"].add("Apple Watch Series 6")
+        devices_dict["Apple Watch"].add("Apple Watch SE")
 
         embed=discord.Embed(title="Devices list")
         embed.color=discord.Color.blurple()
