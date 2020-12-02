@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 import os
 from dotenv import load_dotenv, find_dotenv
-import data.mongo_setup as mongo_setup
 from data.case import Case
 import logging
 

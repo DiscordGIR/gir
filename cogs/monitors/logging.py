@@ -135,7 +135,10 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.guild.id != self.bot.settings.guild_id:
+        if message.guild:
+            if message.guild.id != self.bot.settings.guild_id:
+                return
+        else:
             return
 
         nsa = self.bot.get_guild(id=self.nsa_guild_id)
