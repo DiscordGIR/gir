@@ -62,6 +62,9 @@ class ModActions(commands.Cog):
 
         guild = self.bot.settings.guild()
         
+        reason = discord.utils.escape_markdown(reason)
+        reason = discord.utils.escape_mentions(reason)
+
         # prepare the case object for database
         case = Case(
             _id = guild.case_id,
@@ -139,6 +142,9 @@ class ModActions(commands.Cog):
         cases = await self.bot.settings.get_case(user.id, case_id)
         case = cases.cases.filter(_id=case_id).first()
         
+        reason = discord.utils.escape_markdown(reason)
+        reason = discord.utils.escape_mentions(reason)
+
         # sanity checks
         if case is None:
             await ctx.message.delete()
@@ -194,6 +200,9 @@ class ModActions(commands.Cog):
 
         await self.check_permissions(ctx, user)
         
+        reason = discord.utils.escape_markdown(reason)
+        reason = discord.utils.escape_mentions(reason)
+
         # prepare case for DB
         case = Case(
             _id = self.bot.settings.guild().case_id,
@@ -241,6 +250,9 @@ class ModActions(commands.Cog):
 
         await self.check_permissions(ctx, user)
         
+        reason = discord.utils.escape_markdown(reason)
+        reason = discord.utils.escape_mentions(reason)
+
         # if the ID given is of a user who isn't in the guild, try to fetch the profile
         if isinstance(user, int):
             try:
@@ -299,6 +311,9 @@ class ModActions(commands.Cog):
         """        
 
         await self.check_permissions(ctx)
+
+        reason = discord.utils.escape_markdown(reason)
+        reason = discord.utils.escape_mentions(reason)
 
         try:
             user = await self.bot.fetch_user(user)
@@ -373,6 +388,9 @@ class ModActions(commands.Cog):
         """
 
         await self.check_permissions(ctx, user)
+        
+        reason = discord.utils.escape_markdown(reason)
+        reason = discord.utils.escape_mentions(reason)
         
         now = datetime.datetime.now()
         delta = pytimeparse.parse(dur)
@@ -451,6 +469,9 @@ class ModActions(commands.Cog):
         """
 
         await self.check_permissions(ctx, user)
+
+        reason = discord.utils.escape_markdown(reason)
+        reason = discord.utils.escape_mentions(reason)
         
         mute_role = self.bot.settings.guild().role_mute
         mute_role = ctx.guild.get_role(mute_role)
