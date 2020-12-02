@@ -6,6 +6,7 @@ from data.guild import Guild
 from data.cases import Cases
 from data.case import Case
 from data.user import User
+from data.filterword import FilterWord
 from cogs.utils.tasks import Tasks
 
 import mongoengine
@@ -105,6 +106,10 @@ class Settings(commands.Cog):
         # ensure this user has a cases document before we try to append the new case
         await self.cases(_id)
         Cases.objects(_id=_id).update_one(push__cases=case)
+    
+    
+    async def add_filtered_word(self, fw: FilterWord) -> None:
+        Guild.objects(_id=self.guild_id).update_one(push__filter_words=fw)
 
     async def inc_points(self, _id: int, points: int) -> None:
         """Increments the warnpoints by `points` of a user whose ID is given by `_id`.

@@ -5,7 +5,9 @@
 import discord
 from discord.ext import commands
 from cogs.monitors.report import report
+from data.filterword import FilterWord
 import re
+import traceback
 # logging
 # nsa
 
@@ -105,6 +107,39 @@ class Filters(commands.Cog):
         else:
             await ctx.send("You won't be pinged for reports when offline")
 
+    @commands.guild_only()
+    @commands.command(name="filter")
+    async def filteradd(self, ctx, notify: bool, bypass: int, *, phrase: str) -> None:
+        """Add a word to filter (admin only)
+
+        Example usage:
+        -------------
+        `!filteradd false 5 :kek:`
+
+        Parameters
+        ----------
+        notify : bool
+            Whether to generate a report or not when this word is filtered
+        bypass : int
+            Level that can bypass this word
+        phrase : str
+            Phrase to filter
+        """
+
+        fw = FilterWord()
+        fw.bypass = bypass
+        fw.notify = notify
+        fw.word = phrase  
+
+        await self.bot.settings.add_filtered_word(fw)
+        
+        phrase = discord.utils.escape_markdown(phrase)
+        phrase = discord.utils.escape_mentions(phrase)
+
+        await ctx.message.reply(f"Added new word to filter! This filter {'will' if notify else 'will not'} ping for reports, level {bypass} can bypass it, and the phrase is {phrase}")
+
+
+    @filteradd.error
     @offlineping.error
     async def info_error(self, ctx, error):
         if (isinstance(error, commands.MissingRequiredArgument) 
