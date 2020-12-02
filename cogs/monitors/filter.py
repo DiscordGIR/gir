@@ -96,6 +96,7 @@ class Filters(commands.Cog):
 
 
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5): # must be at least a mod
+            await ctx.message.delete()
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
 
         cur = await self.bot.settings.user(ctx.author.id)
@@ -127,7 +128,8 @@ class Filters(commands.Cog):
         """
 
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least admin
-            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+            await ctx.message.delete()
+            raise commands.BadArgument("You need to be an administator or higher to use that command.")
 
         fw = FilterWord()
         fw.bypass = bypass

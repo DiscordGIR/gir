@@ -35,6 +35,7 @@ class Devices(commands.Cog):
 
         
         if re.match(self.devices_test, ctx.author.display_name):
+            await ctx.message.delete()
             raise commands.BadArgument("You already have a device nickname set!")
 
         the_device = None
@@ -59,9 +60,11 @@ class Devices(commands.Cog):
         
 
         if not the_device:
+            await ctx.message.delete()
             raise commands.BadArgument("Device doesn't exist!")
 
         if not the_device["name"].split(" ")[0].lower() in self.possible_devices:
+            await ctx.message.delete()
             raise commands.BadArgument("Unsupported device. Please see `!listdevices` for possible devices.")
         
         def check(m):
@@ -101,6 +104,7 @@ class Devices(commands.Cog):
             name.replace('Pro Max', 'PM')
             new_nick = f"{ctx.author.display_name} [{name}, {firmware}]"
             if len(new_nick) > 32:
+                await ctx.message.delete()
                 raise commands.BadArgument("Nickname too long! Aborting.")
             await ctx.author.edit(nick=new_nick)
             await ctx.message.reply("Changed your nickname!")
@@ -123,10 +127,12 @@ class Devices(commands.Cog):
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
         
         if not re.match(self.devices_test, ctx.author.display_name):
+            await ctx.message.delete()
             raise commands.BadArgument("You don't have a device nickname set!")
 
         new_nick = re.sub(self.devices_test, "", ctx.author.display_name)
         if len(new_nick) > 32:
+            await ctx.message.delete()
             raise commands.BadArgument("Nickname too long")
 
         await ctx.author.edit(nick=new_nick)
