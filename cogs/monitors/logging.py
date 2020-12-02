@@ -138,7 +138,7 @@ class Logging(commands.Cog):
         nsa_webhook = None
 
         if nsa_channel_info is None:
-            nsa_channel = await self.gen_channel(message)
+            nsa_channel = await self.gen_channel(nsa, message)
             nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
 
             await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)

@@ -57,7 +57,7 @@ async def on_ready():
     bot.send_error = send_error
     await bot.wait_until_ready()
     print(f'\n\nLogged in as: {bot.user.name} - {bot.user.id}\nVersion: {discord.__version__}\n')
-
+    await bot.settings.load_tasks()
     # cases = await bot.settings.cases(109705860275539968)
     # case = Case()
     # case._id = 1

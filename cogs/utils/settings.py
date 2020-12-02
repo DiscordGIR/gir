@@ -33,12 +33,15 @@ class Settings(commands.Cog):
         """
 
         mongoengine.register_connection(alias="core", name="botty")
-        self.tasks       = Tasks(bot)
+        self.tasks       = None
         self.bot         = bot
         self.guild_id    = int(os.environ.get("BOTTY_MAINGUILD"))
         self.permissions = Permissions(self.bot, self)
 
         print("Loaded database")
+
+    async def load_tasks(self):
+        self.tasks = Tasks(self.bot)
 
     def guild(self) -> Guild:
         """Returns the state of the main guild from the database.

@@ -18,7 +18,7 @@ executors = {
 }
 
 job_defaults = {
-    'coalesce': True
+    # 'coalesce': True
 }
 
 bot_global = None
@@ -56,7 +56,7 @@ class Tasks():
             When to unmute
         """        
 
-        self.tasks.add_job(unmute_callback, 'date', id=str(id), next_run_time=date, args=[id])
+        self.tasks.add_job(unmute_callback, 'date', id=str(id), next_run_time=date, args=[id], misfire_grace_time=3600)
 
     def cancel_unmute(self, id: int) -> None:
         """When we manually unmute a user given by ID `id`, stop the task to unmute them.
