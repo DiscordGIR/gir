@@ -8,17 +8,6 @@ from io import BytesIO
 class Logging(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.nsa_guild_id = 783116252842819604
-        self.channel_map = {
-            777886186655055903: 783116252842819608, #general
-            777270542033092638: 783116711024394290, #public
-            777270554800422943: 783116725021442048, #private
-            777270579719569410: 783116739205398558, #report
-            778233669881561088: 783116754183520268, #bot-commands
-            779762542704722040: 783116763919286303, #todo
-            782765012510965781: 783116773460279316, #ignore-1
-            782765029735923722: 783116783929786429, #ignore-2
-        }
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -141,26 +130,29 @@ class Logging(commands.Cog):
         else:
             return
 
-        nsa = self.bot.get_guild(id=self.nsa_guild_id)
+        nsa = self.bot.get_guild(id=self.bot.settings.guild().nsa_guild_id)
         nsa_channel_info = await self.bot.settings.get_nsa_channel(message.channel.id)
         nsa_webhook = None
-        # need better checks for if webhook still exists etc
+
         if nsa_channel_info is None:
-            # we need to create the channel, webhook and store it in the DB
-
-            main_category_name = message.channel.category.name
-            nsa_category = discord.utils.get(nsa.categories, name=main_category_name)
-            if not nsa_category:
-                nsa_category = await nsa.create_category(main_category_name, position=message.channel.category.position)
-
-            nsa_channel = await nsa_category.create_text_channel(name=message.channel.name, position=message.channel.position)
+            nsa_channel = await self.gen_channel(message)
             nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
 
             await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
 
         else:
             nsa_channel = discord.utils.get(nsa.channels, id=nsa_channel_info["channel_id"])
-            nsa_webhook = await self.bot.fetch_webhook(nsa_channel_info["webhook_id"])
+            if not nsa_channel:
+                nsa_channel = await self.gen_channel(nsa, message)
+                nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
+
+                await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
+            else:
+                try:
+                    nsa_webhook = await self.bot.fetch_webhook(nsa_channel_info["webhook_id"])
+                except:
+                    nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
+                    await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
 
         await nsa_webhook.send(
             content = f"**{message.author.id}** {message.content}",
@@ -169,20 +161,14 @@ class Logging(commands.Cog):
             embeds = message.embeds,
             files = [await a.to_file() for a in message.attachments ] or None
         )
-        # embed=discord.Embed()
-        # embed.color = message.author.color
-        # embed.set_author(name=str(message.author), icon_url=message.author.avatar_url)
-        # embed.add_field(name="Body", value=message.content if message.content else "Message has no body.", inline=False)
-        # embed.add_field(name="Message ID", value=message.id, inline=False)
-        # embed.add_field(name="Message link", value=f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}", inline=False)
-        # embed.set_footer(text="User ID: " + str(message.author.id))
-        # embed.timestamp = message.created_at
 
-        # log = await channel.send(embed=embed)
-        # for embed in message.embeds:
-        #     await log.reply("Message contained embed", embed=embed)
-        # for attachment in message.attachments:
-        #     await log.reply(file=(await attachment.to_file()))
+    async def gen_channel(self, nsa, message):
+        main_category_name = message.channel.category.name
+        nsa_category = discord.utils.get(nsa.categories, name=main_category_name)
+        if not nsa_category:
+            nsa_category = await nsa.create_category(main_category_name, position=message.channel.category.position)
+
+        return await nsa_category.create_text_channel(name=message.channel.name, position=message.channel.position)
 
     async def info_error(self, ctx, error):
         if (isinstance(error, commands.MissingRequiredArgument) 
