@@ -29,7 +29,7 @@ class Devices(commands.Cog):
         """
 
         bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != bot_chan:
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
             await ctx.message.delete()
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
 
@@ -118,7 +118,7 @@ class Devices(commands.Cog):
         """
         
         bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != bot_chan:
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
             await ctx.message.delete()
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
         
@@ -143,7 +143,7 @@ class Devices(commands.Cog):
         """
 
         bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != bot_chan:
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
             await ctx.message.delete()
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
         

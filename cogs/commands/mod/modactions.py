@@ -25,7 +25,7 @@ class ModActions(commands.Cog):
         self.bot = bot
 
     async def check_permissions(self, ctx, user: typing.Union[discord.Member, int] = None):
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least a mod
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5): # must be at least a mod
             await ctx.message.delete()
             raise commands.BadArgument("You do not have permission to use this command.")
         if user:
@@ -492,7 +492,7 @@ class ModActions(commands.Cog):
             User to put on clem
 
         """
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 8): # must be owner
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 7): # must be owner
             raise commands.BadArgument("You need to be Aaron to use that command.")
 
         results = await self.bot.settings.user(user.id)

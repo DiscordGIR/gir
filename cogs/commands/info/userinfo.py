@@ -86,7 +86,7 @@ class UserInfo(commands.Cog):
             User to get info about, by default the author of command, by default None
         """
         bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != bot_chan:
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
             await ctx.message.delete()
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
 
@@ -131,7 +131,7 @@ class UserInfo(commands.Cog):
         """
 
         bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != bot_chan:
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
             await ctx.message.delete()
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
 
@@ -161,7 +161,7 @@ class UserInfo(commands.Cog):
         """
 
         bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) and ctx.channel.id != bot_chan:
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
             await ctx.message.delete()
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
 
@@ -187,7 +187,7 @@ class UserInfo(commands.Cog):
 
         """
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
             await ctx.message.delete()
             raise commands.BadArgument("You do not have permission to use this command.")
 
@@ -218,7 +218,7 @@ class UserInfo(commands.Cog):
         """
 
         await ctx.message.delete()
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
             await ctx.message.delete()
             raise commands.BadArgument("You do not have permission to use this command.")
         

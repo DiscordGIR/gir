@@ -46,7 +46,7 @@ async def report(bot, msg, user):
     #     await report_msg.add_reaction(reaction)
 
     # def check(reaction, user):
-    #     return (bot.settings.permissions.hasAtLeast(user.guild, user, 6) 
+    #     return (bot.settings.permissions.hasAtLeast(user.guild, user, 5) 
     #         and reaction.message == report_msg 
     #         and str(reaction.emoji) in report_reactions)
 

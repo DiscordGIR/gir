@@ -48,7 +48,7 @@ class Filters(commands.Cog):
         """
         INVITE FILTER
         """
-        if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, 6):
+        if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, 5):
             invites = re.findall(self.invite_filter, msg.content, flags=re.S)
             if invites:
                 whitelist = ["xd", "jb"]
@@ -63,7 +63,7 @@ class Filters(commands.Cog):
         """
         SPOILER FILTER
         """
-        if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, 6):
+        if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, 5):
             if re.search(self.spoiler_filter, msg.content, flags=re.S):
                 await msg.delete()
                 return
@@ -95,7 +95,7 @@ class Filters(commands.Cog):
         """
 
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least a mod
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5): # must be at least a mod
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
 
         cur = await self.bot.settings.user(ctx.author.id)
@@ -125,6 +125,9 @@ class Filters(commands.Cog):
         phrase : str
             Phrase to filter
         """
+
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least admin
+            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
 
         fw = FilterWord()
         fw.bypass = bypass

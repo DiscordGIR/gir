@@ -289,16 +289,15 @@ class Permissions:
                 and discord.utils.get(guild.roles, id=the_guild.role_genius) in m.roles) 
                 or self.hasAtLeast(guild, m, 5)),
             5: (lambda guild, m: (guild.id == guild_id
-                and m.guild_permissions.manage_guild)
+                and discord.utils.get(guild.roles, id=the_guild.role_moderator) in m.roles) 
                 or self.hasAtLeast(guild, m, 6)),
             6: (lambda guild, m: (guild.id == guild_id
-                and discord.utils.get(guild.roles, id=the_guild.role_moderator) in m.roles) 
+                and m.guild_permissions.manage_guild)
                 or self.hasAtLeast(guild, m, 7)),
             7: (lambda guild, m: (guild.id == guild_id
                 and m == guild.owner) 
-                or self.hasAtLeast(guild, m, 8)),        
-            8: (lambda guild, m: guild.id == guild_id
-                and m.id == bot.owner_id),
+                or self.hasAtLeast(guild, m, 9)),        
+                
             9: (lambda guild, m: guild.id == guild_id
                 and m.id == bot.owner_id),
             10: (lambda guild, m: guild.id == guild_id
