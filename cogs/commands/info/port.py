@@ -39,11 +39,11 @@ class Port(commands.Cog):
                         filter_excluded_channel_list.append(int(channel))
                     for channel in record["logging.excludedChannels"]:
                         logging_excluded_channel_list.append(int(channel))
+        
         g = Guild.objects(_id=self.bot.settings.guild_id).first()
         g.filter_words = word_list
-        # g.logging_excluded_channels = logging_excluded_channel_list
-        # g.filter_excluded_channels = filter_excluded_channel_list
         g.save()
+
         g = Guild.objects(_id=349243932447604736).first()
         g.filter_words = word_list
         g.logging_excluded_channels = logging_excluded_channel_list
@@ -99,7 +99,6 @@ class Port(commands.Cog):
                 user.save()
                 
                 user_count += 1
-                # print("user", record["id"])
 
                 users_cases = record["cases"]
                 cases = Cases()
@@ -108,19 +107,13 @@ class Port(commands.Cog):
                 if len(users_cases) > 0:
                     for case in users_cases:
                         case = json.loads(case)
-                        # if case["type"] == "MUTE":
-                        #     if "until" in case:
-                        #         print("1",dateutil.parser.parse(case["until"]))
-                        #         print("2",pytz.utc.localize(datetime.utcfromtimestamp(case["date"]/1000)))
-                        #         print(case["punishment"])
+
                         if "id" in case:
                             case_count += 1
                             if case["id"] is None:
                                 print("NOOOO")
                                 print(case)
-                            # print("case", case["id"])
-                            # print("case", case)
-                            # print("case", case["modID"])
+                            
                             new_case = Case()
                             new_case._id = case["id"]
                             new_case._type = case["type"]
@@ -156,6 +149,7 @@ class Port(commands.Cog):
             async for record in conn.cursor('SELECT * from guilds'):
                 if int(record["id"]) == 349243932447604736:
                     guild = Guild()
+                    
                     guild.case_id = (await conn.fetchrow('SELECT "caseID" FROM "clientStorage" WHERE id = $1;', "688726074820919326"))["caseID"]
                     guild._id = record["id"]
                     guild.role_mute = record["roles.muted"]
@@ -170,12 +164,11 @@ class Port(commands.Cog):
                     guild.channel_private = record["channels.private"]
                     guild.channel_reports = record["channels.reports"]
                     guild.channel_botspam = record["channels.botspam"]
-
-                    guild.logging_excluded_channels = []
+                    
+                    guild.nsa_guild_id = 687950909191618563
 
                     guild.save()
-                # case = Case()
-                # case._id = 
+
 
         await ctx.send(f"Migrated {user_count} users and {case_count} cases from Postgres db")
 

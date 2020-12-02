@@ -2,8 +2,6 @@ import discord
 from discord.ext import commands
 from datetime import datetime
 from io import BytesIO
-# logging
-# nsa
 
 class Logging(commands.Cog):
     def __init__(self, bot):
@@ -159,7 +157,8 @@ class Logging(commands.Cog):
             username = str(message.author),
             avatar_url = message.author.avatar_url,
             embeds = message.embeds,
-            files = [await a.to_file() for a in message.attachments ] or None
+            files = [await a.to_file() for a in message.attachments ] or None,
+            allowed_mentions = discord.AllowedMentions().none()
         )
 
     async def gen_channel(self, nsa, message):
@@ -179,5 +178,6 @@ class Logging(commands.Cog):
                 await self.bot.send_error(ctx, error)
         else:
             traceback.print_exc()
+
 def setup(bot):
     bot.add_cog(Logging(bot))
