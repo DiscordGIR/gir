@@ -33,6 +33,8 @@ class Devices(commands.Cog):
                     data = await resp.text()
                     devices = json.loads(data)
                     for d in devices:
+                        # if "Apple Watch" in d["name"]:
+                        # print(d["name"])
                         name = re.sub(r'\((.*?)\)', "", d["name"])
                         name = name.replace('[', '')
                         name = name.replace(']', '')

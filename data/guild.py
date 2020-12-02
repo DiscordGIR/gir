@@ -17,6 +17,7 @@ class Guild(mongoengine.Document):
     channel_reports           = mongoengine.IntField()
     channel_botspam           = mongoengine.IntField()
     
+    nsa_mapping               = mongoengine.DictField(default={})
     logging_excluded_channels = mongoengine.ListField(default=[])
     filter_words              = mongoengine.EmbeddedDocumentListField(FilterWord, default=[])
     filter_excluded_channels  = mongoengine.ListField(default=[])

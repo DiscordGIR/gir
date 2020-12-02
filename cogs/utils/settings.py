@@ -49,6 +49,37 @@ class Settings(commands.Cog):
         """       
 
         return Guild.objects(_id=self.guild_id).first()
+    
+    async def get_nsa_channel(self, id) -> dict:
+        """Returns the state of the main guild from the database.
+
+        Returns
+        -------
+        Guild
+            The Guild document object that holds information about the main guild.
+        """       
+
+        _map =  self.guild().nsa_mapping
+        if str(id) in _map:
+            return _map[str(id)]
+        return None
+    
+    async def add_nsa_channel(self, main_channel_id, channel_id, webhook_id) -> dict:
+        """Returns the state of the main guild from the database.
+
+        Returns
+        -------
+        Guild
+            The Guild document object that holds information about the main guild.
+        """       
+
+        g = self.guild()
+        _map = g.nsa_mapping
+        _map[str(main_channel_id)] = {
+            "channel_id": channel_id,
+            "webhook_id": webhook_id,
+        }
+        g.save()
 
     async def inc_caseid(self) -> None:
         """Increments Guild.case_id, which keeps track of the next available ID to

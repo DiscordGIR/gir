@@ -139,22 +139,47 @@ class Logging(commands.Cog):
             return
 
         nsa = self.bot.get_guild(id=self.nsa_guild_id)
-        channel = discord.utils.get(nsa.channels, id=self.channel_map[message.channel.id])
+        nsa_channel_info = await self.bot.settings.get_nsa_channel(message.channel.id)
+        nsa_webhook = None
+        # need better checks for if webhook still exists etc
+        if nsa_channel_info is None:
+            # we need to create the channel, webhook and store it in the DB
 
-        embed=discord.Embed()
-        embed.color = message.author.color
-        embed.set_author(name=str(message.author), icon_url=message.author.avatar_url)
-        embed.add_field(name="Body", value=message.content if message.content else "Message has no body.", inline=False)
-        embed.add_field(name="Message ID", value=message.id, inline=False)
-        embed.add_field(name="Message link", value=f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}", inline=False)
-        embed.set_footer(text="User ID: " + str(message.author.id))
-        embed.timestamp = message.created_at
+            main_category_name = message.channel.category.name
+            nsa_category = discord.utils.get(nsa.categories, name=main_category_name)
+            if not nsa_category:
+                nsa_category = await nsa.create_category(main_category_name, position=message.channel.category.position)
 
-        log = await channel.send(embed=embed)
-        for embed in message.embeds:
-            await log.reply("Message contained embed", embed=embed)
-        for attachment in message.attachments:
-            await log.reply(file=(await attachment.to_file()))
+            nsa_channel = await nsa_category.create_text_channel(name=message.channel.name, position=message.channel.position)
+            nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
+
+            await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
+
+        else:
+            nsa_channel = discord.utils.get(nsa.channels, id=nsa_channel_info["channel_id"])
+            nsa_webhook = await self.bot.fetch_webhook(nsa_channel_info["webhook_id"])
+
+        await nsa_webhook.send(
+            content = f"**{message.author.id}** {message.content}",
+            username = str(message.author),
+            avatar_url = message.author.avatar_url,
+            embeds = message.embeds,
+            files = [await a.to_file() for a in message.attachments ] or None
+        )
+        # embed=discord.Embed()
+        # embed.color = message.author.color
+        # embed.set_author(name=str(message.author), icon_url=message.author.avatar_url)
+        # embed.add_field(name="Body", value=message.content if message.content else "Message has no body.", inline=False)
+        # embed.add_field(name="Message ID", value=message.id, inline=False)
+        # embed.add_field(name="Message link", value=f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}", inline=False)
+        # embed.set_footer(text="User ID: " + str(message.author.id))
+        # embed.timestamp = message.created_at
+
+        # log = await channel.send(embed=embed)
+        # for embed in message.embeds:
+        #     await log.reply("Message contained embed", embed=embed)
+        # for attachment in message.attachments:
+        #     await log.reply(file=(await attachment.to_file()))
 
     async def info_error(self, ctx, error):
         if (isinstance(error, commands.MissingRequiredArgument) 
