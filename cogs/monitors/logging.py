@@ -23,6 +23,11 @@ class Logging(commands.Cog):
         embed.add_field(name="Created", value=member.created_at.strftime("%B %d, %Y, %I:%M %p") + " UTC", inline=True)
         embed.set_footer(text=member.id)
         await channel.send(embed=embed)
+
+        mute_role = self.bot.settings.guild().role_mute
+        mute_role = member.guild.get_role(mute_role)
+        await member.add_roles(mute_role)        
+
         
     @commands.Cog.listener()
     async def on_member_remove(self, member):

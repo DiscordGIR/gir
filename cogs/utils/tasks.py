@@ -108,6 +108,10 @@ async def remove_mute(id: int) -> None:
                 await bot_global.settings.inc_caseid()
                 await bot_global.settings.add_case(user.id, case)
 
+                u = await bot_global.settings.user(id=user.id)
+                u.muted = True
+                u.save()
+
                 log = await prepare_unmute_log(bot_global.user, user, case)
                 public_chan = discord.utils.get(guild.channels, id=bot_global.settings.guild().channel_public)
                 try:

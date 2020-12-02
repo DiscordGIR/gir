@@ -26,10 +26,6 @@ class Devices(commands.Cog):
         device : str
             device user wants to use
 
-        Raises
-        ------
-        commands.BadArgument
-            Error message if permissions error or command error
         """
 
         bot_chan = self.bot.settings.guild().channel_botspam
@@ -119,10 +115,6 @@ class Devices(commands.Cog):
         Example usage:
         `!removedevice`
 
-        Raises
-        ------
-        commands.BadArgument
-            Error message if permissions error or command error
         """
         
         bot_chan = self.bot.settings.guild().channel_botspam
@@ -148,10 +140,6 @@ class Devices(commands.Cog):
         Example usage:
         `!listdevices`
 
-        Raises
-        ------
-        commands.BadArgument
-            Error message if permissions error or command error
         """
 
         bot_chan = self.bot.settings.guild().channel_botspam

@@ -407,6 +407,9 @@ class ModActions(commands.Cog):
         
         await self.bot.settings.inc_caseid()
         await self.bot.settings.add_case(user.id, case)
+        u = await self.bot.settings.user(id=user.id)
+        u.muted = True
+        u.save()
 
         await user.add_roles(mute_role)        
 
@@ -443,7 +446,11 @@ class ModActions(commands.Cog):
         
         mute_role = self.bot.settings.guild().role_mute
         mute_role = ctx.guild.get_role(mute_role)
-        await user.remove_roles(mute_role)   
+        await user.remove_roles(mute_role)
+
+        u = await self.bot.settings.user(id=user.id)
+        u.muted = False
+        u.save()
 
         try:
             self.bot.settings.tasks.cancel_unmute(user.id)
