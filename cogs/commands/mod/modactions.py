@@ -26,12 +26,10 @@ class ModActions(commands.Cog):
 
     async def check_permissions(self, ctx, user: typing.Union[discord.Member, int] = None):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5): # must be at least a mod
-            await ctx.message.delete()
             raise commands.BadArgument("You do not have permission to use this command.")
         if user:
             if isinstance(user, discord.Member):
                 if user.top_role >= ctx.author.top_role:
-                    await ctx.message.delete()
                     raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
         
 
@@ -147,13 +145,10 @@ class ModActions(commands.Cog):
 
         # sanity checks
         if case is None:
-            await ctx.message.delete()
             raise commands.BadArgument(message=f"{user} has no case with ID {case_id}")
         elif case._type != "WARN":
-            await ctx.message.delete()
             raise commands.BadArgument(message=f"{user}'s case with ID {case_id} is not a warn case.")
         elif case.lifted:
-            await ctx.message.delete()
             raise commands.BadArgument(message=f"Case with ID {case_id} already lifted.")
         
         # passed sanity checks, so update the case in DB
@@ -258,7 +253,6 @@ class ModActions(commands.Cog):
             try:
                 user = await self.bot.fetch_user(user)
             except discord.NotFound:
-                await ctx.message.delete()
                 raise commands.BadArgument(f"Couldn't find user with ID {user}")
         
         # prepare the case to store in DB
@@ -318,7 +312,6 @@ class ModActions(commands.Cog):
         try:
             user = await self.bot.fetch_user(user)
         except discord.NotFound:
-            await ctx.message.delete()
             raise commands.BadArgument(f"Couldn't find user with ID {user}")
         
         try:
@@ -361,7 +354,6 @@ class ModActions(commands.Cog):
         await self.check_permissions(ctx)
 
         if limit <= 0:
-            await ctx.message.delete()
             raise commands.BadArgument("Number of messages to purge must be greater than 0")
         
         await ctx.channel.purge(limit=limit)
@@ -407,7 +399,6 @@ class ModActions(commands.Cog):
         mute_role = ctx.guild.get_role(mute_role)
         
         if mute_role in user.roles:
-            await ctx.message.delete()
             raise commands.BadArgument("This user is already muted.")
 
         case = Case(
@@ -426,7 +417,6 @@ class ModActions(commands.Cog):
                 case.punishment = humanize.naturaldelta(time - now, minimum_unit="seconds")
                 self.bot.settings.tasks.schedule_unmute(user.id, time)
             except Exception:
-                await ctx.message.delete()
                 raise commands.BadArgument("An error occured, this user is probably already muted")
         else:
             case.punishment = "PERMANENT"
@@ -469,9 +459,6 @@ class ModActions(commands.Cog):
         """
 
         await self.check_permissions(ctx, user)
-
-        reason = discord.utils.escape_markdown(reason)
-        reason = discord.utils.escape_mentions(reason)
         
         mute_role = self.bot.settings.guild().role_mute
         mute_role = ctx.guild.get_role(mute_role)
@@ -522,7 +509,7 @@ class ModActions(commands.Cog):
 
         """
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 7): # must be owner
-            await ctx.message.delete()
+            
             raise commands.BadArgument("You need to be Aaron to use that command.")
 
         results = await self.bot.settings.user(user.id)
@@ -545,6 +532,7 @@ class ModActions(commands.Cog):
     @kick.error
     @clem.error
     async def info_error(self, ctx, error):
+        await ctx.message.delete()
         if (isinstance(error, commands.MissingRequiredArgument) 
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)

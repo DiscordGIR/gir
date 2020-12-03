@@ -21,6 +21,7 @@ def get_prefix(bot, message):
 
 initial_extensions = ['cogs.utils.settings',
                     'cogs.commands.mod.modactions', 
+                    'cogs.commands.mod.filter', 
                     'cogs.commands.info.userinfo',
                     'cogs.monitors.logging',
                     'cogs.monitors.filter',
@@ -48,7 +49,7 @@ async def send_error(ctx, error):
     embed=discord.Embed(title="An error occured")
     embed.color = discord.Color.red()
     embed.description = discord.utils.escape_markdown(f'{error}')
-    await ctx.send(embed=embed, delete_after=5)
+    await ctx.send(embed=embed, delete_after=8)
 
 @bot.event
 async def on_ready():

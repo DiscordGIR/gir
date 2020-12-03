@@ -30,12 +30,10 @@ class Devices(commands.Cog):
 
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            await ctx.message.delete()
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
 
         
         if re.match(self.devices_test, ctx.author.display_name):
-            await ctx.message.delete()
             raise commands.BadArgument("You already have a device nickname set!")
 
         the_device = None
@@ -60,11 +58,9 @@ class Devices(commands.Cog):
         
 
         if not the_device:
-            await ctx.message.delete()
             raise commands.BadArgument("Device doesn't exist!")
 
         if not the_device["name"].split(" ")[0].lower() in self.possible_devices:
-            await ctx.message.delete()
             raise commands.BadArgument("Unsupported device. Please see `!listdevices` for possible devices.")
         
         def check(m):
@@ -103,9 +99,10 @@ class Devices(commands.Cog):
             name.replace(' Plus', '+')
             name.replace('Pro Max', 'PM')
             new_nick = f"{ctx.author.display_name} [{name}, {firmware}]"
+            
             if len(new_nick) > 32:
-                await ctx.message.delete()
                 raise commands.BadArgument("Nickname too long! Aborting.")
+            
             await ctx.author.edit(nick=new_nick)
             await ctx.message.reply("Changed your nickname!")
         else:
@@ -123,16 +120,13 @@ class Devices(commands.Cog):
         
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            await ctx.message.delete()
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
         
         if not re.match(self.devices_test, ctx.author.display_name):
-            await ctx.message.delete()
             raise commands.BadArgument("You don't have a device nickname set!")
 
         new_nick = re.sub(self.devices_test, "", ctx.author.display_name)
         if len(new_nick) > 32:
-            await ctx.message.delete()
             raise commands.BadArgument("Nickname too long")
 
         await ctx.author.edit(nick=new_nick)
@@ -150,7 +144,6 @@ class Devices(commands.Cog):
 
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            await ctx.message.delete()
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
         
         devices_dict = {
@@ -194,6 +187,7 @@ class Devices(commands.Cog):
     @removedevice.error
     @adddevice.error
     async def info_error(self, ctx, error):
+        await ctx.message.delete()
         if (isinstance(error, commands.MissingRequiredArgument) 
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
@@ -201,6 +195,7 @@ class Devices(commands.Cog):
             or isinstance(error, commands.NoPrivateMessage)):
                 await self.bot.send_error(ctx, error)
         else:
+            await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
 def setup(bot):
     bot.add_cog(Devices(bot))

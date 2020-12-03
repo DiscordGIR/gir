@@ -181,6 +181,7 @@ class Port(commands.Cog):
             or isinstance(error, commands.NoPrivateMessage)):
                 await self.bot.send_error(ctx, error)
         else:
+            await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
 
 def setup(bot):

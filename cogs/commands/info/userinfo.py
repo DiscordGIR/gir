@@ -132,7 +132,6 @@ class UserInfo(commands.Cog):
 
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            await ctx.message.delete()
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
 
         if user is None: user = ctx.author
@@ -162,7 +161,6 @@ class UserInfo(commands.Cog):
 
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            await ctx.message.delete()
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
 
         results = await self.bot.settings.leaderboard()
@@ -189,7 +187,6 @@ class UserInfo(commands.Cog):
 
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            await ctx.message.delete()
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
 
         results = await self.bot.settings.user(user.id)
@@ -246,6 +243,7 @@ class UserInfo(commands.Cog):
     @userinfo.error
     @xp.error
     async def info_error(self, ctx, error):
+        await ctx.message.delete()
         if (isinstance(error, commands.MissingRequiredArgument) 
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
@@ -253,6 +251,7 @@ class UserInfo(commands.Cog):
             or isinstance(error, commands.NoPrivateMessage)):
                 await self.bot.send_error(ctx, error)
         else:
+            await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
 
 def xp_for_next_level(next):

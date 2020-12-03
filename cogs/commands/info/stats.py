@@ -23,7 +23,6 @@ class Stats(commands.Cog):
 
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            await ctx.message.delete()
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
 
         process = psutil.Process(os.getpid())
@@ -49,7 +48,6 @@ class Stats(commands.Cog):
         """
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            await ctx.message.delete()
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
 
         guild = ctx.guild
@@ -72,6 +70,7 @@ class Stats(commands.Cog):
     @serverinfo.error
     @stats.error
     async def info_error(self, ctx, error):
+        await ctx.message.delete()
         if (isinstance(error, commands.MissingRequiredArgument) 
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
@@ -79,6 +78,8 @@ class Stats(commands.Cog):
             or isinstance(error, commands.NoPrivateMessage)):
                 await self.bot.send_error(ctx, error)
         else:
+            await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
+
 def setup(bot):
     bot.add_cog(Stats(bot))
