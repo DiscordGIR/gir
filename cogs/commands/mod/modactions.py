@@ -38,7 +38,7 @@ class ModActions(commands.Cog):
 
     @commands.guild_only()
     @commands.command(name="warn")
-    async def warn(self, ctx: commands.Context, user: discord.Member, points: int, *, reason: str = "No reason.") -> None:
+    async def warn(self, ctx: commands.Context, user: typing.Union[discord.Member, int], points: int, *, reason: str = "No reason.") -> None:
         """Warn a user (mod only)
 
         Example usage:
@@ -60,6 +60,14 @@ class ModActions(commands.Cog):
 
         if points < 1:  # can't warn for negative/0 points
             raise commands.BadArgument(message="Points can't be lower than 1.")
+
+        # if the ID given is of a user who isn't in the guild, try to fetch the profile
+        if isinstance(user, int):
+            try:
+                user = await self.bot.fetch_user(user)
+            except discord.NotFound:
+                raise commands.BadArgument(
+                    f"Couldn't find user with ID {user}")
 
         guild = self.bot.settings.guild()
 
@@ -102,7 +110,7 @@ class ModActions(commands.Cog):
         if cur_points >= 600:
             # automatically ban user if more than 600 points
             await ctx.invoke(self.ban, user=user, reason="600 or more points reached")
-        elif cur_points >= 400 and not results.was_warn_kicked:
+        elif cur_points >= 400 and not results.was_warn_kicked and isinstance(user, discord.Member):
             # kick user if >= 400 points and wasn't previously kicked
             await self.bot.settings.set_warn_kicked(user.id)
 
@@ -113,10 +121,11 @@ class ModActions(commands.Cog):
 
             await ctx.invoke(self.kick, user=user, reason="400 or more points reached")
         else:
-            try:
-                await user.send("You were warned in r/Jailbreak.", embed=log)
-            except Exception:
-                pass
+            if isinstance(user, discord.Member):
+                try:
+                    await user.send("You were warned in r/Jailbreak.", embed=log)
+                except Exception:
+                    pass
 
     @commands.guild_only()
     @commands.command(name="liftwarn")
@@ -258,7 +267,7 @@ class ModActions(commands.Cog):
         """
 
         await self.check_permissions(ctx, user)
-
+            
         reason = discord.utils.escape_markdown(reason)
         reason = discord.utils.escape_mentions(reason)
 
