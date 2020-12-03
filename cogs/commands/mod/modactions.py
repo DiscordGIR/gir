@@ -30,7 +30,7 @@ class ModActions(commands.Cog):
         if user:
             if isinstance(user, discord.Member):
                 if user.top_role >= ctx.author.top_role:
-                    raise commands.BadArgument(message=f"{user}'s top role is the same or higher than yours!")
+                    raise commands.BadArgument(message=f"{user.mention}'s top role is the same or higher than yours!")
         
 
     @commands.guild_only()
@@ -134,7 +134,7 @@ class ModActions(commands.Cog):
 
         """        
 
-        await self.check_permissions(ctx, user)
+        # await self.check_permissions(ctx, user)
 
         # retrieve user's case with given ID
         cases = await self.bot.settings.get_case(user.id, case_id)
@@ -151,6 +151,11 @@ class ModActions(commands.Cog):
         elif case.lifted:
             raise commands.BadArgument(message=f"Case with ID {case_id} already lifted.")
         
+        u = await self.bot.settings.user(id=user.id)
+        if u.warn_points - int(case.punishment) < 0:
+            raise commands.BadArgument(message=f"Can't lift Case #{case_id} because it would make {user.mention}'s points negative.")
+
+
         # passed sanity checks, so update the case in DB
         case.lifted = True
         case.lifted_reason = reason
