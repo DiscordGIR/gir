@@ -1,5 +1,6 @@
 import datetime
 import os
+import traceback
 from math import floor
 
 import discord
@@ -73,7 +74,7 @@ class Stats(commands.Cog):
             "%B %d, %Y, %I:%M %p"), inline=True)
 
         embed.set_footer(text=f"Requested by {ctx.author}")
-        await ctx.message.reply(embed=log)
+        await ctx.message.reply(embed=embed)
 
     @serverinfo.error
     @stats.error
