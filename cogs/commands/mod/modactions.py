@@ -97,15 +97,8 @@ class ModActions(commands.Cog):
 
         # prepare log embed, send to #public-mod-logs, user, channel where invoked
         log = await logging.prepare_warn_log(ctx.author, user, case)
-        public_chan = discord.utils.get(
-            ctx.guild.channels, id=self.bot.settings.guild().channel_public)
-        if public_chan:
-            await public_chan.send(embed=log)
-
+    
         log.add_field(name="Current points", value=cur_points, inline=True)
-        # also send response in channel where command was called
-        # await ctx.send(embed=log)
-        await ctx.message.reply(embed=log)
 
         if cur_points >= 600:
             # automatically ban user if more than 600 points
@@ -126,6 +119,16 @@ class ModActions(commands.Cog):
                     await user.send("You were warned in r/Jailbreak.", embed=log)
                 except Exception:
                     pass
+
+        # also send response in channel where command was called
+        await ctx.message.reply(embed=log, delete_after=10)
+
+        public_chan = discord.utils.get(
+            ctx.guild.channels, id=self.bot.settings.guild().channel_public)
+        if public_chan:
+            log.remove_author()
+            log.set_thumbnail(url=user.avatar_url)
+            await public_chan.send(embed=log)
 
     @commands.guild_only()
     @commands.command(name="liftwarn")
@@ -189,14 +192,16 @@ class ModActions(commands.Cog):
             await user.send("Your warn was lifted in r/Jailbreak.", embed=log)
         except Exception:
             pass
+        
+        await ctx.message.reply(embed=log, delete_after=10)
 
         public_chan = discord.utils.get(
             ctx.guild.channels, id=self.bot.settings.guild().channel_public)
         if public_chan:
+            log.remove_author()
+            log.set_thumbnail(url=user.avatar_url)
             await public_chan.send(embed=log)
-
-        await ctx.message.reply(embed=log)
-
+        
     @commands.guild_only()
     @commands.command(name="kick")
     async def kick(self, ctx: commands.Context, user: discord.Member, *, reason: str = "No reason.") -> None:
@@ -234,19 +239,23 @@ class ModActions(commands.Cog):
         # add new case to DB
         await self.bot.settings.add_case(user.id, case)
 
-        # prepare log embed, send to #public-mod-logs, user, context
         log = await logging.prepare_kick_log(ctx.author, user, case)
-        public_chan = discord.utils.get(
-            ctx.guild.channels, id=self.bot.settings.guild().channel_public)
-        await public_chan.send(embed=log)
-        await ctx.message.reply(embed=log)
 
         try:
             await user.send("You were kicked from r/Jailbreak", embed=log)
         except Exception:
             pass
-
+        
         await user.kick(reason=reason)
+
+        await ctx.message.reply(embed=log, delete_after=10)
+
+        public_chan = discord.utils.get(
+            ctx.guild.channels, id=self.bot.settings.guild().channel_public)
+        if public_chan:
+            log.remove_author()
+            log.set_thumbnail(url=user.avatar_url)
+            await public_chan.send(embed=log)
 
     @commands.guild_only()
     @commands.command(name="ban")
@@ -295,10 +304,6 @@ class ModActions(commands.Cog):
 
         # prepare log embed to send to #public-mod-logs, user and context
         log = await logging.prepare_ban_log(ctx.author, user, case)
-        public_chan = discord.utils.get(
-            ctx.guild.channels, id=self.bot.settings.guild().channel_public)
-        await public_chan.send(embed=log)
-        await ctx.message.reply(embed=log)
 
         try:
             await user.send("You were banned from r/Jailbreak", embed=log)
@@ -310,6 +315,15 @@ class ModActions(commands.Cog):
         else:
             # hackban for user not currently in guild
             await ctx.guild.ban(discord.Object(id=user.id))
+
+        await ctx.message.reply(embed=log, delete_after=10)
+
+        public_chan = discord.utils.get(
+            ctx.guild.channels, id=self.bot.settings.guild().channel_public)
+        if public_chan:
+            log.remove_author()
+            log.set_thumbnail(url=user.avatar_url)
+            await public_chan.send(embed=log)
 
     @commands.guild_only()
     @commands.command(name="unban")
@@ -355,11 +369,14 @@ class ModActions(commands.Cog):
         await self.bot.settings.add_case(user.id, case)
 
         log = await logging.prepare_unban_log(ctx.author, user, case)
+        await ctx.message.reply(embed=log, delete_after=10)
 
         public_chan = discord.utils.get(
             ctx.guild.channels, id=self.bot.settings.guild().channel_public)
-        await public_chan.send(embed=log)
-        await ctx.message.reply(embed=log)
+        if public_chan:
+            log.remove_author()
+            log.set_thumbnail(url=user.avatar_url)
+            await public_chan.send(embed=log)
 
     @commands.guild_only()
     @commands.command(name="purge")
@@ -384,7 +401,7 @@ class ModActions(commands.Cog):
                 "Number of messages to purge must be greater than 0")
 
         await ctx.channel.purge(limit=limit)
-        await ctx.send(f'Purged {limit} messages.')
+        await ctx.send(f'Purged {limit} messages.', delete_after=10)
 
     @commands.guild_only()
     @commands.command(name="mute")
@@ -459,11 +476,14 @@ class ModActions(commands.Cog):
         await user.add_roles(mute_role)
 
         log = await logging.prepare_mute_log(ctx.author, user, case)
+        await ctx.message.reply(embed=log, delete_after=10)
 
         public_chan = discord.utils.get(
             ctx.guild.channels, id=self.bot.settings.guild().channel_public)
-        await public_chan.send(embed=log)
-        await ctx.message.reply(embed=log)
+        if public_chan:
+            log.remove_author()
+            log.set_thumbnail(url=user.avatar_url)
+            await public_chan.send(embed=log)
 
         try:
             await user.send("You have been muted in r/Jailbreak", embed=log)
@@ -515,15 +535,21 @@ class ModActions(commands.Cog):
 
         log = await logging.prepare_unmute_log(ctx.author, user, case)
 
-        public_chan = discord.utils.get(
-            ctx.guild.channels, id=self.bot.settings.guild().channel_public)
-        await public_chan.send(embed=log)
-        await ctx.message.reply(embed=log)
+        await ctx.message.reply(embed=log, delete_after=10)
 
         try:
             await user.send("You have been unmuted in r/Jailbreak", embed=log)
         except:
             pass
+            
+        public_chan = discord.utils.get(
+            ctx.guild.channels, id=self.bot.settings.guild().channel_public)
+        if public_chan:
+            log.remove_author()
+            log.set_thumbnail(url=user.avatar_url)
+            await public_chan.send(embed=log)
+
+
 
     @commands.command(name="clem")
     async def clem(self, ctx: commands.Context, user: discord.Member) -> None:
