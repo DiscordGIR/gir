@@ -1,13 +1,16 @@
+import logging
+import os
+
 import discord
 from discord.ext import commands
-import os
-from dotenv import load_dotenv, find_dotenv
+from dotenv import find_dotenv, load_dotenv
+
 from data.case import Case
-import logging
 
 logging.basicConfig(level=logging.INFO)
 
 load_dotenv(find_dotenv())
+
 
 def get_prefix(bot, message):
     """A callable Prefix for our bot. This could be edited to allow per server prefixes."""
@@ -18,17 +21,16 @@ def get_prefix(bot, message):
     return commands.when_mentioned_or(*prefixes)(bot, message)
 
 
-
 initial_extensions = ['cogs.utils.settings',
-                    'cogs.commands.mod.modactions', 
-                    'cogs.commands.mod.filter', 
-                    'cogs.commands.info.userinfo',
-                    'cogs.monitors.logging',
-                    'cogs.monitors.filter',
-                    'cogs.commands.info.port',
-                    'cogs.commands.info.stats',
-                    'cogs.commands.info.devices',
-                    ]
+                      'cogs.commands.mod.modactions',
+                      'cogs.commands.mod.filter',
+                      'cogs.commands.info.userinfo',
+                      'cogs.monitors.logging',
+                      'cogs.monitors.filter',
+                      'cogs.commands.info.port',
+                      'cogs.commands.info.stats',
+                      'cogs.commands.info.devices',
+                      ]
 
 intents = discord.Intents.default()
 intents.members = True
@@ -36,7 +38,8 @@ intents.messages = True
 intents.presences = True
 mentions = discord.AllowedMentions(everyone=False, users=True, roles=False)
 
-bot = commands.Bot(command_prefix=get_prefix, intents=intents, allowed_mentions=mentions)
+bot = commands.Bot(command_prefix=get_prefix,
+                   intents=intents, allowed_mentions=mentions)
 bot.max_messages = 1000000
 
 
@@ -45,11 +48,13 @@ if __name__ == '__main__':
     for extension in initial_extensions:
         bot.load_extension(extension)
 
+
 async def send_error(ctx, error):
-    embed=discord.Embed(title="An error occured")
+    embed = discord.Embed(title="An error occured")
     embed.color = discord.Color.red()
     embed.description = discord.utils.escape_markdown(f'{error}')
     await ctx.send(embed=embed, delete_after=8)
+
 
 @bot.event
 async def on_ready():
@@ -57,7 +62,8 @@ async def on_ready():
     bot.settings = bot.get_cog("Settings")
     bot.send_error = send_error
     await bot.wait_until_ready()
-    print(f'\n\nLogged in as: {bot.user.name} - {bot.user.id}\nVersion: {discord.__version__}\n')
+    print(
+        f'\n\nLogged in as: {bot.user.name} - {bot.user.id}\nVersion: {discord.__version__}\n')
     await bot.settings.load_tasks()
     # cases = await bot.settings.cases(109705860275539968)
     # case = Case()

@@ -1,11 +1,12 @@
-import discord
-from discord.ext import commands
-from discord.ext import menus
+import traceback
+import typing
 from datetime import datetime
 from math import floor
+
+import discord
 from data.case import Case
-import typing
-import traceback
+from discord.ext import commands, menus
+
 
 class LeaderboardSource(menus.GroupByPageSource):
     async def format_page(self, menu, entry):
@@ -20,14 +21,17 @@ class LeaderboardSource(menus.GroupByPageSource):
                 #     embed.set_thumbnail(url=obj.avatar_url)
                 # except discord.NotFound:
                 #     pass
-               
+
             if i == 1:
                 trophy = ':second_place:'
             if i == 2:
                 trophy = ':third_place:'
-            embed.add_field(name=f"#{i+1} - Level {user.level}", value=f"{trophy} <@{user._id}>", inline=False)
-        embed.set_footer(text=f"Page {menu.current_page +1} of {self.get_max_pages()}")
+            embed.add_field(name=f"#{i+1} - Level {user.level}",
+                            value=f"{trophy} <@{user._id}>", inline=False)
+        embed.set_footer(
+            text=f"Page {menu.current_page +1} of {self.get_max_pages()}")
         return embed
+
 
 class CasesSource(menus.GroupByPageSource):
     async def format_page(self, menu, entry):
@@ -36,22 +40,24 @@ class CasesSource(menus.GroupByPageSource):
             title=f'Cases', color=discord.Color.blurple())
         embed.set_author(name=user, icon_url=user.avatar_url)
         for case in entry.items:
-            timestamp=case.date.strftime("%B %d, %Y, %I:%M %p")
+            timestamp = case.date.strftime("%B %d, %Y, %I:%M %p")
             if case._type == "WARN":
                 if case.lifted:
-                    embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id} [LIFTED]', 
-                        value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Lifted by**: {case.lifted_by_tag}\n**Lift reason**: {case.lifted_reason}\n**Warned on**: {case.date}', inline=True)
+                    embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id} [LIFTED]',
+                                    value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Lifted by**: {case.lifted_by_tag}\n**Lift reason**: {case.lifted_reason}\n**Warned on**: {case.date}', inline=True)
                 else:
-                    embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}', 
-                        value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
+                    embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
+                                    value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
             elif case._type == "MUTE":
-                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}', 
-                    value=f'**Duration**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
+                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
+                                value=f'**Duration**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
             else:
-                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}', 
-                    value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
-        embed.set_footer(text=f"Page {menu.current_page +1} of {self.get_max_pages()}")
+                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
+                                value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
+        embed.set_footer(
+            text=f"Page {menu.current_page +1} of {self.get_max_pages()}")
         return embed
+
 
 class MenuPages(menus.MenuPages):
     async def update(self, payload):
@@ -66,13 +72,14 @@ class MenuPages(menus.MenuPages):
                 return
         await super().update(payload)
 
+
 class UserInfo(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @commands.guild_only()
     @commands.command(name="userinfo")
-    async def userinfo(self, ctx: commands.Context, user:discord.Member=None) -> None:
+    async def userinfo(self, ctx: commands.Context, user: discord.Member = None) -> None:
         """Get information about a user (join/creation date, xp, etc.), defaults to command invoker.
 
         Example usage:
@@ -87,35 +94,42 @@ class UserInfo(commands.Cog):
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
             await ctx.message.delete()
-            raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
+            raise commands.BadArgument(
+                f"Command only allowed in <#{bot_chan}>")
 
-        if user is None: user = ctx.author
+        if user is None:
+            user = ctx.author
 
         roles = ""
         for role in user.roles:
             if role != ctx.guild.default_role:
                 roles += role.mention + " "
         results = (await self.bot.settings.user(user.id))
-        
+
         joined = user.joined_at.strftime("%B %d, %Y, %I:%M %p")
         created = user.created_at.strftime("%B %d, %Y, %I:%M %p")
 
-        embed=discord.Embed(title="User Information")
+        embed = discord.Embed(title="User Information")
         embed.color = user.color
         embed.set_author(name=user, icon_url=user.avatar_url)
-        embed.add_field(name="Username", value=f'{user} ({user.mention})', inline=True)
-        embed.add_field(name="Level", value=results.level if not results.is_xp_frozen else "0", inline=True)
-        embed.add_field(name="XP", value=results.xp if not results.is_xp_frozen else "0/0", inline=True)
-        embed.add_field(name="Roles", value=roles if roles else "None", inline=False)
+        embed.add_field(name="Username",
+                        value=f'{user} ({user.mention})', inline=True)
+        embed.add_field(
+            name="Level", value=results.level if not results.is_xp_frozen else "0", inline=True)
+        embed.add_field(
+            name="XP", value=results.xp if not results.is_xp_frozen else "0/0", inline=True)
+        embed.add_field(
+            name="Roles", value=roles if roles else "None", inline=False)
         embed.add_field(name="Join date", value=f"{joined} UTC", inline=True)
-        embed.add_field(name="Account creation date", value=f"{created} UTC", inline=True)
+        embed.add_field(name="Account creation date",
+                        value=f"{created} UTC", inline=True)
         embed.set_footer(text=f"Requested by {ctx.author}")
 
         await ctx.message.reply(embed=embed)
-    
-    @commands.guild_only()        
+
+    @commands.guild_only()
     @commands.command(name="xpstats", aliases=["xp"])
-    async def xp(self, ctx, user:discord.Member=None):
+    async def xp(self, ctx, user: discord.Member = None):
         """Show your or another user's XP
 
         Example usage:
@@ -131,17 +145,21 @@ class UserInfo(commands.Cog):
 
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
+            raise commands.BadArgument(
+                f"Command only allowed in <#{bot_chan}>")
 
-        if user is None: user = ctx.author
+        if user is None:
+            user = ctx.author
 
         results = await self.bot.settings.user(user.id)
-        
-        embed=discord.Embed(title="Level Statistics")
+
+        embed = discord.Embed(title="Level Statistics")
         embed.color = user.top_role.color
         embed.set_author(name=user, icon_url=user.avatar_url)
-        embed.add_field(name="Level", value=results.level if not results.is_xp_frozen else "0", inline=True)
-        embed.add_field(name="XP", value=f'{results.xp}/{xp_for_next_level(results.level)}' if not results.is_xp_frozen else "0/0", inline=True)
+        embed.add_field(
+            name="Level", value=results.level if not results.is_xp_frozen else "0", inline=True)
+        embed.add_field(
+            name="XP", value=f'{results.xp}/{xp_for_next_level(results.level)}' if not results.is_xp_frozen else "0/0", inline=True)
         # embed.add_field(name="Rank", value=f"{rank}/{ctx.guild.member_count}", inline=True)
         embed.set_footer(text=f"Requested by {ctx.author}")
 
@@ -160,7 +178,8 @@ class UserInfo(commands.Cog):
 
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
+            raise commands.BadArgument(
+                f"Command only allowed in <#{bot_chan}>")
 
         results = await self.bot.settings.leaderboard()
         menus = MenuPages(source=LeaderboardSource(
@@ -168,9 +187,9 @@ class UserInfo(commands.Cog):
 
         await menus.start(ctx)
 
-    @commands.guild_only()        
+    @commands.guild_only()
     @commands.command(name="warnpoints")
-    async def warnpoints(self, ctx, user:discord.Member = None):
+    async def warnpoints(self, ctx, user: discord.Member = None):
         """Show a user's warnpoints (mod only)
 
         Example usage:
@@ -186,27 +205,31 @@ class UserInfo(commands.Cog):
 
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
+            raise commands.BadArgument(
+                f"Command only allowed in <#{bot_chan}>")
 
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user is not None:
-            raise commands.BadArgument(f"You don't have permissions to check other people's warnpoints.")
+            raise commands.BadArgument(
+                f"You don't have permissions to check other people's warnpoints.")
 
         if user is None:
             user = ctx.author
 
         results = await self.bot.settings.user(user.id)
-        
-        embed=discord.Embed(title="Warn Points")
+
+        embed = discord.Embed(title="Warn Points")
         embed.color = discord.Color.orange()
         embed.set_thumbnail(url=user.avatar_url)
-        embed.add_field(name="Member", value=f'{user.mention}\n{user}\n({user.id})', inline=True)
-        embed.add_field(name="Warn Points", value=results.warn_points, inline=True)
+        embed.add_field(
+            name="Member", value=f'{user.mention}\n{user}\n({user.id})', inline=True)
+        embed.add_field(name="Warn Points",
+                        value=results.warn_points, inline=True)
         embed.set_footer(text=f"Requested by {ctx.author}")
 
         await ctx.message.reply(embed=embed)
-    
+
     @commands.command(name="cases")
-    async def cases(self, ctx, user:typing.Union[discord.Member,int] = None):
+    async def cases(self, ctx, user: typing.Union[discord.Member, int] = None):
         """Show list of cases of a user (mod only)
 
         Example usage:
@@ -222,15 +245,18 @@ class UserInfo(commands.Cog):
 
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
-        
+            raise commands.BadArgument(
+                f"Command only allowed in <#{bot_chan}>")
+
         if not isinstance(user, int):
             if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user.id != ctx.author.id:
-                raise commands.BadArgument(f"You don't have permissions to check other people's warnpoints.")
+                raise commands.BadArgument(
+                    f"You don't have permissions to check other people's warnpoints.")
         else:
             if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
-                raise commands.BadArgument(f"You don't have permissions to check other people's warnpoints.")
-            
+                raise commands.BadArgument(
+                    f"You don't have permissions to check other people's warnpoints.")
+
         if user is None:
             user = ctx.author
             ctx.args[2] = user
@@ -238,13 +264,15 @@ class UserInfo(commands.Cog):
         if isinstance(user, int):
             user = await self.bot.fetch_user(user)
             if user is None:
-                raise commands.BadArgument(f"Couldn't find user with ID {user}")
+                raise commands.BadArgument(
+                    f"Couldn't find user with ID {user}")
             ctx.args[2] = user
 
         results = await self.bot.settings.cases(user.id)
         if len(results.cases) == 0:
             if isinstance(user, int):
-                raise commands.BadArgument(f'User with ID {user.id} had no cases.')
+                raise commands.BadArgument(
+                    f'User with ID {user.id} had no cases.')
             else:
                 raise commands.BadArgument(f'{user.mention} had no cases.')
         cases = [case for case in results.cases if case._type != "UNMUTE"]
@@ -260,15 +288,16 @@ class UserInfo(commands.Cog):
     @xp.error
     async def info_error(self, ctx, error):
         await ctx.message.delete()
-        if (isinstance(error, commands.MissingRequiredArgument) 
+        if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
-            or isinstance(error, commands.NoPrivateMessage)):
-                await self.bot.send_error(ctx, error)
+                or isinstance(error, commands.NoPrivateMessage)):
+            await self.bot.send_error(ctx, error)
         else:
             await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
+
 
 def xp_for_next_level(next):
     level = 0
@@ -276,9 +305,10 @@ def xp_for_next_level(next):
 
     for i in range(0, next):
         xp = xp + 45 * level * (floor(level / 10) + 1)
-        level+= 1
+        level += 1
 
     return xp
+
 
 async def determine_emoji(type):
     emoji_dict = {
@@ -291,6 +321,7 @@ async def determine_emoji(type):
         "LIFTWARN": "⚠️❌"
     }
     return emoji_dict[type]
+
 
 def setup(bot):
     bot.add_cog(UserInfo(bot))

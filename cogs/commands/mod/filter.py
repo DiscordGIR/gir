@@ -1,7 +1,9 @@
-import discord
-from discord.ext import commands
-from data.filterword import FilterWord
 import traceback
+
+import discord
+from data.filterword import FilterWord
+from discord.ext import commands
+
 
 class Filters(commands.Cog):
     def __init__(self, bot):
@@ -22,9 +24,10 @@ class Filters(commands.Cog):
 
         """
 
-
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5): # must be at least a mod
-            raise commands.BadArgument("You need to be a moderator or higher to use that command.")
+        # must be at least a mod
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+            raise commands.BadArgument(
+                "You need to be a moderator or higher to use that command.")
 
         cur = await self.bot.settings.user(ctx.author.id)
         cur.offline_report_ping = val
@@ -54,35 +57,37 @@ class Filters(commands.Cog):
             Phrase to filter
         """
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6): # must be at least admin
+        # must be at least admin
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             await ctx.message.delete()
-            raise commands.BadArgument("You need to be an administator or higher to use that command.")
+            raise commands.BadArgument(
+                "You need to be an administator or higher to use that command.")
 
         fw = FilterWord()
         fw.bypass = bypass
         fw.notify = notify
-        fw.word = phrase  
+        fw.word = phrase
 
         await self.bot.settings.add_filtered_word(fw)
-        
+
         phrase = discord.utils.escape_markdown(phrase)
         phrase = discord.utils.escape_mentions(phrase)
 
         await ctx.message.reply(f"Added new word to filter! This filter {'will' if notify else 'will not'} ping for reports, level {bypass} can bypass it, and the phrase is {phrase}")
 
-
     @filteradd.error
     @offlineping.error
     async def info_error(self, ctx, error):
-        if (isinstance(error, commands.MissingRequiredArgument) 
+        if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
-            or isinstance(error, commands.NoPrivateMessage)):
-                await self.bot.send_error(ctx, error)
+                or isinstance(error, commands.NoPrivateMessage)):
+            await self.bot.send_error(ctx, error)
         else:
             await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
+
 
 def setup(bot):
     bot.add_cog(Filters(bot))

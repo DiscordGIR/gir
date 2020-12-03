@@ -1,15 +1,16 @@
-import discord
-from discord.ext import commands
 import json
 import os
-from data.guild import Guild
-from data.cases import Cases
-from data.case import Case
-from data.user import User
-from data.filterword import FilterWord
-from cogs.utils.tasks import Tasks
 
+import discord
 import mongoengine
+from cogs.utils.tasks import Tasks
+from data.case import Case
+from data.cases import Cases
+from data.filterword import FilterWord
+from data.guild import Guild
+from data.user import User
+from discord.ext import commands
+
 
 class Settings(commands.Cog):
     """This class is used to hold the state of the bot. It serves as the connection between the bot 

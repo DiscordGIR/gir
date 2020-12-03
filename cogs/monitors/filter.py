@@ -1,15 +1,17 @@
-import discord
-from discord.ext import commands
-from cogs.monitors.report import report
 import re
 import traceback
+
+import discord
+from cogs.monitors.report import report
+from discord.ext import commands
+
 
 class FilterMonitor(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.spoiler_filter = r'\|\|(.*?)\|\|'
         self.invite_filter = r'(?:https?://)?discord(?:(?:app)?\.com/invite|\.gg)/?[a-zA-Z0-9]+/?'
-    
+
     @commands.Cog.listener()
     async def on_message(self, msg):
         guild = self.bot.settings.guild()
@@ -60,9 +62,9 @@ class FilterMonitor(commands.Cog):
             if re.search(self.spoiler_filter, msg.content, flags=re.S):
                 await msg.delete()
                 return
-            
+
             for a in msg.attachments:
-                if a.is_spoiler(): 
+                if a.is_spoiler():
                     await msg.delete()
                     return
 
@@ -71,14 +73,15 @@ class FilterMonitor(commands.Cog):
         await self.on_message(after)
 
     async def info_error(self, ctx, error):
-        if (isinstance(error, commands.MissingRequiredArgument) 
+        if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
-            or isinstance(error, commands.NoPrivateMessage)):
-                await self.bot.send_error(ctx, error)
+                or isinstance(error, commands.NoPrivateMessage)):
+            await self.bot.send_error(ctx, error)
         else:
             traceback.print_exc()
+
 
 def setup(bot):
     bot.add_cog(FilterMonitor(bot))

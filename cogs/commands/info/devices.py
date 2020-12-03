@@ -1,9 +1,11 @@
-import discord
-from discord.ext import commands
-import traceback
-import aiohttp
 import json
 import re
+import traceback
+
+import aiohttp
+import discord
+from discord.ext import commands
+
 
 class Devices(commands.Cog):
     def __init__(self, bot):
@@ -17,7 +19,7 @@ class Devices(commands.Cog):
     @commands.command(name="adddevice")
     async def adddevice(self, ctx: commands.Context, *, device: str) -> None:
         """Add device name to your nickname, i.e `SlimShadyIAm [iPhone 12, 14.2]`. See !listdevices to see the list of possible devices.
-        
+
         Example usage:
         `!adddevice <device name>`
 
@@ -27,12 +29,13 @@ class Devices(commands.Cog):
             device user wants to use
 
         """
-        
+
         await self.check_permissions(ctx)
 
         # check if user already has a device in their nick
         if re.match(self.devices_test, ctx.author.display_name):
-            raise commands.BadArgument("You already have a device nickname set! You can remove it using `!removedevice`.")
+            raise commands.BadArgument(
+                "You already have a device nickname set! You can remove it using `!removedevice`.")
 
         the_device = None
 
@@ -41,8 +44,9 @@ class Devices(commands.Cog):
                 if resp.status == 200:
                     data = await resp.text()
                     devices = json.loads(data)
-                    devices.append({'name': 'iPhone SE 2', 'identifier': 'iPhone12,8'})
-                    
+                    devices.append(
+                        {'name': 'iPhone SE 2', 'identifier': 'iPhone12,8'})
+
                     # try to find a device with the name given in command
                     for d in devices:
                         # remove regional version info of device i.e iPhone SE (CDMA) -> iPhone SE
@@ -60,9 +64,10 @@ class Devices(commands.Cog):
 
         # is this a supported device type for nicknames?
         if not the_device["name"].split(" ")[0].lower() in self.possible_devices:
-            raise commands.BadArgument("Unsupported device. Please see `!listdevices` for possible devices.")
-        
-        ###### firmware stuff for nickname
+            raise commands.BadArgument(
+                "Unsupported device. Please see `!listdevices` for possible devices.")
+
+        # firmware stuff for nickname
 
         def check(m):
             return m.author == ctx.author and m.channel == ctx.channel
@@ -84,7 +89,7 @@ class Devices(commands.Cog):
             if msg.content.lower() == "cancel":
                 await prompt.delete()
                 return
-            
+
             # is this a valid version for this device?
             for f in firmwares:
                 if f["version"] == msg.content:
@@ -94,20 +99,20 @@ class Devices(commands.Cog):
 
             await prompt.delete()
             await msg.delete()
-            
+
             if found:
                 break
-        
+
         # change the user's nickname!
         if found and firmware:
             name = the_device["name"]
             name.replace(' Plus', '+')
             name.replace('Pro Max', 'PM')
             new_nick = f"{ctx.author.display_name} [{name}, {firmware}]"
-            
+
             if len(new_nick) > 32:
                 raise commands.BadArgument("Nickname too long! Aborting.")
-            
+
             await ctx.author.edit(nick=new_nick)
             await ctx.message.reply("Changed your nickname!")
         else:
@@ -117,14 +122,14 @@ class Devices(commands.Cog):
     @commands.command(name="removedevice")
     async def removedevice(self, ctx: commands.Context) -> None:
         """Removes device from your nickname
-        
+
         Example usage:
         `!removedevice`
 
         """
-        
+
         await self.check_permissions(ctx)
-        
+
         if not re.match(self.devices_test, ctx.author.display_name):
             raise commands.BadArgument("You don't have a device nickname set!")
 
@@ -134,7 +139,7 @@ class Devices(commands.Cog):
 
         await ctx.author.edit(nick=new_nick)
         await ctx.message.reply("Removed device from your nickname!")
-        
+
     @commands.guild_only()
     @commands.command(name="listdevices")
     async def listdevices(self, ctx) -> None:
@@ -146,7 +151,7 @@ class Devices(commands.Cog):
         """
 
         await self.check_permissions(ctx)
-        
+
         devices_dict = {
             'iPhone': set(),
             'iPod': set(),
@@ -154,7 +159,7 @@ class Devices(commands.Cog):
             'Apple TV': set(),
             'Apple Watch': set(),
             'HomePod': set(),
-        }    
+        }
 
         async with aiohttp.ClientSession() as session:
             async with session.get(self.devices_url) as resp:
@@ -175,36 +180,39 @@ class Devices(commands.Cog):
         # devices_dict["Apple Watch"].add("Apple Watch Series 6")
         # devices_dict["Apple Watch"].add("Apple Watch SE")
 
-        embed=discord.Embed(title="Devices list")
-        embed.color=discord.Color.blurple()
+        embed = discord.Embed(title="Devices list")
+        embed.color = discord.Color.blurple()
         for key in devices_dict.keys():
             temp = list(devices_dict[key])
             temp.sort()
-            embed.add_field(name=key, value=', '.join(map(str, temp)), inline=False)
-        
+            embed.add_field(name=key, value=', '.join(
+                map(str, temp)), inline=False)
+
         embed.set_footer(text=f"Requested by {ctx.author}")
-        
+
         await ctx.message.reply(embed=embed)
 
     async def check_permissions(self, ctx):
         # non-mods can only use this in #bot-commands
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
-
+            raise commands.BadArgument(
+                f"Command only allowed in <#{bot_chan}>")
 
     @removedevice.error
     @adddevice.error
     async def info_error(self, ctx, error):
         await ctx.message.delete()
-        if (isinstance(error, commands.MissingRequiredArgument) 
+        if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
-            or isinstance(error, commands.NoPrivateMessage)):
-                await self.bot.send_error(ctx, error)
+                or isinstance(error, commands.NoPrivateMessage)):
+            await self.bot.send_error(ctx, error)
         else:
             await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
+
+
 def setup(bot):
     bot.add_cog(Devices(bot))

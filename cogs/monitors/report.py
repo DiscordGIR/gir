@@ -1,12 +1,16 @@
-import discord
 import asyncio
-import humanize
 import datetime
 
+import discord
+import humanize
+
+
 async def report(bot, msg, user):
-    role = discord.utils.get(msg.guild.roles, id=bot.settings.guild().role_moderator)
-    channel = discord.utils.get(msg.guild.channels, id=bot.settings.guild().channel_reports)
-    
+    role = discord.utils.get(
+        msg.guild.roles, id=bot.settings.guild().role_moderator)
+    channel = discord.utils.get(
+        msg.guild.channels, id=bot.settings.guild().channel_reports)
+
     ping_string = ""
     for member in role.members:
         offline_ping = (await bot.settings.user(member.id)).offline_report_ping
@@ -29,15 +33,19 @@ async def report(bot, msg, user):
     embed.set_thumbnail(url=user.avatar_url)
     embed.add_field(name="Member", value=f"{user} ({user.mention})")
     embed.add_field(name="Channel", value=msg.channel.mention)
-    embed.add_field(name="Message", value=discord.utils.escape_markdown(msg.content), inline=False)
+    embed.add_field(name="Message", value=discord.utils.escape_markdown(
+        msg.content), inline=False)
     embed.add_field(name="Join date", value=f"{joined} UTC", inline=True)
-    embed.add_field(name="Account creation date", value=f"{created} UTC", inline=True)
-    embed.add_field(name="Warn points", value=user_info.warn_points, inline=True)
+    embed.add_field(name="Account creation date",
+                    value=f"{created} UTC", inline=True)
+    embed.add_field(name="Warn points",
+                    value=user_info.warn_points, inline=True)
     if len(rd) > 0:
-        embed.add_field(name=f"{len(rd)} most recent cases", value=rd_text, inline=True)
+        embed.add_field(name=f"{len(rd)} most recent cases",
+                        value=rd_text, inline=True)
     else:
-        embed.add_field(name=f"Recent cases", value="This user has no cases.", inline=True)
-    
+        embed.add_field(name=f"Recent cases",
+                        value="This user has no cases.", inline=True)
 
     report_msg = await channel.send(ping_string, embed=embed)
     # report_reactions = ['⚠️', '💯']
@@ -46,12 +54,12 @@ async def report(bot, msg, user):
     #     await report_msg.add_reaction(reaction)
 
     # def check(reaction, user):
-    #     return (bot.settings.permissions.hasAtLeast(user.guild, user, 5) 
-    #         and reaction.message == report_msg 
+    #     return (bot.settings.permissions.hasAtLeast(user.guild, user, 5)
+    #         and reaction.message == report_msg
     #         and str(reaction.emoji) in report_reactions)
 
     # def check_2(reason_text, user):
-    #     return 
+    #     return
     # try:
     #     reaction, warner = await bot.wait_for('reaction_add', timeout=120.0, check=check)
     # except asyncio.TimeoutError:
