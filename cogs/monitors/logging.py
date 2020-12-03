@@ -8,7 +8,15 @@ class Logging(commands.Cog):
         self.bot = bot
 
     @commands.Cog.listener()
-    async def on_member_join(self, member):
+    async def on_member_join(self, member: discord.Member) -> None:
+        """Log member join messages, send log to #server-logs
+
+        Parameters
+        ----------
+        member : discord.Member
+            The member that joined
+        """
+
         if member.guild.id != self.bot.settings.guild_id:
             return
         
@@ -30,7 +38,15 @@ class Logging(commands.Cog):
 
         
     @commands.Cog.listener()
-    async def on_member_remove(self, member):
+    async def on_member_remove(self, member: discord.Member) -> None:
+        """Log member leaves in #server-logs
+
+        Parameters
+        ----------
+        member : discord.Member
+            Member that left
+        """
+        
         if member.guild.id != self.bot.settings.guild_id:
             return
         
@@ -44,7 +60,17 @@ class Logging(commands.Cog):
         await channel.send(embed=embed)
 
     @commands.Cog.listener()
-    async def on_message_edit(self, before, after):
+    async def on_message_edit(self, before: discord.Message, after: discord.Message) -> None:
+        """Log message edits with before and after content
+
+        Parameters
+        ----------
+        before : discord.Message
+            Before edit message data
+        after : discord.Message
+            Aftere edit message data
+        """
+
         if not before.guild:
             return
         if before.guild.id != self.bot.settings.guild_id:
@@ -65,12 +91,19 @@ class Logging(commands.Cog):
         await channel.send(embed=embed)
 
     @commands.Cog.listener()
-    async def on_message_delete(self, message):
+    async def on_message_delete(self, message: discord.Message) -> None:
+        """Log message deletes
+
+        Parameters
+        ----------
+        message : discord.Message
+            Message that was deleted
+        """
+
         if not message.guild:
             return
         if message.guild.id != self.bot.settings.guild_id:
             return
-        
         if message.author.bot:
             return
         if message.content == "" or not message.content:
@@ -89,7 +122,15 @@ class Logging(commands.Cog):
         await channel.send(embed=embed)
 
     @commands.Cog.listener()
-    async def on_bulk_message_delete(self, messages):
+    async def on_bulk_message_delete(self, messages: [discord.Message]):
+        """Log bulk message deletes. Messages are outputted to file and sent to #server-logs
+
+        Parameters
+        ----------
+        messages : [discord.Message]
+            List of messages that were deleted
+        """
+
         if not messages[0].guild:
             return
         if messages[0].guild.id != self.bot.settings.guild_id:
@@ -127,16 +168,27 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        """NSA: mirror all messages to NSA server
+
+        Parameters
+        ----------
+        message : discord.Message
+            Message to log
+        """
+
         if message.guild:
             if message.guild.id != self.bot.settings.guild_id:
                 return
         else:
             return
 
+        # get NSA guild object
         nsa = self.bot.get_guild(id=self.bot.settings.guild().nsa_guild_id)
+        # get channel ID of the mirror channel in NSA from db, webhook ID
         nsa_channel_info = await self.bot.settings.get_nsa_channel(message.channel.id)
         nsa_webhook = None
 
+        # if we don't have a mirror channel in db, generate one and store in db
         if nsa_channel_info is None:
             nsa_channel = await self.gen_channel(nsa, message)
             nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
@@ -144,19 +196,25 @@ class Logging(commands.Cog):
             await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
 
         else:
+            # get the NSA channel object from Discord
             nsa_channel = discord.utils.get(nsa.channels, id=nsa_channel_info["channel_id"])
+            
+            # channel no longer exists, make new one and store in db
             if not nsa_channel:
                 nsa_channel = await self.gen_channel(nsa, message)
                 nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
 
                 await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
+            
             else:
+                # try to get webhook instance, if doesn't exist, make new one and update db
                 try:
                     nsa_webhook = await self.bot.fetch_webhook(nsa_channel_info["webhook_id"])
                 except:
                     nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
                     await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
 
+        # send the log
         await nsa_webhook.send(
             content = f"**{message.author.id}** {message.content}",
             username = str(message.author),

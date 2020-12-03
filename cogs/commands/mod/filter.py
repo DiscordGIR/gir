@@ -17,8 +17,6 @@ class Filters(commands.Cog):
 
         Parameters
         ----------
-        ctx : [type]
-            [description]
         val : bool
             True or False, if you want pings or not
 
@@ -26,7 +24,6 @@ class Filters(commands.Cog):
 
 
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5): # must be at least a mod
-            await ctx.message.delete()
             raise commands.BadArgument("You need to be a moderator or higher to use that command.")
 
         cur = await self.bot.settings.user(ctx.author.id)
