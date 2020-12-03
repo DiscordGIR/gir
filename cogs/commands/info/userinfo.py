@@ -66,7 +66,6 @@ class MenuPages(menus.MenuPages):
                 return
         await super().update(payload)
 
-
 class UserInfo(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -171,7 +170,7 @@ class UserInfo(commands.Cog):
 
     @commands.guild_only()        
     @commands.command(name="warnpoints")
-    async def warnpoints(self, ctx, user:discord.Member):
+    async def warnpoints(self, ctx, user:discord.Member = None):
         """Show a user's warnpoints (mod only)
 
         Example usage:
@@ -189,6 +188,12 @@ class UserInfo(commands.Cog):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
 
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user is not None:
+            raise commands.BadArgument(f"You don't have permissions to check other people's warnpoints.")
+
+        if user is None:
+            user = ctx.author
+
         results = await self.bot.settings.user(user.id)
         
         embed=discord.Embed(title="Warn Points")
@@ -201,7 +206,7 @@ class UserInfo(commands.Cog):
         await ctx.message.reply(embed=embed)
     
     @commands.command(name="cases")
-    async def cases(self, ctx, user:typing.Union[discord.Member,int]):
+    async def cases(self, ctx, user:typing.Union[discord.Member,int] = None):
         """Show list of cases of a user (mod only)
 
         Example usage:
@@ -215,11 +220,21 @@ class UserInfo(commands.Cog):
 
         """
 
-        await ctx.message.delete()
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>")
         
+        if not isinstance(user, int):
+            if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user.id != ctx.author.id:
+                raise commands.BadArgument(f"You don't have permissions to check other people's warnpoints.")
+        else:
+            if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+                raise commands.BadArgument(f"You don't have permissions to check other people's warnpoints.")
+            
+        if user is None:
+            user = ctx.author
+            ctx.args[2] = user
+
         if isinstance(user, int):
             user = await self.bot.fetch_user(user)
             if user is None:
@@ -234,13 +249,14 @@ class UserInfo(commands.Cog):
                 raise commands.BadArgument(f'{user.mention} had no cases.')
         cases = [case for case in results.cases if case._type != "UNMUTE"]
 
-        menus = MenuPages(source=PaginationSource(
+        menus = MenuPages(source=CasesSource(
             cases, key=lambda t: 1, per_page=9), clear_reactions_after=True)
-
+        await ctx.message.delete()
         await menus.start(ctx)
 
     @cases.error
     @userinfo.error
+    @warnpoints.error
     @xp.error
     async def info_error(self, ctx, error):
         await ctx.message.delete()
@@ -263,6 +279,18 @@ def xp_for_next_level(next):
         level+= 1
 
     return xp
+
+async def determine_emoji(type):
+    emoji_dict = {
+        "KICK": "👢",
+        "BAN": "❌",
+        "UNBAN": "✅",
+        "MUTE": "🔇",
+        "WARN": "⚠️",
+        "UNMUTE": "🔈",
+        "LIFTWARN": "⚠️❌"
+    }
+    return emoji_dict[type]
 
 def setup(bot):
     bot.add_cog(UserInfo(bot))
