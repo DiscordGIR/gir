@@ -23,8 +23,7 @@ class Logging(commands.Cog):
         if member.guild.id != self.bot.settings.guild_id:
             return
 
-        channel = discord.utils.get(
-            member.guild.channels, id=self.bot.settings.guild().channel_private)
+        channel = member.guild.get_channel(self.bot.settings.guild().channel_private)
 
         embed = discord.Embed(title="Member joined")
         embed.color = discord.Color.green()
@@ -56,8 +55,7 @@ class Logging(commands.Cog):
         if member.guild.id != self.bot.settings.guild_id:
             return
 
-        channel = discord.utils.get(
-            member.guild.channels, id=self.bot.settings.guild().channel_private)
+        channel = member.guild.get_channel(self.bot.settings.guild().channel_private)
 
         embed = discord.Embed(title="Member left")
         embed.color = discord.Color.purple()
@@ -86,8 +84,7 @@ class Logging(commands.Cog):
         if before.content == after.content:
             return
 
-        channel = discord.utils.get(
-            before.guild.channels, id=self.bot.settings.guild().channel_private)
+        channel = before.guild.get_channel(self.bot.settings.guild().channel_private)
 
         embed = discord.Embed(title="Message Updated")
         embed.color = discord.Color.purple()
@@ -120,8 +117,7 @@ class Logging(commands.Cog):
         if message.content == "" or not message.content:
             return
 
-        channel = discord.utils.get(
-            message.guild.channels, id=self.bot.settings.guild().channel_private)
+        channel = message.guild.get_channel(self.bot.settings.guild().channel_private)
 
         embed = discord.Embed(title="Message Deleted")
         embed.color = discord.Color.red()
@@ -150,8 +146,7 @@ class Logging(commands.Cog):
         if messages[0].guild.id != self.bot.settings.guild_id:
             return
         members = set()
-        channel = discord.utils.get(
-            messages[0].guild.channels, id=self.bot.settings.guild().channel_private)
+        channel = messages[0].guild.get_channel(self.bot.settings.guild().channel_private)
         output = BytesIO()
         for message in messages:
             members.add(message.author)
@@ -214,8 +209,7 @@ class Logging(commands.Cog):
 
         else:
             # get the NSA channel object from Discord
-            nsa_channel = discord.utils.get(
-                nsa.channels, id=nsa_channel_info["channel_id"])
+            nsa_channel = nsa.get_channel(nsa_channel_info["channel_id"])
 
             # channel no longer exists, make new one and store in db
             if not nsa_channel:

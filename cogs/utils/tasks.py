@@ -117,7 +117,7 @@ async def remove_mute(id: int) -> None:
                 log.remove_author()
                 log.set_thumbnail(url=user.avatar_url)
 
-                public_chan = discord.utils.get(guild.channels, id=bot_global.settings.guild().channel_public)
+                public_chan = guild.get_channel(bot_global.settings.guild().channel_public)
                 try:
                     await public_chan.send(embed=log)
                     await user.send(embed=log)

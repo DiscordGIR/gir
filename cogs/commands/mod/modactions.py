@@ -123,8 +123,7 @@ class ModActions(commands.Cog):
         # also send response in channel where command was called
         await ctx.message.reply(embed=log, delete_after=10)
 
-        public_chan = discord.utils.get(
-            ctx.guild.channels, id=self.bot.settings.guild().channel_public)
+        public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
@@ -195,8 +194,7 @@ class ModActions(commands.Cog):
         
         await ctx.message.reply(embed=log, delete_after=10)
 
-        public_chan = discord.utils.get(
-            ctx.guild.channels, id=self.bot.settings.guild().channel_public)
+        public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
@@ -250,8 +248,7 @@ class ModActions(commands.Cog):
 
         await ctx.message.reply(embed=log, delete_after=10)
 
-        public_chan = discord.utils.get(
-            ctx.guild.channels, id=self.bot.settings.guild().channel_public)
+        public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
@@ -318,8 +315,7 @@ class ModActions(commands.Cog):
 
         await ctx.message.reply(embed=log, delete_after=10)
 
-        public_chan = discord.utils.get(
-            ctx.guild.channels, id=self.bot.settings.guild().channel_public)
+        public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
@@ -371,8 +367,7 @@ class ModActions(commands.Cog):
         log = await logging.prepare_unban_log(ctx.author, user, case)
         await ctx.message.reply(embed=log, delete_after=10)
 
-        public_chan = discord.utils.get(
-            ctx.guild.channels, id=self.bot.settings.guild().channel_public)
+        public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
@@ -478,8 +473,7 @@ class ModActions(commands.Cog):
         log = await logging.prepare_mute_log(ctx.author, user, case)
         await ctx.message.reply(embed=log, delete_after=10)
 
-        public_chan = discord.utils.get(
-            ctx.guild.channels, id=self.bot.settings.guild().channel_public)
+        public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
@@ -542,8 +536,7 @@ class ModActions(commands.Cog):
         except:
             pass
             
-        public_chan = discord.utils.get(
-            ctx.guild.channels, id=self.bot.settings.guild().channel_public)
+        public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)

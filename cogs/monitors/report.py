@@ -6,10 +6,8 @@ import humanize
 
 
 async def report(bot, msg, user):
-    role = discord.utils.get(
-        msg.guild.roles, id=bot.settings.guild().role_moderator)
-    channel = discord.utils.get(
-        msg.guild.channels, id=bot.settings.guild().channel_reports)
+    role = member.guild.get_role(bot.settings.guild().role_moderator)
+    channel = msg.guild.get_channel(bot.settings.guild().channel_reports)
 
     ping_string = ""
     for member in role.members:

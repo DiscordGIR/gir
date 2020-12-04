@@ -297,19 +297,19 @@ class Permissions:
         self.permissions = {
             0: lambda x, y: True,
             1: (lambda guild, m: (guild.id == guild_id
-                and discord.utils.get(guild.roles, id=the_guild.role_memberplus) in m.roles) 
+                and guild.get_role(the_guild.role_memberplus) in m.roles) 
                 or self.hasAtLeast(guild, m, 2)),
             2: (lambda guild, m: (guild.id == guild_id
-                and discord.utils.get(guild.roles, id=the_guild.role_memberpro) in m.roles) 
+                and guild.get_role(the_guild.role_memberpro) in m.roles) 
                 or self.hasAtLeast(guild, m, 3)),
             3: (lambda guild, m: (guild.id == guild_id
-                and discord.utils.get(guild.roles, id=the_guild.role_memberedition) in m.roles)
+                and guild.get_role(the_guild.role_memberedition) in m.roles)
                 or self.hasAtLeast(guild, m, 4)),
             4: (lambda guild, m: (guild.id == guild_id
-                and discord.utils.get(guild.roles, id=the_guild.role_genius) in m.roles) 
+                and guild.get_role(the_guild.role_genius) in m.roles) 
                 or self.hasAtLeast(guild, m, 5)),
             5: (lambda guild, m: (guild.id == guild_id
-                and discord.utils.get(guild.roles, id=the_guild.role_moderator) in m.roles) 
+                and guild.get_role(the_guild.role_moderator) in m.roles) 
                 or self.hasAtLeast(guild, m, 6)),
             6: (lambda guild, m: (guild.id == guild_id
                 and m.guild_permissions.manage_guild)
