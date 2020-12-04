@@ -92,6 +92,22 @@ class Settings(commands.Cog):
         """        
         
         Guild.objects(_id=self.guild_id).update_one(inc__case_id=1)
+    
+    async def inc_xp(self, id, xp):
+        """Increments user xp.
+        """        
+        
+        await self.user(id)
+        User.objects(_id=id).update_one(inc__xp=xp)
+        u = User.objects(_id=id).first()
+        return (u.xp, u.level)
+    
+    async def inc_level(self, id) -> None:
+        """Increments user level.
+        """        
+        
+        await self.user(id)
+        User.objects(_id=id).update_one(inc__level=1)
 
     async def add_case(self, _id: int, case: Case) -> None:
         """Cases holds all the cases for a particular user with id `_id` as an

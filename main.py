@@ -27,6 +27,7 @@ initial_extensions = ['cogs.utils.settings',
                       'cogs.commands.info.userinfo',
                       'cogs.monitors.logging',
                       'cogs.monitors.filter',
+                      'cogs.monitors.xp',
                       'cogs.commands.info.port',
                       'cogs.commands.info.stats',
                       'cogs.commands.info.devices',
@@ -40,8 +41,7 @@ mentions = discord.AllowedMentions(everyone=False, users=True, roles=False)
 
 bot = commands.Bot(command_prefix=get_prefix,
                    intents=intents, allowed_mentions=mentions)
-bot.max_messages = 1000000
-
+bot.max_messages = 10000
 
 # Here we load our extensions(cogs) listed above in [initial_extensions].
 if __name__ == '__main__':

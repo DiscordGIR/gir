@@ -8,7 +8,7 @@ async def prepare_warn_log(author, user, case):
     embed.add_field(name="Mod", value=f'{author} ({author.mention})', inline=True)
     embed.add_field(name="Increase", value=case.punishment, inline=True)
     embed.add_field(name="Reason", value=case.reason, inline=True)
-    embed.set_footer(text=f"Case #{case._id} | Warned by {author}")
+    embed.set_footer(text=f"Case #{case._id} | {user.id}")
     return embed
 
 async def prepare_liftwarn_log(author, user, case):
@@ -19,7 +19,7 @@ async def prepare_liftwarn_log(author, user, case):
     embed.add_field(name="Mod", value=f'{author} ({author.mention})', inline=True)
     embed.add_field(name="Decrease", value=case.punishment, inline=True)
     embed.add_field(name="Reason", value=case.lifted_reason, inline=True)
-    embed.set_footer(text=f"Case #{case._id} | Lifted by {author}")
+    embed.set_footer(text=f"Case #{case._id} | {user.id}")
     return embed
 
 async def prepare_ban_log(author, user, case):
@@ -29,7 +29,7 @@ async def prepare_ban_log(author, user, case):
     embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
     embed.add_field(name="Mod", value=f'{author} ({author.mention})', inline=True)
     embed.add_field(name="Reason", value=case.reason, inline=True)
-    embed.set_footer(text=f"Case #{case._id} | Banned by {author}")
+    embed.set_footer(text=f"Case #{case._id} | {user.id}")
     return embed
 
 async def prepare_unban_log(author, user, case):
@@ -39,7 +39,7 @@ async def prepare_unban_log(author, user, case):
     embed.add_field(name="Member", value=f'{user} ({user.id})', inline=True)
     embed.add_field(name="Mod", value=f'{author} ({author.mention})', inline=True)
     embed.add_field(name="Reason", value=case.reason, inline=True)
-    embed.set_footer(text=f"Case #{case._id} | Unbanned by {author}")
+    embed.set_footer(text=f"Case #{case._id} | {user.id}")
     return embed
 
 async def prepare_kick_log(author, user, case):
@@ -49,7 +49,7 @@ async def prepare_kick_log(author, user, case):
     embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
     embed.add_field(name="Mod", value=f'{author} ({author.mention})', inline=True)
     embed.add_field(name="Reason", value=case.reason, inline=False)
-    embed.set_footer(text=f"Case #{case._id} | Kicked by {author}")
+    embed.set_footer(text=f"Case #{case._id} | {user.id}")
     return embed
 
 async def prepare_mute_log(author, user, case):
@@ -60,7 +60,7 @@ async def prepare_mute_log(author, user, case):
     embed.add_field(name="Mod", value=f'{author} ({author.mention})', inline=True)
     embed.add_field(name="Duration", value=case.punishment, inline=True)
     embed.add_field(name="Reason", value=case.reason, inline=True)
-    embed.set_footer(text=f"Case #{case._id} | Muted by {author}")
+    embed.set_footer(text=f"Case #{case._id} | {user.id}")
     return embed
 
 async def prepare_unmute_log(author, user, case):
@@ -70,5 +70,5 @@ async def prepare_unmute_log(author, user, case):
     embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
     embed.add_field(name="Mod", value=f'{author} ({author.mention})', inline=True)
     embed.add_field(name="Reason", value=case.reason, inline=True)
-    embed.set_footer(text=f"Case #{case._id} | Unmuted by {author}")
+    embed.set_footer(text=f"Case #{case._id} | {user.id}")
     return embed
