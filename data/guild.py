@@ -22,6 +22,7 @@ class Guild(mongoengine.Document):
     logging_excluded_channels = mongoengine.ListField(default=[])
     filter_words              = mongoengine.EmbeddedDocumentListField(FilterWord, default=[])
     filter_excluded_channels  = mongoengine.ListField(default=[])
+    filter_excluded_guilds    = mongoengine.ListField(default=[349243932447604736])
 
     meta = {
         'db_alias': 'core',

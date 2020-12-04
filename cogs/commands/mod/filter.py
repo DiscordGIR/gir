@@ -75,6 +75,32 @@ class Filters(commands.Cog):
 
         await ctx.message.reply(f"Added new word to filter! This filter {'will' if notify else 'will not'} ping for reports, level {bypass} can bypass it, and the phrase is {phrase}")
 
+    @commands.guild_only()
+    @commands.command(name="filterremove")
+    async def filterremove(self, ctx, *, word:str):
+        # must be at least admin
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            await ctx.message.delete()
+            raise commands.BadArgument(
+                "You need to be an administator or higher to use that command.")
+        
+        word = word.lower()
+        await self.bot.settings.remove_filtered_word(word)
+        await ctx.message.reply("Deleted, if it exists :p", delete_after=10)
+    
+    @commands.guild_only()
+    @commands.command(name="whitelist")
+    async def filterremove(self, ctx, *, id:int):
+        # must be at least admin
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            await ctx.message.delete()
+            raise commands.BadArgument(
+                "You need to be an administator or higher to use that command.")
+        
+        await self.bot.settings.add_whitelisted_guild(id)
+        await ctx.message.reply("Whitelisted.", delete_after=10)
+        
+
     @filteradd.error
     @offlineping.error
     async def info_error(self, ctx, error):

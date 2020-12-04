@@ -14,14 +14,14 @@ class FilterMonitor(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, msg):
-        guild = self.bot.settings.guild()
-
+        if not msg.guild:
+            return
         if msg.author.bot:
             return
 
+        guild = self.bot.settings.guild()
         if msg.guild.id != self.bot.settings.guild_id:
             return
-
         if msg.channel.id in guild.filter_excluded_channels:
             return
 
@@ -32,6 +32,7 @@ class FilterMonitor(commands.Cog):
         for word in guild.filter_words:
             if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, word.bypass):
                 if word.word in msg.content:
+                    print(word.word)
                     delete = True
                     if word.notify:
                         await report(self.bot, msg, msg.author)
@@ -46,11 +47,17 @@ class FilterMonitor(commands.Cog):
         if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, 5):
             invites = re.findall(self.invite_filter, msg.content, flags=re.S)
             if invites:
-                whitelist = ["xd", "jb"]
+                whitelist = self.bot.settings.guild().filter_excluded_guilds
                 for invite in invites:
-                    splat = invite.split("/")
-                    id = splat[-1] or splat[-2]
-                    if id.lower() not in whitelist:
+                    invite = await self.bot.fetch_invite(invite)
+
+                    id = None
+                    if isinstance(invite, discord.Invite):
+                        id = invite.guild.id
+                    elif isinstance(invite, discord.PartialInviteGuild):
+                        id = invite.id
+                        
+                    if id not in whitelist:
                         await msg.delete()
                         await report(self.bot, msg, msg.author)
                         break

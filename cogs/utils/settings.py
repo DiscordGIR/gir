@@ -131,6 +131,12 @@ class Settings(commands.Cog):
     async def add_filtered_word(self, fw: FilterWord) -> None:
         Guild.objects(_id=self.guild_id).update_one(push__filter_words=fw)
 
+    async def remove_filtered_word(self, word: str):
+        return Guild.objects(_id=self.guild_id).update_one(pull__filter_words__word = FilterWord(word=word).word)
+    
+    async def add_whitelisted_guild(self, id: int):
+        Guild.objects(_id=self.guild_id).update_one(push__filter_excluded_guilds = id)
+
     async def inc_points(self, _id: int, points: int) -> None:
         """Increments the warnpoints by `points` of a user whose ID is given by `_id`.
         If the user doesn't have a User document in the database, first create that.
