@@ -28,8 +28,6 @@ class Xp(commands.Cog):
         if 50 <= new_level:
             roles_to_add.append(self.bot.settings.guild().role_memberedition)
 
-        print(roles_to_add)
-
         if roles_to_add is not None:
             for role in roles_to_add:
                 role = member.guild.get_role(role)
@@ -63,8 +61,6 @@ class Xp(commands.Cog):
             roles_to_add.append(self.bot.settings.guild().role_memberpro)
         if 50 <= new_level:
             roles_to_add.append(self.bot.settings.guild().role_memberedition)
-
-        print(roles_to_add)
 
         if roles_to_add is not None:
             for role in roles_to_add:
