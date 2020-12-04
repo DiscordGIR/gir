@@ -6,7 +6,7 @@ import humanize
 
 
 async def report(bot, msg, user):
-    role = member.guild.get_role(bot.settings.guild().role_moderator)
+    role = msg.guild.get_role(bot.settings.guild().role_moderator)
     channel = msg.guild.get_channel(bot.settings.guild().channel_reports)
 
     ping_string = ""

@@ -11,6 +11,8 @@ class Xp(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member) -> None:
+        if message.author.bot:
+            return
         user = await self.bot.settings.user(id=member.id)
 
         if user.is_xp_frozen or user.is_clem:
@@ -37,20 +39,23 @@ class Xp(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        if message.guild.id != self.bot.settings.guild_id:
+            return
         user = await self.bot.settings.user(id=message.author.id)
-
+        if not message.guild:
+            return
         if user.is_xp_frozen or user.is_clem:
             return
         if message.guild.id != self.bot.settings.guild_id:
             return
 
         xp_to_add = randint(0, 11)
-        print(f"giving {message.author} {xp_to_add}")
+        # print(f"giving {message.author} {xp_to_add}")
         new_xp, level_before = await self.bot.settings.inc_xp(message.author.id, xp_to_add)
-        print(new_xp)
-        print(level_before)
+        # print(new_xp)
+        # print(level_before)
         new_level = await self.get_level(new_xp)
-        print(new_level)
+        # print(new_level)
         if new_level > level_before:
             await self.bot.settings.inc_level(message.author.id)
 
