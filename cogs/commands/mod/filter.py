@@ -78,6 +78,18 @@ class Filters(commands.Cog):
     @commands.guild_only()
     @commands.command(name="filterremove")
     async def filterremove(self, ctx, *, word:str):
+        """Remove word from filter (admin only)
+
+        Example usage:
+        --------------
+        `!filterremove xd xd xd`
+
+        Parameters
+        ----------
+        word : str
+            Word to remove
+
+        """
         # must be at least admin
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             await ctx.message.delete()
@@ -90,7 +102,20 @@ class Filters(commands.Cog):
     
     @commands.guild_only()
     @commands.command(name="whitelist")
-    async def filterremove(self, ctx, *, id:int):
+    async def whitelist(self, ctx, id:int):
+        """Whitelist a guild from invite filter (admin only)
+
+        Example usage:
+        --------------
+        `!whitelist 349243932447604736`
+
+        Parameters
+        ----------
+        id : int
+            ID of guild to whitelist
+
+        """
+
         # must be at least admin
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             await ctx.message.delete()
@@ -101,6 +126,8 @@ class Filters(commands.Cog):
         await ctx.message.reply("Whitelisted.", delete_after=10)
         
 
+    @whitelist.error
+    @filterremove.error
     @filteradd.error
     @offlineping.error
     async def info_error(self, ctx, error):
