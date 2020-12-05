@@ -287,7 +287,7 @@ class UserInfo(commands.Cog):
     @warnpoints.error
     @xp.error
     async def info_error(self, ctx, error):
-        await ctx.message.delete()
+        await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
