@@ -22,13 +22,15 @@ class Xp(commands.Cog):
         
         level = user.level
         
-        roles_to_add = []
+        db = self.bot.settings.guild()
+
+        roles_to_add = [db.role_member]
         if 15 <= new_level:
-            roles_to_add.append(self.bot.settings.guild().role_memberplus)
+            roles_to_add.append(db.role_memberplus)
         if 30 <= new_level:
-            roles_to_add.append(self.bot.settings.guild().role_memberpro)
+            roles_to_add.append(db.role_memberpro)
         if 50 <= new_level:
-            roles_to_add.append(self.bot.settings.guild().role_memberedition)
+            roles_to_add.append(db.role_memberedition)
 
         if roles_to_add is not None:
             for role in roles_to_add:
@@ -50,22 +52,22 @@ class Xp(commands.Cog):
             return
 
         xp_to_add = randint(0, 11)
-        # print(f"giving {message.author} {xp_to_add}")
+
         new_xp, level_before = await self.bot.settings.inc_xp(message.author.id, xp_to_add)
-        # print(new_xp)
-        # print(level_before)
         new_level = await self.get_level(new_xp)
-        # print(new_level)
+
         if new_level > level_before:
             await self.bot.settings.inc_level(message.author.id)
 
+        db = self.bot.settings.guild()
+
         roles_to_add = []
         if 15 <= new_level:
-            roles_to_add.append(self.bot.settings.guild().role_memberplus)
+            roles_to_add.append(db.role_memberplus)
         if 30 <= new_level:
-            roles_to_add.append(self.bot.settings.guild().role_memberpro)
+            roles_to_add.append(db.role_memberpro)
         if 50 <= new_level:
-            roles_to_add.append(self.bot.settings.guild().role_memberedition)
+            roles_to_add.append(db.role_memberedition)
 
         if roles_to_add is not None:
             for role in roles_to_add:

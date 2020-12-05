@@ -36,6 +36,7 @@ class Logging(commands.Cog):
         embed.add_field(name="Created", value=member.created_at.strftime(
             "%B %d, %Y, %I:%M %p") + " UTC", inline=True)
         embed.set_footer(text=member.id)
+
         await channel.send(embed=embed)
 
         mute_role = self.bot.settings.guild().role_mute
@@ -236,6 +237,62 @@ class Logging(commands.Cog):
             allowed_mentions=discord.AllowedMentions().none()
         )
 
+    @commands.Cog.listener()
+    async def on_member_update(self, before, after):
+        if not after.guild.id == self.bot.settings.guild_id:
+            return
+        if not before or not after:
+            return
+        if before.display_name != after.display_name:
+            await self.member_nick_update(before, after)
+            return
+        
+        new_roles = [ role.mention for role in after.roles if role not in before.roles ]
+        if new_roles:
+            await self.member_roles_update(before, after, new_roles, added=True)
+            return
+
+        removed_roles = [ role.mention for role in before.roles if role not in after.roles ]
+        if removed_roles:
+            await self.member_roles_update(before, after, removed_roles, added=False)
+            return
+
+    async def member_nick_update(self, before, after):
+        embed = discord.Embed(title="Member Renamed")
+        embed.color = discord.Color.orange()
+        embed.set_thumbnail(url=after.avatar_url)
+        embed.add_field(
+            name="Member", value=f'{after} ({after.mention})', inline=False)
+        embed.add_field(
+            name="Old nickname", value=f'{before.display_name}', inline=True)
+        embed.add_field(
+            name="New nickname", value=f'{after.display_name}', inline=True)
+        embed.set_footer(text=after.id)
+
+        private = after.guild.get_channel(self.bot.settings.guild().channel_private)
+        if private:
+            await private.send(embed=embed)
+    
+    async def member_roles_update(self, before, after, roles, added):
+        embed = discord.Embed()
+        if added:
+            embed.title="Member Role Added"
+            embed.color = discord.Color.blue()
+        else:
+            embed.title="Member Role Removed"
+            embed.color = discord.Color.red()
+
+        embed.set_thumbnail(url=after.avatar_url)
+        embed.add_field(
+            name="Member", value=f'{after} ({after.mention})', inline=False)
+        embed.add_field(
+            name="Role difference", value=' '.join(roles), inline=False)
+        embed.set_footer(text=after.id)
+
+        private = after.guild.get_channel(self.bot.settings.guild().channel_private)
+        if private:
+            await private.send(embed=embed)
+    
     async def gen_channel(self, nsa, message):
         main_category_name = message.channel.category.name
         nsa_category = discord.utils.get(
