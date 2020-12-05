@@ -28,7 +28,6 @@ initial_extensions = ['cogs.utils.settings',
                       'cogs.monitors.logging',
                       'cogs.monitors.filter',
                       'cogs.monitors.xp',
-                      'cogs.commands.info.port',
                       'cogs.commands.info.stats',
                       'cogs.commands.info.devices',
                       ]
