@@ -160,7 +160,7 @@ class UserInfo(commands.Cog):
             name="Level", value=results.level if not results.is_xp_frozen else "0", inline=True)
         embed.add_field(
             name="XP", value=f'{results.xp}/{xp_for_next_level(results.level)}' if not results.is_xp_frozen else "0/0", inline=True)
-        # embed.add_field(name="Rank", value=f"{rank}/{ctx.guild.member_count}", inline=True)
+        embed.add_field(name="Rank", value=await self.bot.settings.leaderboard_rank(results.xp), inline=True)
         embed.set_footer(text=f"Requested by {ctx.author}")
 
         await ctx.message.reply(embed=embed)

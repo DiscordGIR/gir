@@ -86,6 +86,16 @@ class Settings(commands.Cog):
         }
         g.save()
 
+    async def leaderboard(self) -> list:
+        return User.objects[0:100].only('_id', 'xp').order_by('-xp', '-_id').select_related()
+
+    async def leaderboard_rank(self, xp):
+        users = User.objects().only('_id', 'xp')
+        overall = users().count()
+        rank = users(xp__gte=xp).count()
+        return f"{rank}/{overall}"
+
+
     async def inc_caseid(self) -> None:
         """Increments Guild.case_id, which keeps track of the next available ID to
         use for a case.
@@ -212,9 +222,6 @@ class Settings(commands.Cog):
             user._id = id
             user.save()
         return user
-
-    async def leaderboard(self) -> list:
-        return User.objects[0:100].order_by('-xp')
     
     async def cases(self, id: int) -> Cases:
         """Return the Document representing the cases of a user, whose ID is given by `id`
