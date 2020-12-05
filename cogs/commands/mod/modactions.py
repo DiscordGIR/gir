@@ -26,6 +26,11 @@ class ModActions(commands.Cog):
         self.bot = bot
 
     async def check_permissions(self, ctx, user: typing.Union[discord.Member, int] = None):
+        if isinstance(user, discord.Member):      
+            if user.id == ctx.author.id:
+                await ctx.message.add_reaction("🤔")
+                raise commands.BadArgument("You can't call that on yourself.")
+        
         # must be at least a mod
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
             raise commands.BadArgument(
@@ -68,7 +73,7 @@ class ModActions(commands.Cog):
             except discord.NotFound:
                 raise commands.BadArgument(
                     f"Couldn't find user with ID {user}")
-
+        
         guild = self.bot.settings.guild()
 
         reason = discord.utils.escape_markdown(reason)
@@ -122,6 +127,7 @@ class ModActions(commands.Cog):
 
         # also send response in channel where command was called
         await ctx.message.reply(embed=log, delete_after=10)
+        await ctx.message.delete(delay=10)
 
         public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
         if public_chan:
@@ -149,8 +155,8 @@ class ModActions(commands.Cog):
 
         """
 
-        # await self.check_permissions(ctx, user)
-
+        await self.check_permissions(ctx, user)
+            
         # retrieve user's case with given ID
         cases = await self.bot.settings.get_case(user.id, case_id)
         case = cases.cases.filter(_id=case_id).first()
@@ -193,6 +199,7 @@ class ModActions(commands.Cog):
             pass
         
         await ctx.message.reply(embed=log, delete_after=10)
+        await ctx.message.delete(delay=10)
 
         public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
         if public_chan:
@@ -247,6 +254,7 @@ class ModActions(commands.Cog):
         await user.kick(reason=reason)
 
         await ctx.message.reply(embed=log, delete_after=10)
+        await ctx.message.delete(delay=10)
 
         public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
         if public_chan:
@@ -314,6 +322,7 @@ class ModActions(commands.Cog):
             await ctx.guild.ban(discord.Object(id=user.id))
 
         await ctx.message.reply(embed=log, delete_after=10)
+        await ctx.message.delete(delay=10)
 
         public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
         if public_chan:
@@ -366,6 +375,7 @@ class ModActions(commands.Cog):
 
         log = await logging.prepare_unban_log(ctx.author, user, case)
         await ctx.message.reply(embed=log, delete_after=10)
+        await ctx.message.delete(delay=10)
 
         public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
         if public_chan:
@@ -417,7 +427,6 @@ class ModActions(commands.Cog):
             Reason for mute, by default "No reason."
 
         """
-
         await self.check_permissions(ctx, user)
 
         reason = discord.utils.escape_markdown(reason)
@@ -472,6 +481,7 @@ class ModActions(commands.Cog):
 
         log = await logging.prepare_mute_log(ctx.author, user, case)
         await ctx.message.reply(embed=log, delete_after=10)
+        await ctx.message.delete(delay=10)
 
         public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
         if public_chan:
@@ -530,6 +540,7 @@ class ModActions(commands.Cog):
         log = await logging.prepare_unmute_log(ctx.author, user, case)
 
         await ctx.message.reply(embed=log, delete_after=10)
+        await ctx.message.delete(delay=10)
 
         try:
             await user.send("You have been unmuted in r/Jailbreak", embed=log)
@@ -558,8 +569,8 @@ class ModActions(commands.Cog):
             User to put on clem
 
         """
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 7):  # must be owner
 
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 7):  # must be owner
             raise commands.BadArgument(
                 "You need to be Aaron to use that command.")
 
@@ -583,7 +594,7 @@ class ModActions(commands.Cog):
     @kick.error
     @clem.error
     async def info_error(self, ctx, error):
-        await ctx.message.delete()
+        await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)

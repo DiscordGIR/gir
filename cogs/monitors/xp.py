@@ -41,11 +41,11 @@ class Xp(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        if not message.guild:
+            return
         if message.guild.id != self.bot.settings.guild_id:
             return
         user = await self.bot.settings.user(id=message.author.id)
-        if not message.guild:
-            return
         if user.is_xp_frozen or user.is_clem:
             return
         if message.guild.id != self.bot.settings.guild_id:
