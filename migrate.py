@@ -71,7 +71,7 @@ async def migrate():
                         elif case["modID"] == "TheMrSkellytone#3411" or case["modID"] == "TheMrSkellytone#2000":
                             new_case.mod_id = 272756876972654592                        
                         elif case["modID"] == "Shady#0001":
-                            new_case.mod_id = 351529578465984513                        
+                            new_case.mod_id = 438101365416263681                        
                         elif not case["modID"].isdigit():
                             new_case.mod_id = 12345
                             print("broken case", case)
@@ -115,6 +115,8 @@ async def migrate():
                 
                 for word in record["filter.words"]:
                     word = json.loads(word)
+                    if word["word"] == "discord.gg/":
+                        continue
                     new_word = FilterWord()
                     new_word.bypass = word["bypass"]
                     new_word.notify = word["notify"]

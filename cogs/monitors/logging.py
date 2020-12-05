@@ -199,6 +199,10 @@ class Logging(commands.Cog):
 
         # get NSA guild object
         nsa = self.bot.get_guild(id=self.bot.settings.guild().nsa_guild_id)
+        if not nsa:
+            print("NSA not found error?")
+            return
+
         # get channel ID of the mirror channel in NSA from db, webhook ID
         nsa_channel_info = await self.bot.settings.get_nsa_channel(message.channel.id)
         nsa_webhook = None
@@ -313,7 +317,11 @@ class Logging(commands.Cog):
         if not nsa_category:
             nsa_category = await nsa.create_category(main_category_name, position=message.channel.category.position)
 
-        return await nsa_category.create_text_channel(name=message.channel.name, position=message.channel.position)
+        test_channel = discord.utils.get(nsa_category.channels, name=message.channel.name)
+        if test_channel:
+            return test_channel
+        else:
+            return await nsa_category.create_text_channel(name=message.channel.name, position=message.channel.position)
 
     async def info_error(self, ctx, error):
         if (isinstance(error, commands.MissingRequiredArgument)
