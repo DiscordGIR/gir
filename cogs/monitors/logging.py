@@ -23,7 +23,7 @@ class Logging(commands.Cog):
         if member.guild.id != self.bot.settings.guild_id:
             return
 
-        await self.nick_filter(after)
+        await self.nick_filter(member)
 
         channel = member.guild.get_channel(self.bot.settings.guild().channel_private)
 
@@ -41,9 +41,11 @@ class Logging(commands.Cog):
 
         await channel.send(embed=embed)
 
-        mute_role = self.bot.settings.guild().role_mute
-        mute_role = member.guild.get_role(mute_role)
-        await member.add_roles(mute_role)
+        u = await self.bot.settings.user(id=user.id)
+        if u.is_muted:
+            mute_role = self.bot.settings.guild().role_mute
+            mute_role = member.guild.get_role(mute_role)
+            await member.add_roles(mute_role)
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member) -> None:

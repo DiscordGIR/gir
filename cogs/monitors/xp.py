@@ -11,25 +11,25 @@ class Xp(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member) -> None:
-        if message.author.bot:
+        if member.bot:
             return
         user = await self.bot.settings.user(id=member.id)
 
         if user.is_xp_frozen or user.is_clem:
             return
-        if message.guild.id != self.bot.settings.guild_id:
+        if member.guild.id != self.bot.settings.guild_id:
             return
         
         level = user.level
-        
+
         db = self.bot.settings.guild()
 
         roles_to_add = [db.role_member]
-        if 15 <= new_level:
+        if 15 <= level:
             roles_to_add.append(db.role_memberplus)
-        if 30 <= new_level:
+        if 30 <= level:
             roles_to_add.append(db.role_memberpro)
-        if 50 <= new_level:
+        if 50 <= level:
             roles_to_add.append(db.role_memberedition)
 
         if roles_to_add is not None:

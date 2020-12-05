@@ -474,7 +474,7 @@ class ModActions(commands.Cog):
         await self.bot.settings.inc_caseid()
         await self.bot.settings.add_case(user.id, case)
         u = await self.bot.settings.user(id=user.id)
-        u.muted = True
+        u.is_muted = True
         u.save()
 
         await user.add_roles(mute_role)
@@ -519,7 +519,7 @@ class ModActions(commands.Cog):
         await user.remove_roles(mute_role)
 
         u = await self.bot.settings.user(id=user.id)
-        u.muted = False
+        u.is_muted = False
         u.save()
 
         try:
