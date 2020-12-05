@@ -17,6 +17,25 @@ class Stats(commands.Cog):
         self.start_time = datetime.datetime.now()
 
     @commands.guild_only()
+    @commands.command(name="ping")
+    async def ping(self, ctx: commands.Context) -> None:
+        """Pong
+
+        Example usage:
+        `!ping`
+
+        """
+        b = datetime.datetime.utcnow()
+        embed = discord.Embed(
+            title=f"Pong!", color=discord.Color.blurple())
+        embed.set_thumbnail(url=self.bot.user.avatar_url)
+        embed.description =f"Latency: testing..."
+        
+        m = await ctx.message.reply(embed=embed)
+        ping = floor((datetime.datetime.utcnow() - b).total_seconds() * 1000)
+        embed.description = f"Latency: {ping} ms"
+        await m.edit(embed=embed)
+    @commands.guild_only()
     @commands.command(name="stats")
     async def stats(self, ctx: commands.Context) -> None:
         """Statistics about the bot

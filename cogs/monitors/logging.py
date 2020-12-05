@@ -231,7 +231,7 @@ class Logging(commands.Cog):
 
         # send the log
         await nsa_webhook.send(
-            content=f"**{message.author.id}** {message.content}",
+            content=f"**{message.author.id}** {message.content}\n\n[Message link](<{message.jump_url}>) | {message.id}",
             username=str(message.author),
             avatar_url=message.author.avatar_url,
             embeds=message.embeds,
