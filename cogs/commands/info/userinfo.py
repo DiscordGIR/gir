@@ -16,11 +16,11 @@ class LeaderboardSource(menus.GroupByPageSource):
             trophy = ''
             if i == 0:
                 trophy = ':first_place:'
-                # try:
-                #     obj = await self.bot.fetch_user(user._id)
-                #     embed.set_thumbnail(url=obj.avatar_url)
-                # except discord.NotFound:
-                #     pass
+                try:
+                    obj = await menu.ctx.bot.fetch_user(user._id)
+                    embed.set_thumbnail(url=obj.avatar_url)
+                except discord.NotFound:
+                    pass
 
             if i == 1:
                 trophy = ':second_place:'

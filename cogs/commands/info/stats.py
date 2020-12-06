@@ -63,8 +63,6 @@ class Stats(commands.Cog):
                         value=f"{floor(process.memory_info().rss/1000/1000)} MB")
         embed.add_field(name="Python Version", value=platform.python_version())
         embed.add_field(name="disord.py Version", value=discord.__version__)
-        embed.add_field(name="Latency",
-                        value=f"{floor(self.bot.latency)} ms")
 
         await ctx.message.reply(embed=embed)
 

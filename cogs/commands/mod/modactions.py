@@ -107,6 +107,11 @@ class ModActions(commands.Cog):
 
         if cur_points >= 600:
             # automatically ban user if more than 600 points
+            try:
+                await user.send("You were banned from r/Jailbreak for reaching 600 or more points.", embed=log)
+            except Exception:
+                pass
+
             await ctx.invoke(self.ban, user=user, reason="600 or more points reached")
         elif cur_points >= 400 and not results.was_warn_kicked and isinstance(user, discord.Member):
             # kick user if >= 400 points and wasn't previously kicked
@@ -359,7 +364,7 @@ class ModActions(commands.Cog):
             raise commands.BadArgument(f"Couldn't find user with ID {user}")
 
         try:
-            await ctx.guild.unban(discord.Object(id=user.id))
+            await ctx.guild.unban(discord.Object(id=user.id), reason=reason)
         except discord.NotFound:
             raise commands.BadArgument(f"{user} is not banned.")
 
