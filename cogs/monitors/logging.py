@@ -41,7 +41,7 @@ class Logging(commands.Cog):
 
         await channel.send(embed=embed)
 
-        u = await self.bot.settings.user(id=user.id)
+        u = await self.bot.settings.user(id=member.id)
         if u.is_muted:
             mute_role = self.bot.settings.guild().role_mute
             mute_role = member.guild.get_role(mute_role)
