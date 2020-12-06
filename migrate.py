@@ -70,7 +70,7 @@ async def migrate():
                             new_case.mod_id = 342905593423462400
                         elif case["modID"] == "TheMrSkellytone#3411" or case["modID"] == "TheMrSkellytone#2000":
                             new_case.mod_id = 272756876972654592                        
-                        elif case["modID"] == "Shady#0001":
+                        elif case["modID"] == "Shady#0001" or case["modID"] == "Gwen#0001":
                             new_case.mod_id = 438101365416263681                        
                         elif not case["modID"].isdigit():
                             new_case.mod_id = 12345

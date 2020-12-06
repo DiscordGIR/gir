@@ -16,7 +16,7 @@ class FilterMonitor(commands.Cog):
         self.bot = bot
         self.spoiler_filter = r'\|\|(.*?)\|\|'
         self.invite_filter = r'(?:https?://)?discord(?:(?:app)?\.com/invite|\.gg)/?[a-zA-Z0-9]+/?'
-        self.spam_cooldown = commands.CooldownMapping.from_cooldown(3, 10.0, commands.BucketType.user)
+        self.spam_cooldown = commands.CooldownMapping.from_cooldown(2, 10.0, commands.BucketType.user)
 
     @commands.Cog.listener()
     async def on_message(self, msg):
@@ -81,7 +81,6 @@ class FilterMonitor(commands.Cog):
             for a in msg.attachments:
                 if a.is_spoiler():
                     await msg.delete()
-                    await self.ratelimit(msg)
                     return
 
     async def ratelimit(self, message):
