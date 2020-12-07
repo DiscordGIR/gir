@@ -35,6 +35,7 @@ class Stats(commands.Cog):
         ping = floor((datetime.datetime.utcnow() - b).total_seconds() * 1000)
         embed.description = f"Latency: {ping} ms"
         await m.edit(embed=embed)
+        
     @commands.guild_only()
     @commands.command(name="stats")
     async def stats(self, ctx: commands.Context) -> None:

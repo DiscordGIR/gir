@@ -16,6 +16,7 @@ class Devices(commands.Cog):
         self.possible_devices = ['iphone', 'ipod', 'ipad', 'homepod', 'apple']
 
     @commands.guild_only()
+    @commands.bot_has_guild_permissions(change_nickname=True)
     @commands.command(name="adddevice")
     async def adddevice(self, ctx: commands.Context, *, device: str) -> None:
         """Add device name to your nickname, i.e `SlimShadyIAm [iPhone 12, 14.2]`. See !listdevices to see the list of possible devices.
@@ -122,6 +123,7 @@ class Devices(commands.Cog):
             raise commands.BadArgument("An error occured :(")
 
     @commands.guild_only()
+    @commands.bot_has_guild_permissions(change_nickname=True)
     @commands.command(name="removedevice")
     async def removedevice(self, ctx: commands.Context) -> None:
         """Removes device from your nickname
@@ -145,6 +147,7 @@ class Devices(commands.Cog):
         await ctx.message.reply("Removed device from your nickname!", delete_after=5)
 
     @commands.guild_only()
+    @commands.bot_has_guild_permissions(change_nickname=True)
     @commands.command(name="listdevices")
     async def listdevices(self, ctx) -> None:
         """List all possible devices you can set your nickname to.
@@ -211,6 +214,7 @@ class Devices(commands.Cog):
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
+            or isinstance(error, commands.BotMissingPermissions)
                 or isinstance(error, commands.NoPrivateMessage)):
             await self.bot.send_error(ctx, error)
         else:

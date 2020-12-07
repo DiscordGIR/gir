@@ -9,6 +9,7 @@ class Filters(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.guild_only()
     @commands.command(name="offlineping")
     async def offlineping(self, ctx, val: bool):
         """Bot will ping for reports when offline (mod only)

@@ -213,6 +213,7 @@ class ModActions(commands.Cog):
             await public_chan.send(embed=log)
         
     @commands.guild_only()
+    @commands.bot_has_guild_permissions(kick_members=True)
     @commands.command(name="kick")
     async def kick(self, ctx: commands.Context, user: discord.Member, *, reason: str = "No reason.") -> None:
         """Kick a user (mod only)
@@ -268,6 +269,7 @@ class ModActions(commands.Cog):
             await public_chan.send(embed=log)
 
     @commands.guild_only()
+    @commands.bot_has_guild_permissions(ban_members=True)
     @commands.command(name="ban")
     async def ban(self, ctx: commands.Context, user: typing.Union[discord.Member, int], *, reason: str = "No reason."):
         """Ban a user (mod only)
@@ -336,6 +338,7 @@ class ModActions(commands.Cog):
             await public_chan.send(embed=log)
 
     @commands.guild_only()
+    @commands.bot_has_guild_permissions(ban_members=True)
     @commands.command(name="unban")
     async def unban(self, ctx: commands.Context, user: int, *, reason: str = "No reason.") -> None:
         """Unban a user (must use ID) (mod only)
@@ -389,6 +392,7 @@ class ModActions(commands.Cog):
             await public_chan.send(embed=log)
 
     @commands.guild_only()
+    @commands.bot_has_guild_permissions(manage_messages=True)
     @commands.command(name="purge")
     async def purge(self, ctx: commands.Context, limit: int = 0) -> None:
         """Purge messages from current channel (mod only)
@@ -414,6 +418,7 @@ class ModActions(commands.Cog):
         await ctx.send(f'Purged {limit} messages.', delete_after=10)
 
     @commands.guild_only()
+    @commands.bot_has_guild_permissions(manage_roles=True)
     @commands.command(name="mute")
     async def mute(self, ctx: commands.Context, user: discord.Member, dur: str = "", *, reason: str = "No reason.") -> None:
         """Mute a user (mod only)
@@ -500,6 +505,7 @@ class ModActions(commands.Cog):
             pass
 
     @commands.guild_only()
+    @commands.bot_has_guild_permissions(manage_roles=True)
     @commands.command(name="unmute")
     async def unmute(self, ctx: commands.Context, user: discord.Member, *, reason: str = "No reason.") -> None:
         """Unmute a user (mod only)
@@ -558,8 +564,7 @@ class ModActions(commands.Cog):
             log.set_thumbnail(url=user.avatar_url)
             await public_chan.send(embed=log)
 
-
-
+    @commands.guild_only()
     @commands.command(name="clem")
     async def clem(self, ctx: commands.Context, user: discord.Member) -> None:
         """Sets user's XP and Level to 0, freezes XP, sets warn points to 599 (AARON ONLY)
@@ -603,6 +608,7 @@ class ModActions(commands.Cog):
         if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
+            or isinstance(error, commands.BotMissingPermissions)
             or isinstance(error, commands.MissingPermissions)
                 or isinstance(error, commands.NoPrivateMessage)):
             await self.bot.send_error(ctx, error)
