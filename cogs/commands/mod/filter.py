@@ -123,11 +123,43 @@ class Filters(commands.Cog):
             raise commands.BadArgument(
                 "You need to be an administator or higher to use that command.")
         
-        await self.bot.settings.add_whitelisted_guild(id)
-        await ctx.message.reply("Whitelisted.", delete_after=10)
+        if await self.bot.settings.add_whitelisted_guild(id):
+            await ctx.message.reply("Whitelisted.", delete_after=10)
+        else:
+            await ctx.message.reply("That server is already whitelisted.", delete_after=10)
+        await ctx.message.delete(delay=10)
+
+    @commands.guild_only()
+    @commands.command(name="blacklist")
+    async def blacklist(self, ctx, id:int):
+        """Blacklist a guild from invite filter (admin only)
+
+        Example usage:
+        --------------
+        `!blacklist 349243932447604736`
+
+        Parameters
+        ----------
+        id : int
+            ID of guild to blacklist
+
+        """
+
+        # must be at least admin
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            await ctx.message.delete()
+            raise commands.BadArgument(
+                "You need to be an administator or higher to use that command.")
         
+        if await self.bot.settings.remove_whitelisted_guild(id):
+            await ctx.message.reply("Blacklisted.", delete_after=10)
+        else:
+            await ctx.message.reply("That server isn't currently whitelisted.", delete_after=10)
+        await ctx.message.delete(delay=10)
+    
 
     @whitelist.error
+    @blacklist.error
     @filterremove.error
     @filteradd.error
     @offlineping.error

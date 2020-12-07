@@ -150,7 +150,20 @@ class Settings(commands.Cog):
         return Guild.objects(_id=self.guild_id).update_one(pull__filter_words__word = FilterWord(word=word).word)
     
     async def add_whitelisted_guild(self, id: int):
-        Guild.objects(_id=self.guild_id).update_one(push__filter_excluded_guilds = id)
+        g = Guild.objects(_id=self.guild_id)
+        g2 = g.first()
+        if id not in g2.filter_excluded_guilds:
+            g.update_one(push__filter_excluded_guilds = id)
+            return True
+        return False
+
+    async def remove_whitelisted_guild(self, id: int):
+        g = Guild.objects(_id=self.guild_id)
+        g2 = g.first()
+        if id in g2.filter_excluded_guilds:
+            g.update_one(pull__filter_excluded_guilds = id)
+            return True
+        return False
 
     async def inc_points(self, _id: int, points: int) -> None:
         """Increments the warnpoints by `points` of a user whose ID is given by `_id`.

@@ -305,12 +305,12 @@ class Logging(commands.Cog):
             await self.member_nick_update(before, after)
             return
         
-        new_roles = [ role.mention for role in after.roles if role not in before.roles ]
+        new_roles = [ str(role) for role in after.roles if role not in before.roles ]
         if new_roles:
             await self.member_roles_update(before, after, new_roles, added=True)
             return
 
-        removed_roles = [ role.mention for role in before.roles if role not in after.roles ]
+        removed_roles = [ str(role) for role in before.roles if role not in after.roles ]
         if removed_roles:
             await self.member_roles_update(before, after, removed_roles, added=False)
             return
