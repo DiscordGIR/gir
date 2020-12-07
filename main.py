@@ -52,9 +52,10 @@ class NewHelpCommand(commands.DefaultHelpCommand):
         super().__init__()
         self.dm_help = True
 
-    async def command_callback(self, ctx, command=None):
+    async def prepare_help_command(self, ctx, command=None):
         await ctx.message.add_reaction("📬")
-        super().command_callback(ctx, command)
+        await ctx.message.delete(delay=5)
+        await super().prepare_help_command(ctx, command)
 
     async def command_not_found(self, ctx):
         return "Command not found!"
