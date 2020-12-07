@@ -109,6 +109,7 @@ async def migrate():
                 guild.channel_private = record["channels.private"]
                 guild.channel_reports = record["channels.reports"]
                 guild.channel_botspam = record["channels.botspam"]
+                guild.channel_emoji_log = 711168733510500373
                 
                 guild.nsa_guild_id = os.environ.get("BOTTY_NSAGUILD")
 

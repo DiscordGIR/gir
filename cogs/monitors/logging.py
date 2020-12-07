@@ -27,15 +27,18 @@ class Logging(commands.Cog):
                 webhook = await self.bot.fetch_webhook(webhook_id)
             except Exception:
                 pass
-
-        if webhook_id is None or webhook is None:
-            channel = member.guild.get_channel(self.bot.settings.guild().channel_private)
-            webhook = await channel.create_webhook(name="logging emojis")
-            await self.bot.settings.save_emoji_webhook(webhook.id)
         
+        print(webhook_id, webhook)
+        if webhook_id is None or webhook is None:
+            channel = member.guild.get_channel(self.bot.settings.guild().channel_emoji_log)
+            if channel:
+                webhook = await channel.create_webhook(name="logging emojis")
+                await self.bot.settings.save_emoji_webhook(webhook.id)
+            else:
+                pass
+            
         embed = discord.Embed(title="Member added reaction")
         embed.color = discord.Color.green()
-        # embed.set_thumbnail(url=reaction.emoji.url)
         embed.add_field(
             name="User", value=f'{member} ({member.mention})', inline=True)
         embed.add_field(
