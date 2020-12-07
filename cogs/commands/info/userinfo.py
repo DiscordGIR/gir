@@ -36,8 +36,9 @@ class LeaderboardSource(menus.GroupByPageSource):
 class CasesSource(menus.GroupByPageSource):
     async def format_page(self, menu, entry):
         user = menu.ctx.args[2]
+        u = await menu.ctx.bot.settings.user(user.id)
         embed = discord.Embed(
-            title=f'Cases', color=discord.Color.blurple())
+            title=f'Cases - {u.warn_points} points', color=discord.Color.blurple())
         embed.set_author(name=user, icon_url=user.avatar_url)
         for case in entry.items:
             timestamp = case.date.strftime("%B %d, %Y, %I:%M %p")
