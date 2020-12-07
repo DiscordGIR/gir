@@ -96,8 +96,12 @@ class Logging(commands.Cog):
         embed.set_thumbnail(url=before.author.avatar_url)
         embed.add_field(
             name="User", value=f'{before.author} ({before.author.mention})', inline=False)
+        if len(before.content) > 400:
+            before.content = before.content[0:400] + "..."
+        if len(after.content) > 400:
+            after.content = after.content[0:400] + "..."
         embed.add_field(name="Old message", value=before.content, inline=False)
-        embed.add_field(name="New message", value=before.content, inline=False)
+        embed.add_field(name="New message", value=after.content, inline=False)
         embed.add_field(
             name="Channel", value=before.channel.mention, inline=False)
         embed.set_footer(text=before.author.id)
@@ -131,6 +135,8 @@ class Logging(commands.Cog):
             name="User", value=f'{message.author} ({message.author.mention})', inline=True)
         embed.add_field(
             name="Channel", value=message.channel.mention, inline=True)
+        if len(message.content) > 400:
+            message.content = message.content[0:400] + "..."
         embed.add_field(name="Message", value=message.content, inline=False)
         embed.set_footer(text=message.author.id)
         embed.timestamp = datetime.now()
@@ -236,6 +242,8 @@ class Logging(commands.Cog):
                     await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
 
         # send the log
+        if len(message.content) > 1800:
+            message.content = message.content[0:1800] + "..."
         await nsa_webhook.send(
             content=f"**{message.author.id}** {message.content}\n\n[Message link](<{message.jump_url}>) | {message.id}",
             username=str(message.author),

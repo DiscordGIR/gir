@@ -103,6 +103,7 @@ async def migrate():
                 guild.role_memberpro = record["roles.memberpro"]
                 guild.role_memberedition = record["roles.memberedition"]
                 guild.role_member = record["roles.member"]
+                guild.role_dev = 355177983398641674
 
                 guild.channel_public = record["channels.public"]
                 guild.channel_private = record["channels.private"]
@@ -141,7 +142,8 @@ async def migrate():
             guild.role_memberpro = 777270222868185158
             guild.role_memberedition = 777270206841880586
             guild.role_member = 777270914365784075
-            
+            guild.role_dev = 785523601435656253
+
             guild.channel_public = 777270542033092638
             guild.channel_private = 777270554800422943
             guild.channel_reports = 777270579719569410

@@ -15,7 +15,7 @@ class FilterMonitor(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.spoiler_filter = r'\|\|(.*?)\|\|'
-        self.invite_filter = r'(?:https?://)?discord(?:(?:app)?\.com/invite|\.gg)/?[a-zA-Z0-9]+/?'
+        self.invite_filter = r'(?:https?://)?discord(?:(?:app)?\.com/invite|\.gg)\/{1,}[a-zA-Z0-9]+/?'
         self.spam_cooldown = commands.CooldownMapping.from_cooldown(2, 10.0, commands.BucketType.user)
 
     @commands.Cog.listener()
@@ -55,33 +55,49 @@ class FilterMonitor(commands.Cog):
             if invites:
                 whitelist = self.bot.settings.guild().filter_excluded_guilds
                 for invite in invites:
-                    invite = await self.bot.fetch_invite(invite)
+                    try:
+                        invite = await self.bot.fetch_invite(invite)
 
-                    id = None
-                    if isinstance(invite, discord.Invite):
-                        id = invite.guild.id
-                    elif isinstance(invite, discord.PartialInviteGuild):
-                        id = invite.id
-                        
-                    if id not in whitelist:
+                        id = None
+                        if isinstance(invite, discord.Invite):
+                            id = invite.guild.id
+                        elif isinstance(invite, discord.PartialInviteGuild):
+                            id = invite.id
+                            
+                        if id not in whitelist:
+                            await msg.delete()
+                            await report(self.bot, msg, msg.author)
+                            await self.ratelimit(msg)
+                            break
+                    except discord.errors.NotFound:
                         await msg.delete()
                         await report(self.bot, msg, msg.author)
                         await self.ratelimit(msg)
                         break
-
         """
         SPOILER FILTER
         """
         if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, 5):
             if re.search(self.spoiler_filter, msg.content, flags=re.S):
                 await msg.delete()
-                await self.ratelimit(msg)
+                # await self.ratelimit(msg)
                 return
 
             for a in msg.attachments:
                 if a.is_spoiler():
                     await msg.delete()
                     return
+
+        """
+        NEWLINE FILTER
+        """
+
+        if len(msg.content.splitlines()) > 100:
+            dev_role = msg.guild.get_role(guild.role_dev)
+            if not dev_role or not dev_role in msg.author.roles:
+                await msg.delete()
+                await self.ratelimit(msg)
+                return
 
     async def ratelimit(self, message):
         current = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()

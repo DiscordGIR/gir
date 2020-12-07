@@ -31,6 +31,8 @@ async def report(bot, msg, user):
     embed.set_thumbnail(url=user.avatar_url)
     embed.add_field(name="Member", value=f"{user} ({user.mention})")
     embed.add_field(name="Channel", value=msg.channel.mention)
+    if len(msg.content) > 400:
+            msg.content = msg.content[0:400] + "..."
     embed.add_field(name="Message", value=discord.utils.escape_markdown(
         msg.content), inline=False)
     embed.add_field(name="Join date", value=f"{joined} UTC", inline=True)
