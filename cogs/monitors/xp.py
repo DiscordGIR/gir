@@ -13,6 +13,9 @@ class Xp(commands.Cog):
     async def on_member_join(self, member: discord.Member) -> None:
         if member.bot:
             return
+        if member.guild.id != self.bot.settings.guild_id:
+            return
+
         user = await self.bot.settings.user(id=member.id)
 
         if user.is_xp_frozen or user.is_clem:
@@ -45,10 +48,11 @@ class Xp(commands.Cog):
             return
         if message.guild.id != self.bot.settings.guild_id:
             return
+        if message.author.bot:
+            return
+
         user = await self.bot.settings.user(id=message.author.id)
         if user.is_xp_frozen or user.is_clem:
-            return
-        if message.guild.id != self.bot.settings.guild_id:
             return
 
         xp_to_add = randint(0, 11)

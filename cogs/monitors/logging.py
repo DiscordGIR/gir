@@ -12,7 +12,7 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: discord.Reaction, member: discord.Member):
-        if member.guild is None:
+        if isinstance(member, discord.ClientUser) or member.guild is None:
             return
         if member.bot:
             return
@@ -28,7 +28,6 @@ class Logging(commands.Cog):
             except Exception:
                 pass
         
-        print(webhook_id, webhook)
         if webhook_id is None or webhook is None:
             channel = member.guild.get_channel(self.bot.settings.guild().channel_emoji_log)
             if channel:
@@ -36,7 +35,7 @@ class Logging(commands.Cog):
                 await self.bot.settings.save_emoji_webhook(webhook.id)
             else:
                 pass
-            
+
         embed = discord.Embed(title="Member added reaction")
         embed.color = discord.Color.green()
         embed.add_field(
@@ -53,7 +52,6 @@ class Logging(commands.Cog):
             embed=embed
         )
    
-
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member) -> None:
         """Log member join messages, send log to #server-logs
@@ -200,6 +198,7 @@ class Logging(commands.Cog):
             return
         if messages[0].guild.id != self.bot.settings.guild_id:
             return
+
         members = set()
         channel = messages[0].guild.get_channel(self.bot.settings.guild().channel_private)
         output = BytesIO()
@@ -243,10 +242,9 @@ class Logging(commands.Cog):
             Message to log
         """
 
-        if message.guild:
-            if message.guild.id != self.bot.settings.guild_id:
-                return
-        else:
+        if not message.guild:
+            return
+        if message.guild.id != self.bot.settings.guild_id:
             return
 
         # get NSA guild object

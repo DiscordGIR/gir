@@ -228,6 +228,7 @@ class UserInfo(commands.Cog):
 
         await ctx.message.reply(embed=embed)
 
+    @commands.guild_only()
     @commands.command(name="cases")
     async def cases(self, ctx, user: typing.Union[discord.Member, int] = None):
         """Show list of cases of a user (mod only)

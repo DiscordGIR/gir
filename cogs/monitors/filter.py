@@ -91,13 +91,13 @@ class FilterMonitor(commands.Cog):
         """
         NEWLINE FILTER
         """
-
-        if len(msg.content.splitlines()) > 100:
-            dev_role = msg.guild.get_role(guild.role_dev)
-            if not dev_role or not dev_role in msg.author.roles:
-                await msg.delete()
-                await self.ratelimit(msg)
-                return
+        if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, 5):
+            if len(msg.content.splitlines()) > 100:
+                dev_role = msg.guild.get_role(guild.role_dev)
+                if not dev_role or not dev_role in msg.author.roles:
+                    await msg.delete()
+                    await self.ratelimit(msg)
+                    return
 
     async def ratelimit(self, message):
         current = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
