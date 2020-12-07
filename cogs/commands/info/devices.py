@@ -81,9 +81,9 @@ class Devices(commands.Cog):
 
         found = False
         firmware = None
+        prompt = await ctx.message.reply("Please enter a version number, like '14.0' ('or 'cancel' to cancel)...")
         while True:
             # prompt user to input an iOS version they want to put in their nickname
-            prompt = await ctx.message.reply("Please enter a version number (or 'cancel' to cancel)")
             msg = await self.bot.wait_for('message', check=check)
 
             if msg.content.lower() == "cancel":
@@ -102,6 +102,8 @@ class Devices(commands.Cog):
 
             if found:
                 break
+            else:
+                prompt = await ctx.message.reply("That version wasn't found. Please enter a version number, like '14.0' ('or 'cancel' to cancel)...")
 
         # change the user's nickname!
         if found and firmware:
@@ -114,7 +116,8 @@ class Devices(commands.Cog):
                 raise commands.BadArgument("Nickname too long! Aborting.")
 
             await ctx.author.edit(nick=new_nick)
-            await ctx.message.reply("Changed your nickname!")
+            await ctx.message.reply("Changed your nickname!", delete_after=5)
+            await ctx.message.delete(delay=5)
         else:
             raise commands.BadArgument("An error occured :(")
 
@@ -138,7 +141,8 @@ class Devices(commands.Cog):
             raise commands.BadArgument("Nickname too long")
 
         await ctx.author.edit(nick=new_nick)
-        await ctx.message.reply("Removed device from your nickname!")
+        await ctx.message.delete(delay=5)
+        await ctx.message.reply("Removed device from your nickname!", delete_after=5)
 
     @commands.guild_only()
     @commands.command(name="listdevices")
