@@ -22,6 +22,17 @@ async def prepare_liftwarn_log(author, user, case):
     embed.set_footer(text=f"Case #{case._id} | {user.id}")
     return embed
 
+async def prepare_removepoints_log(author, user, points, reason):
+    embed=discord.Embed(title="Member points removed")
+    embed.set_author(name=user, icon_url=user.avatar_url)
+    embed.color = discord.Color.blurple()
+    embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
+    embed.add_field(name="Mod", value=f'{author} ({author.mention})', inline=True)
+    embed.add_field(name="Decrease", value=points, inline=True)
+    embed.add_field(name="Reason", value=reason, inline=True)
+    # embed.set_footer(text=f"Case #{case._id} | {user.id}")
+    return embed
+
 async def prepare_ban_log(author, user, case):
     embed=discord.Embed(title="Member banned")
     embed.color = discord.Color.blue()

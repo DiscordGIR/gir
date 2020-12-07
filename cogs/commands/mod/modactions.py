@@ -211,6 +211,62 @@ class ModActions(commands.Cog):
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
             await public_chan.send(embed=log)
+
+    @commands.guild_only()
+    @commands.command(name="removepoints")
+    async def removepoints(self, ctx: commands.Context, user: discord.Member, points: int, *, reason: str = "No reason.") -> None:
+        """Remove warnpoints from a user. (mod only)
+
+        Example usage:
+        --------------
+        `!removepoints <@user/ID> <points> <reason (optional)>`
+
+        Parameters
+        ----------
+        user : discord.Member
+            User to remove warn from
+        points : int
+            Amount of points to remove
+        reason : str, optional
+            Reason for lifting warn, by default "No reason."
+
+        """
+
+        await self.check_permissions(ctx, user)
+            
+        # retrieve user's case with given ID
+        # cases = await self.bot.settings.get_case(user.id, case_id)
+
+        reason = discord.utils.escape_markdown(reason)
+        reason = discord.utils.escape_mentions(reason)
+
+        if points < 1:
+            raise commands.BadArgument("Points can't be lower than 1.")
+
+        u = await self.bot.settings.user(id=user.id)
+        if u.warn_points - points < 0:
+            raise commands.BadArgument(
+                message=f"Can't remove {points} points because it would make {user.mention}'s points negative.")
+
+        # passed sanity checks, so update the case in DB
+        # remove the warn points from the user in DB
+        await self.bot.settings.inc_points(user.id, -1 * points)
+
+        # prepare log embed, send to #public-mod-logs, user, channel where invoked
+        log = await logging.prepare_removepoints_log(ctx.author, user, points, reason)
+        try:
+            await user.send("Your points were removed in r/Jailbreak.", embed=log)
+        except Exception:
+            pass
+        
+        await ctx.message.reply(embed=log, delete_after=10)
+        await ctx.message.delete(delay=10)
+
+        public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
+        if public_chan:
+            log.remove_author()
+            log.set_thumbnail(url=user.avatar_url)
+            await public_chan.send(embed=log)
         
     @commands.guild_only()
     @commands.bot_has_guild_permissions(kick_members=True)
@@ -603,6 +659,7 @@ class ModActions(commands.Cog):
     @purge.error
     @kick.error
     @clem.error
+    @removepoints.error
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
