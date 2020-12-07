@@ -44,7 +44,7 @@ class CasesSource(menus.GroupByPageSource):
             if case._type == "WARN":
                 if case.lifted:
                     embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id} [LIFTED]',
-                                    value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Lifted by**: {case.lifted_by_tag}\n**Lift reason**: {case.lifted_reason}\n**Warned on**: {case.date}', inline=True)
+                                    value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Lifted by**: {case.lifted_by_tag}\n**Lift reason**: {case.lifted_reason}\n**Warned on**: {timestamp}', inline=True)
                 else:
                     embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
                                     value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
