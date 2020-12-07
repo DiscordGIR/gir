@@ -47,6 +47,20 @@ if __name__ == '__main__':
     for extension in initial_extensions:
         bot.load_extension(extension)
 
+class NewHelpCommand(commands.DefaultHelpCommand):
+    def __init__(self):
+        super().__init__()
+        self.dm_help = True
+
+    async def command_callback(self, ctx, command=None):
+        await ctx.message.add_reaction("📬")
+        super().command_callback(ctx, command)
+
+    async def command_not_found(self, ctx):
+        return "Command not found!"
+    
+    async def subcommand_not_found(self, ctx, xd):
+        return "Command not found!"
 
 async def send_error(ctx, error):
     embed = discord.Embed(title="An error occured")
@@ -57,6 +71,7 @@ async def send_error(ctx, error):
 
 @bot.event
 async def on_ready():
+    bot.help_command = NewHelpCommand()
     bot.owner_id = os.environ.get("BOTTY_OWNER")
     bot.settings = bot.get_cog("Settings")
     bot.send_error = send_error
