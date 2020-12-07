@@ -18,6 +18,8 @@ class Guild(mongoengine.Document):
     channel_reports           = mongoengine.IntField()
     channel_botspam           = mongoengine.IntField()
     
+
+    emoji_logging_webhook     = mongoengine.IntField()
     nsa_guild_id              = mongoengine.IntField()
     nsa_mapping               = mongoengine.DictField(default={})
     logging_excluded_channels = mongoengine.ListField(default=[])

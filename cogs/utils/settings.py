@@ -86,6 +86,11 @@ class Settings(commands.Cog):
         }
         g.save()
 
+    async def save_emoji_webhook(self, id):
+        g = Guild.objects(_id=self.guild_id).first()
+        g.emoji_logging_webhook = id
+        g.save()
+
     async def leaderboard(self) -> list:
         return User.objects[0:100].only('_id', 'xp').order_by('-xp', '-_id').select_related()
 
