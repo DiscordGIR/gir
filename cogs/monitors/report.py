@@ -55,11 +55,17 @@ async def report(bot, msg, user):
     #     await report_msg.add_reaction(reaction)
     await report_msg.add_reaction("✅")        
 
-    try:
-        reaction, _ = await bot.wait_for('reaction_add', timeout=120.0, check=lambda reaction, user: (user.id != bot.user.id
+    def check(reaction, user):
+        res = (user.id != bot.user.id
             and reaction.message == report_msg
             and str(reaction.emoji) == "✅"
-            and bot.settings.permissions.hasAtLeast(user.guild, user, 5)))
+            and bot.settings.permissions.hasAtLeast(user.guild, user, 5))
+        # if not res:
+        #     await reaction.remove(user)
+        return res
+
+    try:
+        reaction, _ = await bot.wait_for('reaction_add', timeout=120.0, check=check)
     except asyncio.TimeoutError:
         await report_msg.clear_reactions()
     else:
