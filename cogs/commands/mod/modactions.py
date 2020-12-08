@@ -42,6 +42,7 @@ class ModActions(commands.Cog):
                         message=f"{user.mention}'s top role is the same or higher than yours!")
 
     @commands.guild_only()
+    @commands.bot_has_guild_permissions(kick_members=True, ban_members=True)
     @commands.command(name="warn")
     async def warn(self, ctx: commands.Context, user: typing.Union[discord.Member, int], points: int, *, reason: str = "No reason.") -> None:
         """Warn a user (mod only)
