@@ -67,7 +67,6 @@ class Stats(commands.Cog):
         embed.add_field(name="Memory Usage",
                         value=f"{floor(process.memory_info().rss/1000/1000)} MB")
         embed.add_field(name="Python Version", value=platform.python_version())
-        embed.add_field(name="disord.py Version", value=discord.__version__)
 
         await ctx.message.reply(embed=embed)
 
