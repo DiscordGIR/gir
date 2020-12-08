@@ -34,18 +34,14 @@ class FilterMonitor(commands.Cog):
         """
         BAD WORD FILTER
         """
-        delete = False
         for word in guild.filter_words:
             if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, word.bypass):
                 if word.word in msg.content:
-                    delete = True
+                    await self.ratelimit(msg)
+                    await msg.delete()
                     if word.notify:
                         await report(self.bot, msg, msg.author)
-                        break
-        if delete:
-            await msg.delete()
-            await self.ratelimit(msg)
-            return
+                        return
 
         """
         INVITE FILTER
@@ -68,12 +64,13 @@ class FilterMonitor(commands.Cog):
                             await msg.delete()
                             await report(self.bot, msg, msg.author)
                             await self.ratelimit(msg)
-                            break
+                            return
+                    
                     except discord.errors.NotFound:
                         await msg.delete()
                         await report(self.bot, msg, msg.author)
                         await self.ratelimit(msg)
-                        break
+                        return
         """
         SPOILER FILTER
         """

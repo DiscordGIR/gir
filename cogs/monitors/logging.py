@@ -355,7 +355,7 @@ class Logging(commands.Cog):
         embed.add_field(
             name="Member", value=f'{after} ({after.mention})', inline=False)
         embed.add_field(
-            name="Role difference", value=' '.join(roles), inline=False)
+            name="Role difference", value=', '.join(roles), inline=False)
         embed.set_footer(text=after.id)
 
         private = after.guild.get_channel(self.bot.settings.guild().channel_private)
