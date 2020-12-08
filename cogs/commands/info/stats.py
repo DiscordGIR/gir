@@ -24,6 +24,11 @@ class Stats(commands.Cog):
         `!ping`
 
         """
+        bot_chan = self.bot.settings.guild().channel_botspam
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
+            raise commands.BadArgument(
+                f"Command only allowed in <#{bot_chan}>")
+
         b = datetime.datetime.utcnow()
         embed = discord.Embed(
             title=f"Pong!", color=discord.Color.blurple())
