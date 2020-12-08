@@ -1,7 +1,8 @@
+import math
 import traceback
 from random import randint
+
 import discord
-import math
 from discord.ext import commands
 
 
@@ -65,12 +66,19 @@ class Xp(commands.Cog):
 
         return roles_to_add
 
-    async def add_new_roles(self, message, roles_to_add):
+    async def add_new_roles(self, obj, roles_to_add):
         if roles_to_add is not None:
-            for role in roles_to_add:
-                role = message.guild.get_role(role)
-                if role not in message.author.roles:
-                    await message.author.add_roles(role)
+            if isinstance(obj, discord.Message):
+                for role in roles_to_add:
+                    role = obj.guild.get_role(role)
+                    if role not in obj.author.roles:
+                        await obj.author.add_roles(role)
+            
+            elif isinstance(obj, discord.Member):
+                for role in roles_to_add:
+                    role = obj.guild.get_role(role)
+                    if role not in obj.roles:
+                        await obj.add_roles(role)
 
     async def get_level(self, current_xp):
         level = 0
