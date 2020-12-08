@@ -30,6 +30,9 @@ class ModActions(commands.Cog):
             if user.id == ctx.author.id:
                 await ctx.message.add_reaction("🤔")
                 raise commands.BadArgument("You can't call that on yourself.")
+            if user.id == self.bot.user.id:
+                await ctx.message.add_reaction("🤔")
+                raise commands.BadArgument("You can't call that on me :(")
         
         # must be at least a mod
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
@@ -667,6 +670,12 @@ class ModActions(commands.Cog):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 7):  # must be owner
             raise commands.BadArgument(
                 "You need to be Aaron to use that command.")
+         if user.id == ctx.author.id:
+            await ctx.message.add_reaction("🤔")
+            raise commands.BadArgument("You can't call that on yourself.")
+        if user.id == self.bot.user.id:
+            await ctx.message.add_reaction("🤔")
+            raise commands.BadArgument("You can't call that on me :(")
 
         results = await self.bot.settings.user(user.id)
         results.is_clem = True
