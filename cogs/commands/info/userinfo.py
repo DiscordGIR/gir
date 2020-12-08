@@ -38,7 +38,7 @@ class CasesSource(menus.GroupByPageSource):
         user = menu.ctx.args[2]
         u = await menu.ctx.bot.settings.user(user.id)
         embed = discord.Embed(
-            title=f'Cases - {u.warn_points} points', color=discord.Color.blurple())
+            title=f'Cases - {u.warn_points} warn points', color=discord.Color.blurple())
         embed.set_author(name=user, icon_url=user.avatar_url)
         for case in entry.items:
             timestamp = case.date.strftime("%B %d, %Y, %I:%M %p")
@@ -52,11 +52,14 @@ class CasesSource(menus.GroupByPageSource):
             elif case._type == "MUTE":
                 embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
                                 value=f'**Duration**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
+            elif case._type == "REMOVEPOINTS":
+                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
+                                value=f'**Points removed**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
             else:
                 embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
                                 value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
         embed.set_footer(
-            text=f"Page {menu.current_page +1} of {self.get_max_pages()}")
+            text=f"Page {menu.current_page +1} of {self.get_max_pages()} - newest cases first")
         return embed
 
 
@@ -278,6 +281,7 @@ class UserInfo(commands.Cog):
             else:
                 raise commands.BadArgument(f'{user.mention} had no cases.')
         cases = [case for case in results.cases if case._type != "UNMUTE"]
+        cases.reverse()
 
         menus = MenuPages(source=CasesSource(
             cases, key=lambda t: 1, per_page=9), clear_reactions_after=True)
@@ -320,7 +324,8 @@ async def determine_emoji(type):
         "MUTE": "🔇",
         "WARN": "⚠️",
         "UNMUTE": "🔈",
-        "LIFTWARN": "⚠️❌"
+        "LIFTWARN": "⚠️❌",
+        "REMOVEPOINTS": "⬇️"
     }
     return emoji_dict[type]
 

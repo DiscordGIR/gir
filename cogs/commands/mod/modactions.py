@@ -259,9 +259,23 @@ class ModActions(commands.Cog):
         # passed sanity checks, so update the case in DB
         # remove the warn points from the user in DB
         await self.bot.settings.inc_points(user.id, -1 * points)
+        
+        case = Case(
+            _id=self.bot.settings.guild().case_id,
+            _type="REMOVEPOINTS",
+            mod_id=ctx.author.id,
+            mod_tag=str(ctx.author),
+            punishment=str(points),
+            reason=reason,
+        )
+
+        # increment DB's max case ID for next case
+        await self.bot.settings.inc_caseid()
+        # add case to db
+        await self.bot.settings.add_case(user.id, case)
 
         # prepare log embed, send to #public-mod-logs, user, channel where invoked
-        log = await logging.prepare_removepoints_log(ctx.author, user, points, reason)
+        log = await logging.prepare_removepoints_log(ctx.author, user, case)
         try:
             await user.send("Your points were removed in r/Jailbreak.", embed=log)
         except Exception:
