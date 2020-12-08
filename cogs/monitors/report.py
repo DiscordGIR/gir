@@ -46,6 +46,7 @@ async def report(bot, msg, user):
     else:
         embed.add_field(name=f"Recent cases",
                         value="This user has no cases.", inline=True)
+        embed.set_footer(text="React with ✅ to dismiss.")
 
     report_msg = await channel.send(ping_string, embed=embed)
     # report_reactions = ['⚠️', '💯']
