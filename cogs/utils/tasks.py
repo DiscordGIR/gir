@@ -113,7 +113,7 @@ async def remove_mute(id: int) -> None:
                 await bot_global.settings.add_case(user.id, case)
 
                 u = await bot_global.settings.user(id=user.id)
-                u.muted = True
+                u.is_muted = False
                 u.save()
 
                 log = await prepare_unmute_log(bot_global.user, user, case)
