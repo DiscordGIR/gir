@@ -298,10 +298,10 @@ class Permissions:
     Level 2 is people with Member Pro role
     Level 3 is people with Member Edition role
     Level 4 is people with Genius role
-    Level 5 is people with MANAGE_GUILD permission
-    Level 6 is Moderators
+    Level 5 is people with Moderator role
+    Level 6 is Admins
     Level 7 is the Guild owner (Aaron)
-    Level 8 is the bot owner
+    Level 9 and 10 is the bot owner
 
     """
 

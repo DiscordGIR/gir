@@ -18,6 +18,7 @@ pytimeparse = "*"
 asyncpg = "*"
 "discord.py" = {git = "https://github.com/Rapptz/discord.py"}
 psutil = "*"
+python-dateutil = "*"
 
 [requires]
 python_version = "3.8"
