@@ -257,7 +257,11 @@ class UserInfo(commands.Cog):
             User we want to get cases of, doesn't have to be in guild
 
         """
-            
+
+        if user is None:
+            user = ctx.author
+            ctx.args[2] = user
+
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
             raise commands.BadArgument(
@@ -271,10 +275,6 @@ class UserInfo(commands.Cog):
             if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
                 raise commands.BadArgument(
                     f"You don't have permissions to check other people's warnpoints.")
-
-        if user is None:
-            user = ctx.author
-            ctx.args[2] = user
 
         if isinstance(user, int):
             user = await self.bot.fetch_user(user)
