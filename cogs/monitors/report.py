@@ -34,7 +34,7 @@ async def report(bot, msg, user):
     if len(msg.content) > 400:
             msg.content = msg.content[0:400] + "..."
     embed.add_field(name="Message", value=discord.utils.escape_markdown(
-        msg.content), inline=False)
+        msg.content) + f"\n\n[Link to message]({msg.jump_url})", inline=False)
     embed.add_field(name="Join date", value=f"{joined} UTC", inline=True)
     embed.add_field(name="Account creation date",
                     value=f"{created} UTC", inline=True)
