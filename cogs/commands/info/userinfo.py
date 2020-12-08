@@ -59,6 +59,9 @@ class CasesSource(menus.GroupByPageSource):
             elif case._type == "BAN":
                 embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
                                 value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Banned on**: {timestamp} UTC', inline=True)
+            elif case._type == "CLEM":
+                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
+                                value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Clemmed on**: {timestamp} UTC', inline=True)
             elif case._type == "UNBAN":
                 embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
                                 value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Unbanned on**: {timestamp} UTC', inline=True)
@@ -332,7 +335,8 @@ async def determine_emoji(type):
         "WARN": "⚠️",
         "UNMUTE": "🔈",
         "LIFTWARN": "⚠️❌",
-        "REMOVEPOINTS": "⬇️"
+        "REMOVEPOINTS": "⬇️",
+        "CLEM": "👎"
     }
     return emoji_dict[type]
 
