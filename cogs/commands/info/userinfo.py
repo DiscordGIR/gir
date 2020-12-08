@@ -105,14 +105,14 @@ class UserInfo(commands.Cog):
         user : discord.Member, optional
             User to get info about, by default the author of command, by default None
         """
+        if user is None:
+            user = ctx.author
+
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
             await ctx.message.delete()
             raise commands.BadArgument(
                 f"Command only allowed in <#{bot_chan}>")
-
-        if user is None:
-            user = ctx.author
 
         roles = ""
         for role in user.roles:
