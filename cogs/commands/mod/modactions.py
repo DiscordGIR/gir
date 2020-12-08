@@ -102,8 +102,9 @@ class ModActions(commands.Cog):
 
         # prepare log embed, send to #public-mod-logs, user, channel where invoked
         log = await logging.prepare_warn_log(ctx.author, user, case)
-    
         log.add_field(name="Current points", value=cur_points, inline=True)
+
+        log_kickban = None
 
         if cur_points >= 600:
             # automatically ban user if more than 600 points
@@ -112,7 +113,9 @@ class ModActions(commands.Cog):
             except Exception:
                 pass
 
-            await ctx.invoke(self.ban, user=user, reason="600 or more points reached")
+            log_kickban = await self.add_ban_case(ctx, user, "600 or more warn points reached.")
+            await user.ban(reason="600 or more warn points reached.")
+
         elif cur_points >= 400 and not results.was_warn_kicked and isinstance(user, discord.Member):
             # kick user if >= 400 points and wasn't previously kicked
             await self.bot.settings.set_warn_kicked(user.id)
@@ -121,8 +124,10 @@ class ModActions(commands.Cog):
                 await user.send("You were kicked from r/Jailbreak for reaching 400 or more points.", embed=log)
             except Exception:
                 pass
+            
+            log_kickban = await self.add_kick_case(ctx, user, "400 or more warn points reached.")
+            await user.kick(reason="400 or more warn points reached.")
 
-            await ctx.invoke(self.kick, user=user, reason="400 or more points reached")
         else:
             if isinstance(user, discord.Member):
                 try:
@@ -139,6 +144,11 @@ class ModActions(commands.Cog):
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
             await public_chan.send(embed=log)
+
+            if log_kickban:
+                log_kickban.remove_author()
+                log_kickban.set_thumbnail(url=user.avatar_url)
+                await public_chan.send(embed=log_kickban)
 
     @commands.guild_only()
     @commands.command(name="liftwarn")
@@ -234,9 +244,6 @@ class ModActions(commands.Cog):
 
         await self.check_permissions(ctx, user)
             
-        # retrieve user's case with given ID
-        # cases = await self.bot.settings.get_case(user.id, case_id)
-
         reason = discord.utils.escape_markdown(reason)
         reason = discord.utils.escape_mentions(reason)
 
@@ -292,21 +299,7 @@ class ModActions(commands.Cog):
         reason = discord.utils.escape_markdown(reason)
         reason = discord.utils.escape_mentions(reason)
 
-        # prepare case for DB
-        case = Case(
-            _id=self.bot.settings.guild().case_id,
-            _type="KICK",
-            mod_id=ctx.author.id,
-            mod_tag=str(ctx.author),
-            reason=reason,
-        )
-
-        # increment max case ID for next case
-        await self.bot.settings.inc_caseid()
-        # add new case to DB
-        await self.bot.settings.add_case(user.id, case)
-
-        log = await logging.prepare_kick_log(ctx.author, user, case)
+        log = await self.add_kick_case(ctx, user, reason)
 
         try:
             await user.send("You were kicked from r/Jailbreak", embed=log)
@@ -323,6 +316,23 @@ class ModActions(commands.Cog):
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
             await public_chan.send(embed=log)
+
+    async def add_kick_case(self, ctx, user, reason):
+        # prepare case for DB
+        case = Case(
+            _id=self.bot.settings.guild().case_id,
+            _type="KICK",
+            mod_id=ctx.author.id,
+            mod_tag=str(ctx.author),
+            reason=reason,
+        )
+
+        # increment max case ID for next case
+        await self.bot.settings.inc_caseid()
+        # add new case to DB
+        await self.bot.settings.add_case(user.id, case)
+
+        return await logging.prepare_kick_log(ctx.author, user, case)
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(ban_members=True)
@@ -356,22 +366,7 @@ class ModActions(commands.Cog):
                 raise commands.BadArgument(
                     f"Couldn't find user with ID {user}")
 
-        # prepare the case to store in DB
-        case = Case(
-            _id=self.bot.settings.guild().case_id,
-            _type="BAN",
-            mod_id=ctx.author.id,
-            mod_tag=str(ctx.author),
-            punishment="PERMANENT",
-            reason=reason,
-        )
-
-        # increment DB's max case ID for next case
-        await self.bot.settings.inc_caseid()
-        await self.bot.settings.add_case(user.id, case)
-
-        # prepare log embed to send to #public-mod-logs, user and context
-        log = await logging.prepare_ban_log(ctx.author, user, case)
+        log = await self.add_ban_case(ctx, user, reason)
 
         try:
             await user.send("You were banned from r/Jailbreak", embed=log)
@@ -392,6 +387,24 @@ class ModActions(commands.Cog):
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
             await public_chan.send(embed=log)
+
+    async def add_ban_case(self, ctx, user, reason):
+        # prepare the case to store in DB
+        case = Case(
+            _id=self.bot.settings.guild().case_id,
+            _type="BAN",
+            mod_id=ctx.author.id,
+            mod_tag=str(ctx.author),
+            punishment="PERMANENT",
+            reason=reason,
+        )
+
+        # increment DB's max case ID for next case
+        await self.bot.settings.inc_caseid()
+        # add case to db
+        await self.bot.settings.add_case(user.id, case)
+        # prepare log embed to send to #public-mod-logs, user and context
+        return await logging.prepare_ban_log(ctx.author, user, case)
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(ban_members=True)
