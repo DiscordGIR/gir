@@ -48,13 +48,22 @@ class CasesSource(menus.GroupByPageSource):
                                     value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Lifted by**: {case.lifted_by_tag}\n**Lift reason**: {case.lifted_reason}\n**Warned on**: {timestamp}', inline=True)
                 else:
                     embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
-                                    value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
+                                    value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Warned on**: {timestamp} UTC', inline=True)
             elif case._type == "MUTE":
                 embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
                                 value=f'**Duration**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
             elif case._type == "REMOVEPOINTS":
                 embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
                                 value=f'**Points removed**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
+            elif case._type == "KICK":
+                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
+                                value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Kicked on**: {timestamp} UTC', inline=True)
+            elif case._type == "BAN":
+                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
+                                value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Banned on**: {timestamp} UTC', inline=True)
+            elif case._type == "UNBAN":
+                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
+                                value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Unbanned on**: {timestamp} UTC', inline=True)
             else:
                 embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
                                 value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
