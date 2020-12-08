@@ -33,7 +33,7 @@ class LeaderboardSource(menus.GroupByPageSource):
 
 class CasesSource(menus.GroupByPageSource):
     async def format_page(self, menu, entry):
-        user = menu.ctx.args[2]
+        user = menu.ctx.args[2] or menu.ctx.author
         u = await menu.ctx.bot.settings.user(user.id)
         embed = discord.Embed(
             title=f'Cases - {u.warn_points} warn points', color=discord.Color.blurple())
@@ -257,8 +257,6 @@ class UserInfo(commands.Cog):
             User we want to get cases of, doesn't have to be in guild
 
         """
-        if user is None:
-            user = ctx.author
             
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
