@@ -257,7 +257,9 @@ class UserInfo(commands.Cog):
             User we want to get cases of, doesn't have to be in guild
 
         """
-
+        if user is None:
+            user = ctx.author
+            
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
             raise commands.BadArgument(
