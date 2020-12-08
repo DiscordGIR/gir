@@ -31,8 +31,10 @@ async def report(bot, msg, user):
     embed.set_thumbnail(url=user.avatar_url)
     embed.add_field(name="Member", value=f"{user} ({user.mention})")
     embed.add_field(name="Channel", value=msg.channel.mention)
+
     if len(msg.content) > 400:
-            msg.content = msg.content[0:400] + "..."
+        msg.content = msg.content[0:400] + "..."
+
     embed.add_field(name="Message", value=discord.utils.escape_markdown(
         msg.content) + f"\n\n[Link to message]({msg.jump_url})", inline=False)
     embed.add_field(name="Join date", value=f"{joined} UTC", inline=True)
@@ -53,13 +55,13 @@ async def report(bot, msg, user):
 
     # for reaction in report_reactions:
     #     await report_msg.add_reaction(reaction)
-    await report_msg.add_reaction("✅")        
+    await report_msg.add_reaction("✅")
 
     def check(reaction, user):
         res = (user.id != bot.user.id
-            and reaction.message == report_msg
-            and str(reaction.emoji) == "✅"
-            and bot.settings.permissions.hasAtLeast(user.guild, user, 5))
+               and reaction.message == report_msg
+               and str(reaction.emoji) == "✅"
+               and bot.settings.permissions.hasAtLeast(user.guild, user, 5))
         # if not res:
         #     await reaction.remove(user)
         return res

@@ -5,8 +5,6 @@ import discord
 from discord.ext import commands
 from dotenv import find_dotenv, load_dotenv
 
-from data.case import Case
-
 logging.basicConfig(level=logging.INFO)
 
 load_dotenv(find_dotenv())
@@ -47,6 +45,7 @@ if __name__ == '__main__':
     for extension in initial_extensions:
         bot.load_extension(extension)
 
+
 class NewHelpCommand(commands.DefaultHelpCommand):
     def __init__(self):
         super().__init__()
@@ -59,9 +58,10 @@ class NewHelpCommand(commands.DefaultHelpCommand):
 
     async def command_not_found(self, ctx):
         return "Command not found!"
-    
+
     async def subcommand_not_found(self, ctx, xd):
         return "Command not found!"
+
 
 async def send_error(ctx, error):
     embed = discord.Embed(title="An error occured")

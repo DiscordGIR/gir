@@ -4,12 +4,12 @@ import traceback
 
 import cogs.utils.logs as logging
 import discord
+import humanize
 import pytimeparse
-import datetime
 from cogs.monitors.report import report
 from data.case import Case
 from discord.ext import commands
-import humanize
+
 
 class FilterMonitor(commands.Cog):
     def __init__(self, bot):
@@ -59,13 +59,13 @@ class FilterMonitor(commands.Cog):
                             id = invite.guild.id
                         elif isinstance(invite, discord.PartialInviteGuild):
                             id = invite.id
-                            
+
                         if id not in whitelist:
                             await msg.delete()
                             await report(self.bot, msg, msg.author)
                             await self.ratelimit(msg)
                             return
-                    
+
                     except discord.errors.NotFound:
                         await msg.delete()
                         await report(self.bot, msg, msg.author)
@@ -91,7 +91,7 @@ class FilterMonitor(commands.Cog):
         if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, 5):
             if len(msg.content.splitlines()) > 100:
                 dev_role = msg.guild.get_role(guild.role_dev)
-                if not dev_role or not dev_role in msg.author.roles:
+                if not dev_role or dev_role not in msg.author.roles:
                     await msg.delete()
                     await self.ratelimit(msg)
                     return
@@ -120,7 +120,7 @@ class FilterMonitor(commands.Cog):
 
         if mute_role in user.roles:
             return
-            
+
         case = Case(
             _id=self.bot.settings.guild().case_id,
             _type="MUTE",
@@ -159,7 +159,7 @@ class FilterMonitor(commands.Cog):
 
         try:
             await user.send("You have been muted in r/Jailbreak", embed=log)
-        except:
+        except Exception:
             pass
 
     async def info_error(self, ctx, error):

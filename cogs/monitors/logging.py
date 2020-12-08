@@ -18,7 +18,7 @@ class Logging(commands.Cog):
             return
         if member.guild.id != self.bot.settings.guild_id:
             return
-        
+
         webhook_id = self.bot.settings.guild().emoji_logging_webhook
         webhook = None
 
@@ -27,7 +27,7 @@ class Logging(commands.Cog):
                 webhook = await self.bot.fetch_webhook(webhook_id)
             except Exception:
                 pass
-        
+
         if webhook_id is None or webhook is None:
             channel = member.guild.get_channel(self.bot.settings.guild().channel_emoji_log)
             if channel:
@@ -51,7 +51,7 @@ class Logging(commands.Cog):
             avatar_url=self.bot.user.avatar_url,
             embed=embed
         )
-   
+
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member) -> None:
         """Log member join messages, send log to #server-logs
@@ -279,7 +279,7 @@ class Logging(commands.Cog):
                 # try to get webhook instance, if doesn't exist, make new one and update db
                 try:
                     nsa_webhook = await self.bot.fetch_webhook(nsa_channel_info["webhook_id"])
-                except:
+                except Exception:
                     nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
                     await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
 
@@ -304,13 +304,13 @@ class Logging(commands.Cog):
         if before.display_name != after.display_name:
             await self.member_nick_update(before, after)
             return
-        
-        new_roles = [ str(role) for role in after.roles if role not in before.roles ]
+
+        new_roles = [str(role) for role in after.roles if role not in before.roles]
         if new_roles:
             await self.member_roles_update(before, after, new_roles, added=True)
             return
 
-        removed_roles = [ str(role) for role in before.roles if role not in after.roles ]
+        removed_roles = [str(role) for role in before.roles if role not in after.roles]
         if removed_roles:
             await self.member_roles_update(before, after, removed_roles, added=False)
             return
@@ -341,14 +341,14 @@ class Logging(commands.Cog):
             if not self.bot.settings.permissions.hasAtLeast(member.guild, member, word.bypass):
                 if word.word in nick:
                     await member.edit(nick="change name pls", reason=f"filter triggered ({nick})")
-    
+
     async def member_roles_update(self, before, after, roles, added):
         embed = discord.Embed()
         if added:
-            embed.title="Member Role Added"
+            embed.title = "Member Role Added"
             embed.color = discord.Color.blue()
         else:
-            embed.title="Member Role Removed"
+            embed.title = "Member Role Removed"
             embed.color = discord.Color.red()
 
         embed.set_thumbnail(url=after.avatar_url)
@@ -361,7 +361,7 @@ class Logging(commands.Cog):
         private = after.guild.get_channel(self.bot.settings.guild().channel_private)
         if private:
             await private.send(embed=embed)
-    
+
     async def gen_channel(self, nsa, message):
         main_category_name = message.channel.category.name
         nsa_category = discord.utils.get(

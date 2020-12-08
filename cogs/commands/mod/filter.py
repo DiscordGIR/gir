@@ -78,7 +78,7 @@ class Filters(commands.Cog):
 
     @commands.guild_only()
     @commands.command(name="filterremove")
-    async def filterremove(self, ctx, *, word:str):
+    async def filterremove(self, ctx, *, word: str):
         """Remove word from filter (admin only)
 
         Example usage:
@@ -96,14 +96,14 @@ class Filters(commands.Cog):
             await ctx.message.delete()
             raise commands.BadArgument(
                 "You need to be an administator or higher to use that command.")
-        
+
         word = word.lower()
         await self.bot.settings.remove_filtered_word(word)
         await ctx.message.reply("Deleted, if it exists :p", delete_after=10)
-    
+
     @commands.guild_only()
     @commands.command(name="whitelist")
-    async def whitelist(self, ctx, id:int):
+    async def whitelist(self, ctx, id: int):
         """Whitelist a guild from invite filter (admin only)
 
         Example usage:
@@ -122,7 +122,7 @@ class Filters(commands.Cog):
             await ctx.message.delete()
             raise commands.BadArgument(
                 "You need to be an administator or higher to use that command.")
-        
+
         if await self.bot.settings.add_whitelisted_guild(id):
             await ctx.message.reply("Whitelisted.", delete_after=10)
         else:
@@ -131,7 +131,7 @@ class Filters(commands.Cog):
 
     @commands.guild_only()
     @commands.command(name="blacklist")
-    async def blacklist(self, ctx, id:int):
+    async def blacklist(self, ctx, id: int):
         """Blacklist a guild from invite filter (admin only)
 
         Example usage:
@@ -150,13 +150,12 @@ class Filters(commands.Cog):
             await ctx.message.delete()
             raise commands.BadArgument(
                 "You need to be an administator or higher to use that command.")
-        
+
         if await self.bot.settings.remove_whitelisted_guild(id):
             await ctx.message.reply("Blacklisted.", delete_after=10)
         else:
             await ctx.message.reply("That server isn't currently whitelisted.", delete_after=10)
         await ctx.message.delete(delay=10)
-    
 
     @whitelist.error
     @blacklist.error

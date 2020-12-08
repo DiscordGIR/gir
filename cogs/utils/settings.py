@@ -1,4 +1,3 @@
-import json
 import os
 
 import discord
@@ -13,7 +12,7 @@ from discord.ext import commands
 
 
 class Settings(commands.Cog):
-    """This class is used to hold the state of the bot. It serves as the connection between the bot 
+    """This class is used to hold the state of the bot. It serves as the connection between the bot
     and the database. Information about the guild, users, cases, etc. can all be looked up from here,
     and additionally permissions can be calculated for a given user.
 
@@ -34,9 +33,9 @@ class Settings(commands.Cog):
         """
 
         mongoengine.register_connection(alias="core", name="botty")
-        self.tasks       = None
-        self.bot         = bot
-        self.guild_id    = int(os.environ.get("BOTTY_MAINGUILD"))
+        self.tasks = None
+        self.bot = bot
+        self.guild_id = int(os.environ.get("BOTTY_MAINGUILD"))
         self.permissions = Permissions(self.bot, self)
 
         print("Loaded database")
@@ -51,10 +50,10 @@ class Settings(commands.Cog):
         -------
         Guild
             The Guild document object that holds information about the main guild.
-        """       
+        """
 
         return Guild.objects(_id=self.guild_id).first()
-    
+
     async def get_nsa_channel(self, id) -> dict:
         """Returns the state of the main guild from the database.
 
@@ -62,13 +61,13 @@ class Settings(commands.Cog):
         -------
         Guild
             The Guild document object that holds information about the main guild.
-        """       
+        """
 
-        _map =  self.guild().nsa_mapping
+        _map = self.guild().nsa_mapping
         if str(id) in _map:
             return _map[str(id)]
         return None
-    
+
     async def add_nsa_channel(self, main_channel_id, channel_id, webhook_id) -> dict:
         """Returns the state of the main guild from the database.
 
@@ -76,7 +75,7 @@ class Settings(commands.Cog):
         -------
         Guild
             The Guild document object that holds information about the main guild.
-        """       
+        """
 
         g = self.guild()
         _map = g.nsa_mapping
@@ -100,34 +99,33 @@ class Settings(commands.Cog):
         rank = users(xp__gte=xp).count()
         return f"{rank}/{overall}"
 
-
     async def inc_caseid(self) -> None:
         """Increments Guild.case_id, which keeps track of the next available ID to
         use for a case.
-        """        
-        
+        """
+
         Guild.objects(_id=self.guild_id).update_one(inc__case_id=1)
-    
+
     async def inc_xp(self, id, xp):
         """Increments user xp.
-        """        
-        
+        """
+
         await self.user(id)
         User.objects(_id=id).update_one(inc__xp=xp)
         u = User.objects(_id=id).first()
         return (u.xp, u.level)
-    
+
     async def inc_level(self, id) -> None:
         """Increments user level.
-        """        
-        
+        """
+
         await self.user(id)
         User.objects(_id=id).update_one(inc__level=1)
 
     async def add_case(self, _id: int, case: Case) -> None:
         """Cases holds all the cases for a particular user with id `_id` as an
-        EmbeddedDocumentListField. This function appends a given case object to 
-        this list. If this user doesn't have any previous cases, we first add 
+        EmbeddedDocumentListField. This function appends a given case object to
+        this list. If this user doesn't have any previous cases, we first add
         a new Cases document to the database.
 
         Parameters
@@ -136,24 +134,23 @@ class Settings(commands.Cog):
             ID of the user who we want to add the case to.
         case : Case
             The case we want to add to the user.
-        """        
+        """
 
         # ensure this user has a cases document before we try to append the new case
         await self.cases(_id)
         Cases.objects(_id=_id).update_one(push__cases=case)
-    
-    
+
     async def add_filtered_word(self, fw: FilterWord) -> None:
         Guild.objects(_id=self.guild_id).update_one(push__filter_words=fw)
 
     async def remove_filtered_word(self, word: str):
-        return Guild.objects(_id=self.guild_id).update_one(pull__filter_words__word = FilterWord(word=word).word)
-    
+        return Guild.objects(_id=self.guild_id).update_one(pull__filter_words__word=FilterWord(word=word).word)
+
     async def add_whitelisted_guild(self, id: int):
         g = Guild.objects(_id=self.guild_id)
         g2 = g.first()
         if id not in g2.filter_excluded_guilds:
-            g.update_one(push__filter_excluded_guilds = id)
+            g.update_one(push__filter_excluded_guilds=id)
             return True
         return False
 
@@ -161,7 +158,7 @@ class Settings(commands.Cog):
         g = Guild.objects(_id=self.guild_id)
         g2 = g.first()
         if id in g2.filter_excluded_guilds:
-            g.update_one(pull__filter_excluded_guilds = id)
+            g.update_one(pull__filter_excluded_guilds=id)
             return True
         return False
 
@@ -175,7 +172,7 @@ class Settings(commands.Cog):
             The user's ID to whom we want to add/remove points
         points : int
             The amount of points to increment the field by, can be negative to remove points
-        """        
+        """
 
         # first we ensure this user has a User document in the database before continuing
         await self.user(_id)
@@ -190,12 +187,12 @@ class Settings(commands.Cog):
         ----------
         _id : int
             The user's ID who we want to set `was_warn_kicked` for.
-        """        
+        """
 
         # first we ensure this user has a User document in the database before continuing
         await self.user(_id)
         User.objects(_id=_id).update_one(set__was_warn_kicked=True)
-        
+
     async def get_case(self, _id: int, case_id: int) -> Case:
         """Get the case with ID `case_id`, which belongs to the punishee given by ID `_id`.
         If the user doesn't have a Cases document in the database, first create that.
@@ -211,7 +208,7 @@ class Settings(commands.Cog):
         -------
         Case
             The Case object representing the case.
-        """        
+        """
 
         # first we ensure this user has a Cases document in the database before continuing
         await self.cases(_id)
@@ -231,7 +228,7 @@ class Settings(commands.Cog):
         -------
         User
             The User document we found from the database.
-        """        
+        """
 
         user = User.objects(_id=id).first()
         # first we ensure this user has a User document in the database before continuing
@@ -240,7 +237,7 @@ class Settings(commands.Cog):
             user._id = id
             user.save()
         return user
-    
+
     async def cases(self, id: int) -> Cases:
         """Return the Document representing the cases of a user, whose ID is given by `id`
         If the user doesn't have a Cases document in the database, first create that.
@@ -263,7 +260,7 @@ class Settings(commands.Cog):
             cases._id = id
             cases.save()
         return cases
-    
+
     async def rundown(self, id: int) -> list:
         """Return the 3 most recent cases of a user, whose ID is given by `id`
         If the user doesn't have a Cases document in the database, first create that.
@@ -289,9 +286,10 @@ class Settings(commands.Cog):
 
         cases = cases.cases
         cases = filter(lambda x: x._type != "UNMUTE", cases)
-        cases = sorted(cases, key = lambda i: i['date'])
+        cases = sorted(cases, key=lambda i: i['date'])
         cases.reverse()
         return cases[0:3]
+
 
 class Permissions:
     """A way of calculating a user's permissions.
@@ -305,7 +303,7 @@ class Permissions:
     Level 7 is the Guild owner (Aaron)
     Level 8 is the bot owner
 
-    """    
+    """
 
     def __init__(self, bot: discord.Client, settings: Settings):
         """Initialize Permissions.
@@ -316,7 +314,7 @@ class Permissions:
             Instance of Discord client to look up a user's roles, permissions, etc.
         settings : Settings
             State of the bot
-        """        
+        """
 
         self.bot = bot
         self.settings = settings
@@ -328,33 +326,33 @@ class Permissions:
         self.permissions = {
             0: lambda x, y: True,
             1: (lambda guild, m: (guild.id == guild_id
-                and guild.get_role(the_guild.role_memberplus) in m.roles) 
+                                  and guild.get_role(the_guild.role_memberplus) in m.roles)
                 or self.hasAtLeast(guild, m, 2)),
             2: (lambda guild, m: (guild.id == guild_id
-                and guild.get_role(the_guild.role_memberpro) in m.roles) 
+                                  and guild.get_role(the_guild.role_memberpro) in m.roles)
                 or self.hasAtLeast(guild, m, 3)),
             3: (lambda guild, m: (guild.id == guild_id
-                and guild.get_role(the_guild.role_memberedition) in m.roles)
+                                  and guild.get_role(the_guild.role_memberedition) in m.roles)
                 or self.hasAtLeast(guild, m, 4)),
             4: (lambda guild, m: (guild.id == guild_id
-                and guild.get_role(the_guild.role_genius) in m.roles) 
+                                  and guild.get_role(the_guild.role_genius) in m.roles)
                 or self.hasAtLeast(guild, m, 5)),
             5: (lambda guild, m: (guild.id == guild_id
-                and guild.get_role(the_guild.role_moderator) in m.roles) 
+                                  and guild.get_role(the_guild.role_moderator) in m.roles)
                 or self.hasAtLeast(guild, m, 6)),
             6: (lambda guild, m: (guild.id == guild_id
-                and m.guild_permissions.manage_guild)
+                                  and m.guild_permissions.manage_guild)
                 or self.hasAtLeast(guild, m, 7)),
             7: (lambda guild, m: (guild.id == guild_id
-                and m == guild.owner) 
-                or self.hasAtLeast(guild, m, 9)),        
-                
+                                  and m == guild.owner)
+                or self.hasAtLeast(guild, m, 9)),
+
             9: (lambda guild, m: guild.id == guild_id
                 and m.id == bot.owner_id),
             10: (lambda guild, m: guild.id == guild_id
-                and m.id == bot.owner_id),
+                 and m.id == bot.owner_id),
         }
-    
+
     def hasAtLeast(self, guild: discord.Guild, member: discord.Member, level: int) -> bool:
         """Checks whether a user given by `member` has at least the permission level `level`
         in guild `guild`. Using the `self.permissions` dict-lambda thing.
@@ -366,15 +364,16 @@ class Permissions:
         member : discord.Member
             The member whose permissions we're checking
         level : int
-            The level we want to check if the user has 
+            The level we want to check if the user has
 
         Returns
         -------
         bool
             True if the user has that level, otherwise False.
-        """        
+        """
 
         return self.permissions[level](guild, member)
+
 
 def setup(bot):
     bot.add_cog(Settings(bot))

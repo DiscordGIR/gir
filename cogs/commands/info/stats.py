@@ -1,11 +1,10 @@
 import datetime
 import os
+import platform
 import traceback
 from math import floor
 
 import discord
-import psutil
-import platform
 import humanize
 import psutil
 from discord.ext import commands
@@ -29,13 +28,13 @@ class Stats(commands.Cog):
         embed = discord.Embed(
             title=f"Pong!", color=discord.Color.blurple())
         embed.set_thumbnail(url=self.bot.user.avatar_url)
-        embed.description =f"Latency: testing..."
-        
+        embed.description = "Latency: testing..."
+
         m = await ctx.message.reply(embed=embed)
         ping = floor((datetime.datetime.utcnow() - b).total_seconds() * 1000)
         embed.description = f"Latency: {ping} ms"
         await m.edit(embed=embed)
-        
+
     @commands.guild_only()
     @commands.command(name="stats")
     async def stats(self, ctx: commands.Context) -> None:

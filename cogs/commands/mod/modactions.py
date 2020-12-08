@@ -26,14 +26,14 @@ class ModActions(commands.Cog):
         self.bot = bot
 
     async def check_permissions(self, ctx, user: typing.Union[discord.Member, int] = None):
-        if isinstance(user, discord.Member):      
+        if isinstance(user, discord.Member):
             if user.id == ctx.author.id:
                 await ctx.message.add_reaction("🤔")
                 raise commands.BadArgument("You can't call that on yourself.")
             if user.id == self.bot.user.id:
                 await ctx.message.add_reaction("🤔")
                 raise commands.BadArgument("You can't call that on me :(")
-        
+
         # must be at least a mod
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
             raise commands.BadArgument(
@@ -77,7 +77,7 @@ class ModActions(commands.Cog):
             except discord.NotFound:
                 raise commands.BadArgument(
                     f"Couldn't find user with ID {user}")
-        
+
         guild = self.bot.settings.guild()
 
         reason = discord.utils.escape_markdown(reason)
@@ -128,7 +128,7 @@ class ModActions(commands.Cog):
                 await user.send("You were kicked from r/Jailbreak for reaching 400 or more points.", embed=log)
             except Exception:
                 pass
-            
+
             log_kickban = await self.add_kick_case(ctx, user, "400 or more warn points reached.")
             await user.kick(reason="400 or more warn points reached.")
 
@@ -143,7 +143,8 @@ class ModActions(commands.Cog):
         await ctx.message.reply(embed=log, delete_after=10)
         await ctx.message.delete(delay=10)
 
-        public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
+        public_chan = ctx.guild.get_channel(
+            self.bot.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
@@ -175,7 +176,7 @@ class ModActions(commands.Cog):
         """
 
         await self.check_permissions(ctx, user)
-            
+
         # retrieve user's case with given ID
         cases = await self.bot.settings.get_case(user.id, case_id)
         case = cases.cases.filter(_id=case_id).first()
@@ -216,11 +217,12 @@ class ModActions(commands.Cog):
             await user.send("Your warn was lifted in r/Jailbreak.", embed=log)
         except Exception:
             pass
-        
+
         await ctx.message.reply(embed=log, delete_after=10)
         await ctx.message.delete(delay=10)
 
-        public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
+        public_chan = ctx.guild.get_channel(
+            self.bot.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
@@ -247,7 +249,7 @@ class ModActions(commands.Cog):
         """
 
         await self.check_permissions(ctx, user)
-            
+
         reason = discord.utils.escape_markdown(reason)
         reason = discord.utils.escape_mentions(reason)
 
@@ -262,7 +264,7 @@ class ModActions(commands.Cog):
         # passed sanity checks, so update the case in DB
         # remove the warn points from the user in DB
         await self.bot.settings.inc_points(user.id, -1 * points)
-        
+
         case = Case(
             _id=self.bot.settings.guild().case_id,
             _type="REMOVEPOINTS",
@@ -283,16 +285,17 @@ class ModActions(commands.Cog):
             await user.send("Your points were removed in r/Jailbreak.", embed=log)
         except Exception:
             pass
-        
+
         await ctx.message.reply(embed=log, delete_after=10)
         await ctx.message.delete(delay=10)
 
-        public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
+        public_chan = ctx.guild.get_channel(
+            self.bot.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
             await public_chan.send(embed=log)
-        
+
     @commands.guild_only()
     @commands.bot_has_guild_permissions(kick_members=True)
     @commands.command(name="kick")
@@ -323,13 +326,14 @@ class ModActions(commands.Cog):
             await user.send("You were kicked from r/Jailbreak", embed=log)
         except Exception:
             pass
-        
+
         await user.kick(reason=reason)
 
         await ctx.message.reply(embed=log, delete_after=10)
         await ctx.message.delete(delay=10)
 
-        public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
+        public_chan = ctx.guild.get_channel(
+            self.bot.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
@@ -372,7 +376,7 @@ class ModActions(commands.Cog):
         """
 
         await self.check_permissions(ctx, user)
-            
+
         reason = discord.utils.escape_markdown(reason)
         reason = discord.utils.escape_mentions(reason)
 
@@ -400,7 +404,8 @@ class ModActions(commands.Cog):
         await ctx.message.reply(embed=log, delete_after=10)
         await ctx.message.delete(delay=10)
 
-        public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
+        public_chan = ctx.guild.get_channel(
+            self.bot.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
@@ -472,7 +477,8 @@ class ModActions(commands.Cog):
         await ctx.message.reply(embed=log, delete_after=10)
         await ctx.message.delete(delay=10)
 
-        public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
+        public_chan = ctx.guild.get_channel(
+            self.bot.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
@@ -580,7 +586,8 @@ class ModActions(commands.Cog):
         await ctx.message.reply(embed=log, delete_after=10)
         await ctx.message.delete(delay=10)
 
-        public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
+        public_chan = ctx.guild.get_channel(
+            self.bot.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
@@ -588,7 +595,7 @@ class ModActions(commands.Cog):
 
         try:
             await user.send("You have been muted in r/Jailbreak", embed=log)
-        except:
+        except Exception:
             pass
 
     @commands.guild_only()
@@ -642,10 +649,11 @@ class ModActions(commands.Cog):
 
         try:
             await user.send("You have been unmuted in r/Jailbreak", embed=log)
-        except:
+        except Exception:
             pass
-            
-        public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
+
+        public_chan = ctx.guild.get_channel(
+            self.bot.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
@@ -667,10 +675,11 @@ class ModActions(commands.Cog):
 
         """
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 7):  # must be owner
+        # must be owner
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 7):
             raise commands.BadArgument(
                 "You need to be Aaron to use that command.")
-         if user.id == ctx.author.id:
+        if user.id == ctx.author.id:
             await ctx.message.add_reaction("🤔")
             raise commands.BadArgument("You can't call that on yourself.")
         if user.id == self.bot.user.id:
