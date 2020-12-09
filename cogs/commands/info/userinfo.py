@@ -227,7 +227,7 @@ class UserInfo(commands.Cog):
             raise commands.BadArgument(
                 f"Command only allowed in <#{bot_chan}>")
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user is not None:
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user.id != ctx.author.id:
             raise commands.BadArgument(
                 f"You don't have permissions to check other people's warnpoints.")
 
