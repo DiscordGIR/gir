@@ -89,9 +89,12 @@ class Devices(commands.Cog):
                 if resp.status == 200:
                     firmwares = json.loads(await resp.text())["firmwares"]
 
+        if len(firmwares) == 0:
+            raise commands.BadArgument("Unforunately I don't have version history for this device.")
+
         found = False
         firmware = None
-        prompt = await ctx.message.reply("Please enter a version number, like '14.0' ('or 'cancel' to cancel)...")
+        prompt = await ctx.message.reply(f"Please enter a version number ('or 'cancel' to cancel).\nHere are the 5 most recent...\n{', '.join(firmware['version'] for firmware in firmwares[0:5])}")
         while True:
             # prompt user to input an iOS version they want to put in their nickname
             
@@ -101,6 +104,8 @@ class Devices(commands.Cog):
                 return
 
             if msg.content.lower() == "cancel":
+                await ctx.message.delete()
+                await msg.delete()
                 await prompt.delete()
                 return
 
@@ -117,7 +122,7 @@ class Devices(commands.Cog):
             if found:
                 break
             else:
-                prompt = await ctx.message.reply("That version wasn't found. Please enter a version number, like '14.0' ('or 'cancel' to cancel)...")
+                prompt = await ctx.message.reply(f"That version wasn't found. Please enter a version number ('or 'cancel' to cancel).\nHere are the 10 most recent...\n{', '.join(firmware['version'] for firmware in firmwares[0:10])}")
 
         # change the user's nickname!
         if found and firmware:
