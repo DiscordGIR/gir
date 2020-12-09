@@ -24,7 +24,8 @@ class FilterMonitor(commands.Cog):
             return
         if msg.author.bot:
             return
-
+        if not msg.content:
+            return
         guild = self.bot.settings.guild()
         if msg.guild.id != self.bot.settings.guild_id:
             return
@@ -34,7 +35,12 @@ class FilterMonitor(commands.Cog):
         """
         BAD WORD FILTER
         """
-        homoglyphs = hg.Homoglyphs(languages={'en'}, strategy=hg.STRATEGY_LOAD)
+        homoglyphs = None
+        try:
+            homoglyphs = hg.Homoglyphs(languages={'en'}, strategy=hg.STRATEGY_LOAD)
+        except Exception:
+            print("error resolving message", msg.content, msg.id, msg.jump_url)
+            return
         folded_message = homoglyphs.to_ascii(msg.content)
         if isinstance(folded_message, list) and len(folded_message) > 0:
             folded_message = folded_message[0]

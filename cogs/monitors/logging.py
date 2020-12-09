@@ -185,6 +185,11 @@ class Logging(commands.Cog):
         await channel.send(embed=embed)
 
     @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, commands.CommandNotFound):
+            return
+
+    @commands.Cog.listener()
     async def on_bulk_message_delete(self, messages: [discord.Message]):
         """Log bulk message deletes. Messages are outputted to file and sent to #server-logs
 
