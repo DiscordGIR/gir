@@ -9,6 +9,7 @@ import pytimeparse
 from cogs.monitors.report import report
 from data.case import Case
 from discord.ext import commands
+from fold_to_ascii import fold
 
 
 class FilterMonitor(commands.Cog):
@@ -36,12 +37,14 @@ class FilterMonitor(commands.Cog):
         """
         for word in guild.filter_words:
             if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, word.bypass):
-                if word.word.lower() in msg.content.lower():
-                    await self.ratelimit(msg)
-                    await msg.delete()
-                    if word.notify:
-                        await report(self.bot, msg, msg.author)
-                        return
+                testword = fold(word.word.lower())
+                if testword:
+                    if testword in msg.content.lower():
+                        await self.ratelimit(msg)
+                        await msg.delete()
+                        if word.notify:
+                            await report(self.bot, msg, msg.author)
+                            return
 
         """
         INVITE FILTER
