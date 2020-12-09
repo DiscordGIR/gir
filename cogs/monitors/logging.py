@@ -44,6 +44,7 @@ class Logging(commands.Cog):
             name="Reaction", value=reaction.emoji, inline=True)
         embed.add_field(
             name="Message", value=f"[Link]({reaction.message.jump_url})\nby {reaction.message.author} ({reaction.message.author.id})", inline=False)
+        embed.timestamp = datetime.now()
         embed.set_footer(text=member.id)
 
         await webhook.send(
@@ -79,6 +80,7 @@ class Logging(commands.Cog):
             "%B %d, %Y, %I:%M %p") + " UTC", inline=False)
         embed.add_field(name="Created", value=member.created_at.strftime(
             "%B %d, %Y, %I:%M %p") + " UTC", inline=True)
+        embed.timestamp = datetime.now()
         embed.set_footer(text=member.id)
 
         await channel.send(embed=embed)
@@ -109,6 +111,7 @@ class Logging(commands.Cog):
         embed.set_thumbnail(url=member.avatar_url)
         embed.add_field(
             name="User", value=f'{member} ({member.mention})', inline=True)
+        embed.timestamp = datetime.now()
         embed.set_footer(text=member.id)
         await channel.send(embed=embed)
 
@@ -146,6 +149,7 @@ class Logging(commands.Cog):
         embed.add_field(name="New message", value=after.content, inline=False)
         embed.add_field(
             name="Channel", value=before.channel.mention, inline=False)
+        embed.timestamp = datetime.now()
         embed.set_footer(text=before.author.id)
         await channel.send(embed=embed)
 
@@ -234,6 +238,7 @@ class Logging(commands.Cog):
             name="Users", value=f'This batch included {len(messages)} messages from {member_string}', inline=True)
         embed.add_field(
             name="Channel", value=message.channel.mention, inline=True)
+        embed.timestamp = datetime.now()
         await channel.send(embed=embed)
         await channel.send(file=discord.File(output, 'message.txt'))
 
@@ -332,6 +337,7 @@ class Logging(commands.Cog):
             name="Old nickname", value=f'{before.display_name}', inline=True)
         embed.add_field(
             name="New nickname", value=f'{after.display_name}', inline=True)
+        embed.timestamp = datetime.now()
         embed.set_footer(text=after.id)
 
         private = after.guild.get_channel(self.bot.settings.guild().channel_private)
@@ -361,6 +367,7 @@ class Logging(commands.Cog):
             name="Member", value=f'{after} ({after.mention})', inline=False)
         embed.add_field(
             name="Role difference", value=', '.join(roles), inline=False)
+        embed.timestamp = datetime.now()
         embed.set_footer(text=after.id)
 
         private = after.guild.get_channel(self.bot.settings.guild().channel_private)

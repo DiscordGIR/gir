@@ -507,8 +507,10 @@ class ModActions(commands.Cog):
             raise commands.BadArgument(
                 "Number of messages to purge must be greater than 0")
 
-        await ctx.channel.purge(limit=limit)
-        await ctx.send(f'Purged {limit} messages.', delete_after=10)
+        msgs = await ctx.channel.history(limit=limit+1).flatten()
+
+        await ctx.channel.purge(limit=limit+1)
+        await ctx.send(f'Purged {len(msgs)} messages.', delete_after=10)
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_roles=True)

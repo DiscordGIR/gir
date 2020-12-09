@@ -17,6 +17,7 @@ class Devices(commands.Cog):
         self.possible_devices = ['iphone', 'ipod', 'ipad', 'homepod', 'apple']
 
     @commands.guild_only()
+    @commands.max_concurrency(1,per=commands.BucketType.member,wait=False)
     @commands.bot_has_guild_permissions(change_nickname=True)
     @commands.command(name="adddevice")
     async def adddevice(self, ctx: commands.Context, *, device: str) -> None:
@@ -57,7 +58,7 @@ class Devices(commands.Cog):
                         name = name.replace('[', '')
                         name = name.replace(']', '')
                         name = name.strip()
-                        print(name)
+
                         # are the names equal?
                         if name.lower() == device.lower():
                             the_device = d
@@ -222,6 +223,7 @@ class Devices(commands.Cog):
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
             or isinstance(error, commands.BotMissingPermissions)
+            or isinstance(error, commands.MaxConcurrencyReached)
                 or isinstance(error, commands.NoPrivateMessage)):
             await self.bot.send_error(ctx, error)
         else:
