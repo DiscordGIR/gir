@@ -19,7 +19,7 @@ asyncpg = "*"
 "discord.py" = {git = "https://github.com/Rapptz/discord.py"}
 psutil = "*"
 python-dateutil = "*"
-fold-to-ascii = "*"
+homoglyphs = "*"
 
 [requires]
 python_version = "3.8"

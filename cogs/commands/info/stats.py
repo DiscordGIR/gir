@@ -7,6 +7,7 @@ from math import floor
 import discord
 import humanize
 import psutil
+from asyncio import sleep
 from discord.ext import commands
 
 
@@ -37,6 +38,7 @@ class Stats(commands.Cog):
 
         m = await ctx.message.reply(embed=embed)
         ping = floor((datetime.datetime.utcnow() - b).total_seconds() * 1000)
+        await sleep(1)
         embed.description = f"Latency: {ping} ms"
         await m.edit(embed=embed)
 

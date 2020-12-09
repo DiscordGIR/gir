@@ -118,6 +118,7 @@ class UserInfo(commands.Cog):
                 f"Command only allowed in <#{bot_chan}>")
 
         roles = ""
+        user.roles.reverse()
         for role in user.roles:
             if role != ctx.guild.default_role:
                 roles += role.mention + " "

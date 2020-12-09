@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "cd44ce08021ccf6fe813583bcd9832373285b695e7e7a88facf317522ba3f9b2"
+            "sha256": "5383d8e187e35a191f67abd1d8dc01822ff5a585b77294a549313b20b52fecf8"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -108,13 +108,13 @@
         "discord.py": {
             "git": "https://github.com/Rapptz/discord.py"
         },
-        "fold-to-ascii": {
+        "homoglyphs": {
             "hashes": [
-                "sha256:6a06640b0cd8cdd16b83ba72a098fb4b243987a50b2f8213b419b6de97787de6",
-                "sha256:7167a07fdc230bd5df5381e9221fe246d0eff3a86eb67e3935f91f5aeca3533a"
+                "sha256:18c9f235f54fd0467dc3145fe82c33c7faaf7fc8ce5559ab26abcc83f5780da6",
+                "sha256:bdcdb00cc46880b8479c51084b7652bf7992d044a80abee8d5afc0a3b2bdb5c8"
             ],
             "index": "pypi",
-            "version": "==1.0.2.post1"
+            "version": "==2.0.4"
         },
         "humanize": {
             "hashes": [

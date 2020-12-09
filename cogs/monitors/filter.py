@@ -9,8 +9,7 @@ import pytimeparse
 from cogs.monitors.report import report
 from data.case import Case
 from discord.ext import commands
-from fold_to_ascii import fold
-
+import homoglyphs as hg
 
 class FilterMonitor(commands.Cog):
     def __init__(self, bot):
@@ -35,11 +34,13 @@ class FilterMonitor(commands.Cog):
         """
         BAD WORD FILTER
         """
-        for word in guild.filter_words:
-            if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, word.bypass):
-                folded_message = fold(msg.content)
-                if folded_message:
-                    if word.word.lower() in folded_message.lower():
+        homoglyphs = hg.Homoglyphs(languages={'en'}, strategy=hg.STRATEGY_LOAD)
+        folded_message = homoglyphs.to_ascii(msg.content)[0]
+
+        if folded_message:
+            for word in guild.filter_words:
+                if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, word.bypass):
+                    if word.word.lower() in folded_message.lower() or word.word.lower() in msg.content.lower():
                         await self.ratelimit(msg)
                         await msg.delete()
                         if word.notify:
