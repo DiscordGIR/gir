@@ -118,8 +118,10 @@ class UserInfo(commands.Cog):
                 f"Command only allowed in <#{bot_chan}>")
 
         roles = ""
-        user.roles.reverse()
-        for role in user.roles:
+        reversed_roles = user.roles
+        reversed_roles.reverse()
+        
+        for role in reversed_roles:
             if role != ctx.guild.default_role:
                 roles += role.mention + " "
         results = (await self.bot.settings.user(user.id))
@@ -129,7 +131,8 @@ class UserInfo(commands.Cog):
 
         embed = discord.Embed(title="User Information")
         embed.color = user.color
-        embed.set_author(name=user, icon_url=user.avatar_url)
+        embed.set_author(name=user)
+        embed.set_thumbnail(url=user.avatar_url)
         embed.add_field(name="Username",
                         value=f'{user} ({user.mention})', inline=True)
         embed.add_field(
