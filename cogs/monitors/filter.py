@@ -35,7 +35,7 @@ class FilterMonitor(commands.Cog):
         BAD WORD FILTER
         """
         homoglyphs = hg.Homoglyphs(languages={'en'}, strategy=hg.STRATEGY_LOAD)
-        folded_message = homoglyphs.to_ascii(msg.content)[0]
+        folded_message = homoglyphs.to_ascii(msg.content)[0] or homoglyphs.to_ascii(msg.content)
 
         if folded_message:
             for word in guild.filter_words:
