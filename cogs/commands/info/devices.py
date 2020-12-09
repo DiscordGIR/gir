@@ -40,6 +40,10 @@ class Devices(commands.Cog):
             raise commands.BadArgument(
                 "You already have a device nickname set! You can remove it using `!removedevice`.")
 
+        if not device.split(" ")[0].lower() in self.possible_devices:
+            raise commands.BadArgument(
+                "Unsupported device. Please see `!listdevices` for possible devices.")
+
         the_device = None
 
         async with aiohttp.ClientSession() as session:
@@ -61,6 +65,7 @@ class Devices(commands.Cog):
 
                         # are the names equal?
                         if name.lower() == device.lower():
+                            d["name"] = name
                             the_device = d
 
         # did we find a device with given name?
@@ -68,9 +73,9 @@ class Devices(commands.Cog):
             raise commands.BadArgument("Device doesn't exist!")
 
         # is this a supported device type for nicknames?
-        if not the_device["name"].split(" ")[0].lower() in self.possible_devices:
-            raise commands.BadArgument(
-                "Unsupported device. Please see `!listdevices` for possible devices.")
+        # if not the_device["name"].split(" ")[0].lower() in self.possible_devices:
+        #     raise commands.BadArgument(
+        #         "Unsupported device. Please see `!listdevices` for possible devices.")
 
         # firmware stuff for nickname
 
@@ -117,8 +122,8 @@ class Devices(commands.Cog):
         # change the user's nickname!
         if found and firmware:
             name = the_device["name"]
-            name.replace(' Plus', '+')
-            name.replace('Pro Max', 'PM')
+            name = name.replace(' Plus', '+')
+            name = name.replace('Pro Max', 'PM')
             new_nick = f"{ctx.author.display_name} [{name}, {firmware}]"
 
             if len(new_nick) > 32:
@@ -213,6 +218,10 @@ class Devices(commands.Cog):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
             raise commands.BadArgument(
                 f"Command only allowed in <#{bot_chan}>")
+
+        if ctx.me.top_role < ctx.author.top_role:
+             raise commands.BadArgument(
+                f"Your top role is higher than mine. I can't change your nickname :(")
 
     @removedevice.error
     @adddevice.error

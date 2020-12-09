@@ -140,8 +140,11 @@ class Filters(commands.Cog):
 
         Parameters
         ----------
-       
+        channel : discord.Channel
+            Channel to ignore
+
         """
+
         # must be at least admin
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             await ctx.message.delete()
@@ -165,8 +168,10 @@ class Filters(commands.Cog):
 
         Parameters
         ----------
-       
+        channel : discord.Channel
+            Channel to unignore
         """
+
         # must be at least admin
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             await ctx.message.delete()
