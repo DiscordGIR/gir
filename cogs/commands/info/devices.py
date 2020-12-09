@@ -3,6 +3,7 @@ import re
 import traceback
 
 import aiohttp
+import asyncio
 import discord
 from discord.ext import commands
 
@@ -55,6 +56,8 @@ class Devices(commands.Cog):
                         # get rid of '[ and ']'
                         name = name.replace('[', '')
                         name = name.replace(']', '')
+                        name = name.strip()
+                        print(name)
                         # are the names equal?
                         if name.lower() == device.lower():
                             the_device = d
@@ -85,7 +88,11 @@ class Devices(commands.Cog):
         prompt = await ctx.message.reply("Please enter a version number, like '14.0' ('or 'cancel' to cancel)...")
         while True:
             # prompt user to input an iOS version they want to put in their nickname
-            msg = await self.bot.wait_for('message', check=check)
+            
+            try:
+                msg = await self.bot.wait_for('message', check=check)
+            except asyncio.TimeoutError:
+                return
 
             if msg.content.lower() == "cancel":
                 await prompt.delete()
