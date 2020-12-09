@@ -39,7 +39,7 @@ class FilterMonitor(commands.Cog):
             if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, word.bypass):
                 folded_message = fold(msg.content)
                 if folded_message:
-                    if word.word in folded_message:
+                    if word.word.lower() in folded_message.lower():
                         await self.ratelimit(msg)
                         await msg.delete()
                         if word.notify:
