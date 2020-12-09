@@ -23,12 +23,15 @@ initial_extensions = ['cogs.utils.settings',
                       'cogs.commands.mod.modactions',
                       'cogs.commands.mod.filter',
                       'cogs.commands.info.userinfo',
-                      'cogs.monitors.logging',
-                      'cogs.monitors.filter',
-                      'cogs.monitors.xp',
                       'cogs.commands.info.stats',
                       'cogs.commands.info.devices',
                       ]
+
+monitor_extensions = [
+                'cogs.monitors.logging',
+                'cogs.monitors.filter',
+                'cogs.monitors.xp',
+]
 
 intents = discord.Intents.default()
 intents.members = True
@@ -77,6 +80,10 @@ async def on_ready():
     bot.settings = bot.get_cog("Settings")
     bot.send_error = send_error
     await bot.wait_until_ready()
+
+    for extension in monitor_extensions:
+        bot.load_extension(extension)
+
     print(
         f'\n\nLogged in as: {bot.user.name} - {bot.user.id}\nVersion: {discord.__version__}\n')
     await bot.settings.load_tasks()
