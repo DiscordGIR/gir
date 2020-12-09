@@ -305,6 +305,7 @@ class UserInfo(commands.Cog):
     @userinfo.error
     @warnpoints.error
     @xp.error
+    @xptop.error
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
