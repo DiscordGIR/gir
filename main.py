@@ -64,7 +64,7 @@ class NewHelpCommand(commands.DefaultHelpCommand):
 
 
 async def send_error(ctx, error):
-    embed = discord.Embed(title="An error occured")
+    embed = discord.Embed(title="Something happened :(")
     embed.color = discord.Color.red()
     embed.description = discord.utils.escape_markdown(f'{error}')
     await ctx.send(embed=embed, delete_after=8)

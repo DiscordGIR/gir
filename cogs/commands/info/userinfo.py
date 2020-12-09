@@ -92,7 +92,7 @@ class UserInfo(commands.Cog):
         self.bot = bot
 
     @commands.guild_only()
-    @commands.command(name="userinfo")
+    @commands.command(name="userinfo", aliases=["info"])
     async def userinfo(self, ctx: commands.Context, user: discord.Member = None) -> None:
         """Get information about a user (join/creation date, xp, etc.), defaults to command invoker.
 
@@ -202,7 +202,7 @@ class UserInfo(commands.Cog):
         await menus.start(ctx)
 
     @commands.guild_only()
-    @commands.command(name="warnpoints")
+    @commands.command(name="warnpoints", aliases=["wp"])
     async def warnpoints(self, ctx, user: discord.Member = None):
         """Show a user's warnpoints (mod only)
 
@@ -217,6 +217,8 @@ class UserInfo(commands.Cog):
 
         """
 
+        user = user or ctx.author
+
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
             raise commands.BadArgument(
@@ -225,9 +227,6 @@ class UserInfo(commands.Cog):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user is not None:
             raise commands.BadArgument(
                 f"You don't have permissions to check other people's warnpoints.")
-
-        if user is None:
-            user = ctx.author
 
         results = await self.bot.settings.user(user.id)
 
