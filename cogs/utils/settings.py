@@ -162,6 +162,22 @@ class Settings(commands.Cog):
             return True
         return False
 
+    async def add_ignored_channel(self, id: int):
+        g = Guild.objects(_id=self.guild_id)
+        g2 = g.first()
+        if id not in g2.filter_excluded_channels:
+            g.update_one(push__filter_excluded_channels=id)
+            return True
+        return False
+
+    async def remove_ignored_channel(self, id: int):
+        g = Guild.objects(_id=self.guild_id)
+        g2 = g.first()
+        if id in g2.filter_excluded_channels:
+            g.update_one(pull__filter_excluded_channels=id)
+            return True
+        return False
+
     async def inc_points(self, _id: int, points: int) -> None:
         """Increments the warnpoints by `points` of a user whose ID is given by `_id`.
         If the user doesn't have a User document in the database, first create that.

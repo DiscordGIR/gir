@@ -130,6 +130,57 @@ class Filters(commands.Cog):
         await ctx.message.delete(delay=10)
 
     @commands.guild_only()
+    @commands.command(name="ignorechannel")
+    async def ignorechannel(self, ctx, channel: discord.TextChannel) -> None:
+        """Ignore channel in filter (admin only)
+
+        Example usage:
+        -------------
+        `!ignorechannel #xd`
+
+        Parameters
+        ----------
+       
+        """
+        # must be at least admin
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            await ctx.message.delete()
+            raise commands.BadArgument(
+                "You need to be an administator or higher to use that command.")
+
+        if await self.bot.settings.add_ignored_channel(channel.id):
+            await ctx.message.reply("Ignored.", delete_after=10)
+        else:
+            await ctx.message.reply("That channel is already ignored.", delete_after=10)
+        await ctx.message.delete(delay=10)
+
+    @commands.guild_only()
+    @commands.command(name="unignorechannel")
+    async def unignorechannel(self, ctx, channel: discord.TextChannel) -> None:
+        """Unignore channel in filter (admin only)
+
+        Example usage:
+        -------------
+        `!unignorechannel #xd`
+
+        Parameters
+        ----------
+       
+        """
+        # must be at least admin
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            await ctx.message.delete()
+            raise commands.BadArgument(
+                "You need to be an administator or higher to use that command.")
+
+        if await self.bot.settings.remove_ignored_channel(channel.id):
+            await ctx.message.reply("Unignored.", delete_after=10)
+        else:
+            await ctx.message.reply("That channel is not already ignored.", delete_after=10)
+        await ctx.message.delete(delay=10)
+
+
+    @commands.guild_only()
     @commands.command(name="blacklist")
     async def blacklist(self, ctx, id: int):
         """Blacklist a guild from invite filter (admin only)
@@ -154,7 +205,7 @@ class Filters(commands.Cog):
         if await self.bot.settings.remove_whitelisted_guild(id):
             await ctx.message.reply("Blacklisted.", delete_after=10)
         else:
-            await ctx.message.reply("That server isn't currently whitelisted.", delete_after=10)
+            await ctx.message.reply("That server is already blacklisted.", delete_after=10)
         await ctx.message.delete(delay=10)
 
     @whitelist.error
@@ -162,6 +213,8 @@ class Filters(commands.Cog):
     @filterremove.error
     @filteradd.error
     @offlineping.error
+    @ignorechannel.error
+    @unignorechannel.error
     async def info_error(self, ctx, error):
         if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, commands.BadArgument)
