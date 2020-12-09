@@ -36,7 +36,7 @@ class FilterMonitor(commands.Cog):
         """
         for word in guild.filter_words:
             if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, word.bypass):
-                if word.word in msg.content:
+                if word.word.lower() in msg.content.lower():
                     await self.ratelimit(msg)
                     await msg.delete()
                     if word.notify:
