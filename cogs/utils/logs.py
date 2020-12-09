@@ -2,7 +2,7 @@ import discord
 
 
 async def prepare_warn_log(author, user, case):
-    embed = discord.Embed(title="Member warned")
+    embed = discord.Embed(title="Member Warned")
     embed.set_author(name=user, icon_url=user.avatar_url)
     embed.color = discord.Color.orange()
     embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
@@ -14,7 +14,7 @@ async def prepare_warn_log(author, user, case):
 
 
 async def prepare_liftwarn_log(author, user, case):
-    embed = discord.Embed(title="Member warn lifted")
+    embed = discord.Embed(title="Member Warn Lifted")
     embed.set_author(name=user, icon_url=user.avatar_url)
     embed.color = discord.Color.blurple()
     embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
@@ -26,7 +26,7 @@ async def prepare_liftwarn_log(author, user, case):
 
 
 async def prepare_removepoints_log(author, user, case):
-    embed = discord.Embed(title="Member points removed")
+    embed = discord.Embed(title="Member Points Removed")
     embed.set_author(name=user, icon_url=user.avatar_url)
     embed.color = discord.Color.blurple()
     embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
@@ -38,7 +38,7 @@ async def prepare_removepoints_log(author, user, case):
 
 
 async def prepare_ban_log(author, user, case):
-    embed = discord.Embed(title="Member banned")
+    embed = discord.Embed(title="Member Banned")
     embed.color = discord.Color.blue()
     embed.set_author(name=user, icon_url=user.avatar_url)
     embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
@@ -49,7 +49,7 @@ async def prepare_ban_log(author, user, case):
 
 
 async def prepare_unban_log(author, user, case):
-    embed = discord.Embed(title="Member unbanned")
+    embed = discord.Embed(title="Member Unbanned")
     embed.color = discord.Color.blurple()
     embed.set_author(name=user, icon_url=user.avatar_url)
     embed.add_field(name="Member", value=f'{user} ({user.id})', inline=True)
@@ -60,7 +60,7 @@ async def prepare_unban_log(author, user, case):
 
 
 async def prepare_kick_log(author, user, case):
-    embed = discord.Embed(title="Member kicked")
+    embed = discord.Embed(title="Member Kicked")
     embed.color = discord.Color.green()
     embed.set_author(name=user, icon_url=user.avatar_url)
     embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
@@ -71,7 +71,7 @@ async def prepare_kick_log(author, user, case):
 
 
 async def prepare_mute_log(author, user, case):
-    embed = discord.Embed(title="Member muted")
+    embed = discord.Embed(title="Member Muted")
     embed.color = discord.Color.red()
     embed.set_author(name=user, icon_url=user.avatar_url)
     embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
@@ -83,7 +83,7 @@ async def prepare_mute_log(author, user, case):
 
 
 async def prepare_unmute_log(author, user, case):
-    embed = discord.Embed(title="Member unmuted")
+    embed = discord.Embed(title="Member Unmuted")
     embed.color = discord.Color.green()
     embed.set_author(name=user, icon_url=user.avatar_url)
     embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)

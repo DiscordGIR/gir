@@ -37,9 +37,9 @@ class FilterMonitor(commands.Cog):
         """
         for word in guild.filter_words:
             if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, word.bypass):
-                testword = fold(word.word.lower())
-                if testword:
-                    if testword in msg.content.lower():
+                folded_message = fold(msg.content)
+                if folded_message:
+                    if word.word in folded_message:
                         await self.ratelimit(msg)
                         await msg.delete()
                         if word.notify:
