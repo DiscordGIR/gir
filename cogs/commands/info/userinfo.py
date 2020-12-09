@@ -47,6 +47,9 @@ class CasesSource(menus.GroupByPageSource):
                 else:
                     embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
                                     value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Warned on**: {timestamp} UTC', inline=True)
+            elif case._type == "LIFTWARN":
+                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id} [LIFTED]',
+                                value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Lifted by**: {case.lifted_by_tag}\n**Lift reason**: {case.lifted_reason}\n**Warned on**: {timestamp}', inline=True)
             elif case._type == "MUTE":
                 embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
                                 value=f'**Duration**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
@@ -333,7 +336,7 @@ async def determine_emoji(type):
         "MUTE": "🔇",
         "WARN": "⚠️",
         "UNMUTE": "🔈",
-        "LIFTWARN": "⚠️❌",
+        "LIFTWARN": "⚠️",
         "REMOVEPOINTS": "⬇️",
         "CLEM": "👎"
     }
