@@ -35,20 +35,22 @@ class FilterMonitor(commands.Cog):
         """
         BAD WORD FILTER
         """
-        homoglyphs = None
-        try:
-            homoglyphs = hg.Homoglyphs(languages={'en'}, strategy=hg.STRATEGY_LOAD)
-        except Exception:
-            print("error resolving message", msg.content, msg.id, msg.jump_url)
-            return
-        folded_message = homoglyphs.to_ascii(msg.content)
-        if isinstance(folded_message, list) and len(folded_message) > 0:
-            folded_message = folded_message[0]
+        # homoglyphs = None
+        # try:
+        #     homoglyphs = hg.Homoglyphs(languages={'en'}, strategy=hg.STRATEGY_LOAD)
+        # except Exception:
+        #     print("error resolving message", msg.content, msg.id, msg.jump_url)
+        #     return
+        # folded_message = homoglyphs.to_ascii(msg.content)
+        folded_message = msg.content.lower()
+        # if isinstance(folded_message, list) and len(folded_message) > 0:
+        #     folded_message = folded_message[0]
         
         if folded_message:
             for word in guild.filter_words:
                 if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, word.bypass):
-                    if word.word.lower() in folded_message.lower() or word.word.lower() in msg.content.lower():
+                    if word.word.lower() in folded_message.lower()
+                    # if word.word.lower() in folded_message.lower() or word.word.lower() in msg.content.lower():
                         await self.ratelimit(msg)
                         await msg.delete()
                         if word.notify:
