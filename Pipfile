@@ -20,6 +20,7 @@ asyncpg = "*"
 psutil = "*"
 python-dateutil = "*"
 homoglyphs = "*"
+fold-to-ascii = "*"
 
 [requires]
 python_version = "3.8"

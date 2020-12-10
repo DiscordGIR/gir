@@ -9,7 +9,8 @@ import pytimeparse
 from cogs.monitors.report import report
 from data.case import Case
 from discord.ext import commands
-import homoglyphs as hg
+# import homoglyphs as hg
+from fold_to_ascii import fold
 
 class FilterMonitor(commands.Cog):
     def __init__(self, bot):
@@ -42,7 +43,12 @@ class FilterMonitor(commands.Cog):
         #     print("error resolving message", msg.content, msg.id, msg.jump_url)
         #     return
         # folded_message = homoglyphs.to_ascii(msg.content)
-        folded_message = msg.content.lower()
+        symbols = (u"абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ",
+                   u"abBrdeex3nnKnmHonpcTyoxu4wwbbbeoRABBrDEEX3NNKNMHONPCTyOXU4WWbbbEOR")
+        
+        tr = {ord(a):ord(b) for a, b in zip(*symbols)}
+        
+        folded_message = fold(msg.content.translate(tr).lower())
         # if isinstance(folded_message, list) and len(folded_message) > 0:
         #     folded_message = folded_message[0]
         

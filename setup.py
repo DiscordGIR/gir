@@ -12,8 +12,8 @@ async def setup():
     guild = Guild()
     
     # you should have this setup in the .env file beforehand
-    guild._id          = int(os.environ.get("BOTTY_MAINGUILD")
-    guild.nsa_guild_id = os.environ.get("BOTTY_NSAGUILD")
+    guild._id          = int(os.environ.get("BOTTY_MAINGUILD"))
+    guild.nsa_guild_id = int(os.environ.get("BOTTY_NSAGUILD"))
     guild.case_id      = 1
 
     guild.role_mute          = 123  # put in the role IDs for your server here
