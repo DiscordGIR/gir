@@ -9,8 +9,8 @@ import pytimeparse
 from cogs.monitors.report import report
 from data.case import Case
 from discord.ext import commands
-# import homoglyphs as hg
 from fold_to_ascii import fold
+
 
 class FilterMonitor(commands.Cog):
     def __init__(self, bot):
@@ -36,27 +36,17 @@ class FilterMonitor(commands.Cog):
         """
         BAD WORD FILTER
         """
-        # homoglyphs = None
-        # try:
-        #     homoglyphs = hg.Homoglyphs(languages={'en'}, strategy=hg.STRATEGY_LOAD)
-        # except Exception:
-        #     print("error resolving message", msg.content, msg.id, msg.jump_url)
-        #     return
-        # folded_message = homoglyphs.to_ascii(msg.content)
         symbols = (u"абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ",
                    u"abBrdeex3nnKnmHonpcTyoxu4wwbbbeoRABBrDEEX3NNKNMHONPCTyOXU4WWbbbEOR")
-        
-        tr = {ord(a):ord(b) for a, b in zip(*symbols)}
-        
+
+        tr = {ord(a): ord(b) for a, b in zip(*symbols)}
+
         folded_message = fold(msg.content.translate(tr).lower())
-        # if isinstance(folded_message, list) and len(folded_message) > 0:
-        #     folded_message = folded_message[0]
-        
+
         if folded_message:
             for word in guild.filter_words:
                 if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, word.bypass):
                     if word.word.lower() in folded_message.lower():
-                    # if word.word.lower() in folded_message.lower() or word.word.lower() in msg.content.lower():
                         await self.ratelimit(msg)
                         await msg.delete()
                         if word.notify:
