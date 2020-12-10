@@ -5,7 +5,7 @@ import discord
 import humanize
 
 
-async def report(bot, msg, user):
+async def report(bot, msg, user, invite = None):
     role = msg.guild.get_role(bot.settings.guild().role_moderator)
     channel = msg.guild.get_channel(bot.settings.guild().channel_reports)
 
@@ -50,7 +50,10 @@ async def report(bot, msg, user):
                         value="This user has no cases.", inline=True)
         embed.set_footer(text="React with ✅ to dismiss.")
 
-    report_msg = await channel.send(ping_string, embed=embed)
+    if invite:
+        report_msg = await channel.send(f"{ping_string}\nMessage contained invite: {invite}", embed=embed)
+    else:
+        report_msg = await channel.send(ping_string, embed=embed)
     # report_reactions = ['⚠️', '💯']
 
     # for reaction in report_reactions:

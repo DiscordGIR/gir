@@ -71,19 +71,19 @@ class FilterMonitor(commands.Cog):
                         id = None
                         if isinstance(invite, discord.Invite):
                             id = invite.guild.id
-                        elif isinstance(invite, discord.PartialInviteGuild):
+                        elif isinstance(invite, discord.PartialInviteGuild) or isinstance(invite, discord.PartialInviteChannel):
                             id = invite.id
 
                         if id not in whitelist:
                             await msg.delete()
-                            await report(self.bot, msg, msg.author)
                             await self.ratelimit(msg)
+                            await report(self.bot, msg, msg.author, invite)
                             return
 
                     except discord.errors.NotFound:
                         await msg.delete()
-                        await report(self.bot, msg, msg.author)
                         await self.ratelimit(msg)
+                        await report(self.bot, msg, msg.author, invite)
                         return
         """
         SPOILER FILTER
@@ -91,7 +91,6 @@ class FilterMonitor(commands.Cog):
         if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, 5):
             if re.search(self.spoiler_filter, msg.content, flags=re.S):
                 await msg.delete()
-                # await self.ratelimit(msg)
                 return
 
             for a in msg.attachments:
@@ -129,10 +128,11 @@ class FilterMonitor(commands.Cog):
         now = datetime.datetime.now()
         delta = pytimeparse.parse(dur)
 
+        u = await self.bot.settings.user(id=user.id)
         mute_role = self.bot.settings.guild().role_mute
         mute_role = ctx.guild.get_role(mute_role)
 
-        if mute_role in user.roles:
+        if mute_role in user.roles or u.is_muted:
             return
 
         case = Case(
