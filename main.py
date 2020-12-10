@@ -67,7 +67,7 @@ class NewHelpCommand(commands.DefaultHelpCommand):
 
 
 async def send_error(ctx, error):
-    embed = discord.Embed(title="Something went wrong :(")
+    embed = discord.Embed(title="Your command ran into a problem :(")
     embed.color = discord.Color.red()
     embed.description = discord.utils.escape_markdown(f'{error}')
     await ctx.send(embed=embed, delete_after=8)
@@ -76,9 +76,10 @@ async def send_error(ctx, error):
 @bot.event
 async def on_ready():
     bot.help_command = NewHelpCommand()
-    bot.owner_id = os.environ.get("BOTTY_OWNER")
     bot.settings = bot.get_cog("Settings")
     bot.send_error = send_error
+    bot.owner_id = int(os.environ.get("BOTTY_OWNER"))
+
     await bot.wait_until_ready()
 
     for extension in monitor_extensions:
@@ -87,17 +88,6 @@ async def on_ready():
     print(
         f'\n\nLogged in as: {bot.user.name} - {bot.user.id}\nVersion: {discord.__version__}\n')
     await bot.settings.load_tasks()
-    # cases = await bot.settings.cases(109705860275539968)
-    # case = Case()
-    # case._id = 1
-    # case._type = "KICK"
-    # case.mod_id = 123
-    # case.mod_tag = "Slim#99"
-    # case.reason = "xd"
-    # case.punishment = "xd"
-    # cases.cases.append(case)
-    # cases.save()
-    # Changes our bots Playing Status. type=1(streaming) for a standard game you could remove type and url.
     print(f'Successfully logged in and booted...!')
 
 
