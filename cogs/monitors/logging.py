@@ -4,11 +4,12 @@ from io import BytesIO
 
 import discord
 from discord.ext import commands
-
+from collections import defaultdict
 
 class Logging(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.webhook_dict = defaultdict(discord.Webhook)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: discord.Reaction, member: discord.Member):
@@ -256,7 +257,7 @@ class Logging(commands.Cog):
     #         return
     #     if message.guild.id != self.bot.settings.guild_id:
     #         return
-
+    #     print(self.webhook_dict)
     #     # get NSA guild object
     #     nsa = self.bot.get_guild(id=self.bot.settings.guild().nsa_guild_id)
     #     if not nsa:
@@ -271,6 +272,7 @@ class Logging(commands.Cog):
     #     if nsa_channel_info is None:
     #         nsa_channel = await self.gen_channel(nsa, message)
     #         nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
+    #         self.webhook_dict[nsa_webhook.id] = nsa_webhook
 
     #         await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
 
@@ -282,15 +284,18 @@ class Logging(commands.Cog):
     #         if not nsa_channel:
     #             nsa_channel = await self.gen_channel(nsa, message)
     #             nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
+    #             self.webhook_dict[nsa_webhook.id] = nsa_webhook
 
     #             await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
 
     #         else:
     #             # try to get webhook instance, if doesn't exist, make new one and update db
     #             try:
-    #                 nsa_webhook = await self.bot.fetch_webhook(nsa_channel_info["webhook_id"])
+    #                 nsa_webhook = self.webhook_dict[nsa_channel_info["webhook_id"]] or await self.bot.fetch_webhook(nsa_channel_info["webhook_id"])
+    #                 self.webhook_dict[nsa_webhook.id] = nsa_webhook
     #             except Exception:
     #                 nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
+    #                 self.webhook_dict[nsa_webhook.id] = nsa_webhook
     #                 await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
 
     #     # send the log

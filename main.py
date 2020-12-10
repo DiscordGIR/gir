@@ -25,6 +25,7 @@ initial_extensions = ['cogs.utils.settings',
                       'cogs.commands.info.userinfo',
                       'cogs.commands.info.stats',
                       'cogs.commands.info.devices',
+                      'cogs.commands.info.help'
                       ]
 
 monitor_extensions = [
@@ -45,6 +46,7 @@ bot.max_messages = 10000
 
 # Here we load our extensions(cogs) listed above in [initial_extensions].
 if __name__ == '__main__':
+    bot.remove_command("help")
     for extension in initial_extensions:
         bot.load_extension(extension)
 
@@ -67,7 +69,7 @@ class NewHelpCommand(commands.DefaultHelpCommand):
 
 
 async def send_error(ctx, error):
-    embed = discord.Embed(title="Your command ran into a problem :(")
+    embed = discord.Embed(title=":(\nYour command ran into a problem")
     embed.color = discord.Color.red()
     embed.description = discord.utils.escape_markdown(f'{error}')
     await ctx.send(embed=embed, delete_after=8)
@@ -75,7 +77,7 @@ async def send_error(ctx, error):
 
 @bot.event
 async def on_ready():
-    bot.help_command = NewHelpCommand()
+    # bot.help_command = NewHelpCommand()
     bot.settings = bot.get_cog("Settings")
     bot.send_error = send_error
     bot.owner_id = int(os.environ.get("BOTTY_OWNER"))
