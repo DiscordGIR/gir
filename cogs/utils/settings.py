@@ -370,6 +370,19 @@ class Permissions:
                  and m.id == bot.owner_id),
         }
 
+        self.permission_names = {
+            0: "Everyone and up",
+            1: "Member Plus and up",
+            2: "Member Pros and up",
+            3: "Member Editions and up",
+            4: "Geniuses and up",
+            5: "Moderators and up",
+            6: "Administrators and up",
+            7: "Guild owner (Aaron) and up",
+            9: "Bot owner",
+            10: "Bot owner",
+        }
+
     def hasAtLeast(self, guild: discord.Guild, member: discord.Member, level: int) -> bool:
         """Checks whether a user given by `member` has at least the permission level `level`
         in guild `guild`. Using the `self.permissions` dict-lambda thing.
@@ -390,6 +403,9 @@ class Permissions:
         """
 
         return self.permissions[level](guild, member)
+
+    def level_info(self, level: int) -> str:
+        return self.permission_names[level]
 
 
 def setup(bot):

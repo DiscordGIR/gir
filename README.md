@@ -31,4 +31,8 @@ BOTTY_DBPASSWORD = ""
 4. Set up mongodb on your system
 5. `python main.py` - if everything was set up properly you're good to go!
 
+### First time use
+
 If porting from Janet, run `python port.py` first (you will need the extra 4 env variables above if so).
+
+If you aren't porting from Janet, you don't have any baseline data for the bot to work. I wrote a short script `setup.py` which you should fill in with data from your own server, then run `python setup.py`

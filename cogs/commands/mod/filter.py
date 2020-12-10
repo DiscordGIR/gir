@@ -3,6 +3,33 @@ import traceback
 import discord
 from data.filterword import FilterWord
 from discord.ext import commands
+from discord.ext import menus
+
+
+class FilterSource(menus.GroupByPageSource):
+    async def format_page(self, menu, entry):
+        permissions = menu.ctx.bot.settings.permissions
+        embed = discord.Embed(
+            title=f'Filtered words', color=discord.Color.blurple())
+        for _, word in entry.items:
+            embed.add_field(name=word.word, value=f"Bypassed by: {permissions.level_info(word.bypass)}\nWill report: {word.notify}")
+        embed.set_footer(
+            text=f"Page {menu.current_page +1} of {self.get_max_pages()}")
+        return embed
+
+
+class MenuPages(menus.MenuPages):
+    async def update(self, payload):
+        if self._can_remove_reactions:
+            if payload.event_type == 'REACTION_ADD':
+                await self.bot.http.remove_reaction(
+                    payload.channel_id, payload.message_id,
+                    discord.Message._emoji_reaction(
+                        payload.emoji), payload.member.id
+                )
+            elif payload.event_type == 'REACTION_REMOVE':
+                return
+        await super().update(payload)
 
 
 class Filters(commands.Cog):
@@ -75,6 +102,26 @@ class Filters(commands.Cog):
         phrase = discord.utils.escape_mentions(phrase)
 
         await ctx.message.reply(f"Added new word to filter! This filter {'will' if notify else 'will not'} ping for reports, level {bypass} can bypass it, and the phrase is {phrase}")
+
+    @commands.guild_only()
+    @commands.command(name="filterlist")
+    async def filterlist(self, ctx):
+        """List filtered words (admin only)
+
+        """
+
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            await ctx.message.delete()
+            raise commands.BadArgument(
+                "You need to be an administator or higher to use that command.")
+
+        filters = self.bot.settings.guild().filter_words
+
+        menus = MenuPages(source=FilterSource(
+            enumerate(filters), key=lambda t: 1, per_page=12), clear_reactions_after=True)
+
+        await menus.start(ctx)
+
 
     @commands.guild_only()
     @commands.command(name="filterremove")
@@ -217,6 +264,7 @@ class Filters(commands.Cog):
     @blacklist.error
     @filterremove.error
     @filteradd.error
+    @filterlist.error
     @offlineping.error
     @ignorechannel.error
     @unignorechannel.error
