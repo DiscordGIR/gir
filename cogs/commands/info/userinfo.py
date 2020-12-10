@@ -233,7 +233,7 @@ class UserInfo(commands.Cog):
 
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user.id != ctx.author.id:
             raise commands.BadArgument(
-                f"You don't have permissions to check other people's warnpoints.")
+                f"You don't have permissions to check others' warnpoints.")
 
         results = await self.bot.settings.user(user.id)
 
@@ -276,11 +276,11 @@ class UserInfo(commands.Cog):
         if not isinstance(user, int):
             if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user.id != ctx.author.id:
                 raise commands.BadArgument(
-                    f"You don't have permissions to check other people's warnpoints.")
+                    f"You don't have permissions to check others' cases.")
         else:
             if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
                 raise commands.BadArgument(
-                    f"You don't have permissions to check other people's warnpoints.")
+                    f"You don't have permissions to check others' cases.")
 
         if isinstance(user, int):
             user = await self.bot.fetch_user(user)

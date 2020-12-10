@@ -341,30 +341,31 @@ class Permissions:
         # will return True or False if a user has that permission level.
         self.permissions = {
             0: lambda x, y: True,
-            1: (lambda guild, m: (guild.id == guild_id
-                                  and guild.get_role(the_guild.role_memberplus) in m.roles)
-                or self.hasAtLeast(guild, m, 2)),
-            2: (lambda guild, m: (guild.id == guild_id
-                                  and guild.get_role(the_guild.role_memberpro) in m.roles)
-                or self.hasAtLeast(guild, m, 3)),
-            3: (lambda guild, m: (guild.id == guild_id
-                                  and guild.get_role(the_guild.role_memberedition) in m.roles)
-                or self.hasAtLeast(guild, m, 4)),
-            4: (lambda guild, m: (guild.id == guild_id
-                                  and guild.get_role(the_guild.role_genius) in m.roles)
-                or self.hasAtLeast(guild, m, 5)),
-            5: (lambda guild, m: (guild.id == guild_id
-                                  and guild.get_role(the_guild.role_moderator) in m.roles)
-                or self.hasAtLeast(guild, m, 6)),
-            6: (lambda guild, m: (guild.id == guild_id
-                                  and m.guild_permissions.manage_guild)
-                or self.hasAtLeast(guild, m, 7)),
-            7: (lambda guild, m: (guild.id == guild_id
-                                  and m == guild.owner)
-                or self.hasAtLeast(guild, m, 9)),
+
+            1: (lambda guild, m: self.hasAtLeast(guild, m, 2) or (guild.id == guild_id
+                and guild.get_role(the_guild.role_memberplus) in m.roles)),
+
+            2: (lambda guild, m: self.hasAtLeast(guild, m, 3) or (guild.id == guild_id
+                and guild.get_role(the_guild.role_memberpro) in m.roles)),
+
+            3: (lambda guild, m: self.hasAtLeast(guild, m, 4) or (guild.id == guild_id
+                and guild.get_role(the_guild.role_memberedition) in m.roles)),
+
+            4: (lambda guild, m: self.hasAtLeast(guild, m, 5) or (guild.id == guild_id
+                and guild.get_role(the_guild.role_genius) in m.roles)),
+
+            5: (lambda guild, m: self.hasAtLeast(guild, m, 6) or (guild.id == guild_id
+                and guild.get_role(the_guild.role_moderator) in m.roles)),
+
+            6: (lambda guild, m: self.hasAtLeast(guild, m, 7) or (guild.id == guild_id
+                and m.guild_permissions.manage_guild)),
+
+            7: (lambda guild, m: self.hasAtLeast(guild, m, 9) or (guild.id == guild_id
+                and m == guild.owner)),
 
             9: (lambda guild, m: guild.id == guild_id
                 and m.id == bot.owner_id),
+
             10: (lambda guild, m: guild.id == guild_id
                  and m.id == bot.owner_id),
         }
