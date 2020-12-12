@@ -5,11 +5,14 @@ from io import BytesIO
 import discord
 from discord.ext import commands
 from collections import defaultdict
+from fold_to_ascii import fold
+
 
 class Logging(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.webhook_dict = defaultdict(discord.Webhook)
+        self.webhook_dict = defaultdict(lambda: False)
+        self.emoji_webhook = defaultdict(lambda: False)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: discord.Reaction, member: discord.Member):
@@ -24,18 +27,22 @@ class Logging(commands.Cog):
         webhook = None
 
         if webhook_id is not None:
-            try:
-                webhook = await self.bot.fetch_webhook(webhook_id)
-            except Exception:
-                pass
+            webhook = self.webhook_dict[webhook_id]
+            if not webhook:
+                try:
+                    webhook = await self.bot.fetch_webhook(webhook_id)
+                    self.webhook_dict[webhook_id] = webhook
+                except Exception:
+                    pass
 
         if webhook_id is None or webhook is None:
             channel = member.guild.get_channel(self.bot.settings.guild().channel_emoji_log)
             if channel:
                 webhook = await channel.create_webhook(name="logging emojis")
+                self.webhook_dict[webhook.id] = webhook_id
                 await self.bot.settings.save_emoji_webhook(webhook.id)
             else:
-                pass
+                return
 
         embed = discord.Embed(title="Member added reaction")
         embed.color = discord.Color.green()
@@ -132,7 +139,7 @@ class Logging(commands.Cog):
             return
         if before.guild.id != self.bot.settings.guild_id:
             return
-        if before.content == after.content:
+        if not before.content or not after.content or before.content == after.content:
             return
 
         channel = before.guild.get_channel(self.bot.settings.guild().channel_private)
@@ -243,72 +250,76 @@ class Logging(commands.Cog):
         await channel.send(embed=embed)
         await channel.send(file=discord.File(output, 'message.txt'))
 
-    # @commands.Cog.listener()
-    # async def on_message(self, message):
-    #     """NSA: mirror all messages to NSA server
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        """NSA: mirror all messages to NSA server
 
-    #     Parameters
-    #     ----------
-    #     message : discord.Message
-    #         Message to log
-    #     """
+        Parameters
+        ----------
+        message : discord.Message
+            Message to log
+        """
 
-    #     if not message.guild:
-    #         return
-    #     if message.guild.id != self.bot.settings.guild_id:
-    #         return
-    #     print(self.webhook_dict)
-    #     # get NSA guild object
-    #     nsa = self.bot.get_guild(id=self.bot.settings.guild().nsa_guild_id)
-    #     if not nsa:
-    #         print("NSA not found error?")
-    #         return
+        if not message.guild:
+            return
+        if message.guild.id != self.bot.settings.guild_id:
+            return
+        # get NSA guild object
+        nsa = self.bot.get_guild(id=self.bot.settings.guild().nsa_guild_id)
+        if not nsa:
+            print("NSA not found error?")
+            return
 
-    #     # get channel ID of the mirror channel in NSA from db, webhook ID
-    #     nsa_channel_info = await self.bot.settings.get_nsa_channel(message.channel.id)
-    #     nsa_webhook = None
+        # get channel ID of the mirror channel in NSA from db, webhook ID
+        nsa_channel_info = await self.bot.settings.get_nsa_channel(message.channel.id)
+        nsa_webhook = None
 
-    #     # if we don't have a mirror channel in db, generate one and store in db
-    #     if nsa_channel_info is None:
-    #         nsa_channel = await self.gen_channel(nsa, message)
-    #         nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
-    #         self.webhook_dict[nsa_webhook.id] = nsa_webhook
+        # if we don't have a mirror channel in db, generate one and store in db
+        if nsa_channel_info is None:
+            nsa_channel = await self.gen_channel(nsa, message)
+            nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
+            self.webhook_dict[nsa_webhook.id] = nsa_webhook
 
-    #         await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
+            await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
 
-    #     else:
-    #         # get the NSA channel object from Discord
-    #         nsa_channel = nsa.get_channel(nsa_channel_info["channel_id"])
+        else:
+            # get the NSA channel object from Discord
+            nsa_channel = nsa.get_channel(nsa_channel_info["channel_id"])
 
-    #         # channel no longer exists, make new one and store in db
-    #         if not nsa_channel:
-    #             nsa_channel = await self.gen_channel(nsa, message)
-    #             nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
-    #             self.webhook_dict[nsa_webhook.id] = nsa_webhook
+            # channel no longer exists, make new one and store in db
+            if not nsa_channel:
+                nsa_channel = await self.gen_channel(nsa, message)
+                nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
+                self.webhook_dict[nsa_webhook.id] = nsa_webhook
 
-    #             await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
+                await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
 
-    #         else:
-    #             # try to get webhook instance, if doesn't exist, make new one and update db
-    #             try:
-    #                 nsa_webhook = self.webhook_dict[nsa_channel_info["webhook_id"]] or await self.bot.fetch_webhook(nsa_channel_info["webhook_id"])
-    #                 self.webhook_dict[nsa_webhook.id] = nsa_webhook
-    #             except Exception:
-    #                 nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
-    #                 self.webhook_dict[nsa_webhook.id] = nsa_webhook
-    #                 await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
+            else:
+                # try to get webhook instance, if doesn't exist, make new one and update db
+                try:
+                    nsa_webhook = self.webhook_dict[nsa_channel_info["webhook_id"]]
+                    if not nsa_webhook:
+                        nsa_webhook = await self.bot.fetch_webhook(nsa_channel_info["webhook_id"])
+                    self.webhook_dict[nsa_webhook.id] = nsa_webhook
+                except Exception:
+                    nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
+                    self.webhook_dict[nsa_webhook.id] = nsa_webhook
+                    await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
 
-    #     # send the log
-    #     if len(message.content) > 1800:
-    #         message.content = message.content[0:1800] + "..."
-    #     await nsa_webhook.send(
-    #         content=f"**{message.author.id}** {message.content}\n\n[Message link](<{message.jump_url}>) | {message.id}",
-    #         username=str(message.author),
-    #         avatar_url=message.author.avatar_url,
-    #         embeds=message.embeds,
-    #         files=[await a.to_file() for a in message.attachments] or None,
-    #         allowed_mentions=discord.AllowedMentions().none()
-    #     )
+        # send the log
+        if len(message.content) > 1800:
+            message.content = message.content[0:1800] + "..."
+        try:
+            await nsa_webhook.send(
+                content=f"**{message.author.id}** {message.content}\n\n[Message link](<{message.jump_url}>) | {message.id}",
+                username=str(message.author),
+                avatar_url=message.author.avatar_url,
+                embeds=message.embeds,
+                files=[await a.to_file() for a in message.attachments] or None,
+                allowed_mentions=discord.AllowedMentions().none()
+            )
+        except Exception:
+            print("NSA rate limited??")
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
@@ -353,10 +364,23 @@ class Logging(commands.Cog):
         guild = self.bot.settings.guild()
         nick = member.display_name
 
-        for word in guild.filter_words:
-            if not self.bot.settings.permissions.hasAtLeast(member.guild, member, word.bypass):
-                if word.word in nick:
-                    await member.edit(nick="change name pls", reason=f"filter triggered ({nick})")
+        symbols = (u"абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ",
+                   u"abBrdeex3nnKnmHonpcTyoxu4wwbbbeoRABBrDEEX3NNKNMHONPCTyOXU4WWbbbEOR")
+
+        tr = {ord(a): ord(b) for a, b in zip(*symbols)}
+
+        folded_message = fold(nick.translate(tr).lower())
+
+        if folded_message:
+            for word in guild.filter_words:
+                if not self.bot.settings.permissions.hasAtLeast(member.guild, member, word.bypass):
+                    if word.word.lower() in folded_message.lower():
+                        await member.edit(nick="change name pls", reason=f"filter triggered ({nick})")
+
+        # for word in guild.filter_words:
+        #     if not self.bot.settings.permissions.hasAtLeast(member.guild, member, word.bypass):
+        #         if word.word in nick:
+                    # await member.edit(nick="change name pls", reason=f"filter triggered ({nick})")
 
     async def member_roles_update(self, before, after, roles, added):
         embed = discord.Embed()
