@@ -48,8 +48,8 @@ class FilterMonitor(commands.Cog):
                 if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, word.bypass):
                     if word.word.lower() in folded_message.lower():
                         await self.ratelimit(msg)
-                        await msg.delete()
                         if word.notify:
+                            await self.delete(msg)
                             await report(self.bot, msg, msg.author)
                             return
 
@@ -71,13 +71,13 @@ class FilterMonitor(commands.Cog):
                             id = invite.id
 
                         if id not in whitelist:
-                            await msg.delete()
+                            await self.delete(msg)
                             await self.ratelimit(msg)
                             await report(self.bot, msg, msg.author, invite)
                             return
 
                     except discord.errors.NotFound:
-                        await msg.delete()
+                        await self.delete(msg)
                         await self.ratelimit(msg)
                         await report(self.bot, msg, msg.author, invite)
                         return
@@ -86,12 +86,12 @@ class FilterMonitor(commands.Cog):
         """
         if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, 5):
             if re.search(self.spoiler_filter, msg.content, flags=re.S):
-                await msg.delete()
+                await self.delete(msg)
                 return
 
             for a in msg.attachments:
                 if a.is_spoiler():
-                    await msg.delete()
+                    await self.delete(msg)
                     return
 
         """
@@ -101,7 +101,7 @@ class FilterMonitor(commands.Cog):
             if len(msg.content.splitlines()) > 100:
                 dev_role = msg.guild.get_role(guild.role_dev)
                 if not dev_role or dev_role not in msg.author.roles:
-                    await msg.delete()
+                    await self.delete(msg)
                     await self.ratelimit(msg)
                     return
 
@@ -112,6 +112,12 @@ class FilterMonitor(commands.Cog):
         if bucket.update_rate_limit(current):
             ctx = await self.bot.get_context(message, cls=commands.Context)
             await self.mute(ctx, message.author)
+
+    async def delete(self, msg):
+        try:
+            await msg.delete()
+        except Exception:
+            pass
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
