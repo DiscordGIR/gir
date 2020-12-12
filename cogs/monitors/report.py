@@ -54,53 +54,61 @@ async def report(bot, msg, user, invite = None):
         report_msg = await channel.send(f"{ping_string}\nMessage contained invite: {invite}", embed=embed)
     else:
         report_msg = await channel.send(ping_string, embed=embed)
-    # report_reactions = ['⚠️', '💯']
 
-    # for reaction in report_reactions:
-    #     await report_msg.add_reaction(reaction)
-    await report_msg.add_reaction("✅")
+    report_reactions = {'⚠️': handle_warn,
+                        '🔇': handle_mute,
+                        '❌': handle_ban,
+                        '✅': handle_pass
+                        }
+    for reaction in report_reactions:
+        await report_msg.add_reaction(reaction)
 
     def check(reaction, user):
         res = (user.id != bot.user.id
                and reaction.message == report_msg
-               and str(reaction.emoji) == "✅"
+               and str(reaction.emoji) in report_reactions
                and bot.settings.permissions.hasAtLeast(user.guild, user, 5))
-        # if not res:
-        #     await reaction.remove(user)
         return res
 
     try:
-        reaction, _ = await bot.wait_for('reaction_add', timeout=120.0, check=check)
+        reaction, punisher = await bot.wait_for('reaction_add', timeout=120.0, check=check)
     except asyncio.TimeoutError:
         try:
             await report_msg.clear_reactions()
         except Exception:
             pass
     else:
+        await report_msg.clear_reactions()
+        callback = report_reactions[str(reaction.emoji)]
+        await callback(bot, msg, punisher, user)
+        await report_msg.delete()
+
+
+async def handle_warn(bot, msg, punisher, user):
+    channel = msg.guild.get_channel(bot.settings.guild().channel_reports)
+
+    def response(msg, user):
+        return msg.id == punisher.id
+    
+    while True:
+        prompt = ctx.send("Please enter points for the warn.")
         try:
-            await report_msg.delete()
-        except Exception:
+            punishment, _ = await bot.wait_for('message', check=response)
+        except:
             pass
+    
 
-    # def check(reaction, user):
-    #     return (bot.settings.permissions.hasAtLeast(user.guild, user, 5)
-    #         and reaction.message == report_msg
-    #         and str(reaction.emoji) in report_reactions)
 
-    # def check_2(reason_text, user):
-    #     return
-    # try:
-    #     reaction, warner = await bot.wait_for('reaction_add', timeout=120.0, check=check)
-    # except asyncio.TimeoutError:
-    #     await report_msg.clear_reactions()
-    # else:
-    #     await report_msg.clear_reactions()
+async def handle_mute(bot, msg, punisher, user):
+    pass
 
-    #      try:
-    #         reaction, user = await bot.wait_for('message', timeout=30.0, check=check2)
-    #     except asyncio.TimeoutError:
-    #         await report_msg.clear_reactions()
-    #     else:
 
-    #     cmd = bot.get_command("warn")
-    #     await ctx.invoke(cmd, user, 50)
+async def handle_ban(bot, msg, punisher, user):
+    pass
+
+
+async def handle_pass(bot, msg, punisher, user):
+    try:
+        await report_msg.delete()
+    except Exception:
+        pass
