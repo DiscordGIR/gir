@@ -48,10 +48,10 @@ class FilterMonitor(commands.Cog):
             for word in guild.filter_words:
                 if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, word.bypass):
                     if word.word.lower() in folded_message.lower():
+                        await self.delete(msg)
                         if not reported:
                             await self.ratelimit(msg)
                             reported = True
-                        await self.delete(msg)
                         if word.notify:
                             await report(self.bot, msg, msg.author)
                             return

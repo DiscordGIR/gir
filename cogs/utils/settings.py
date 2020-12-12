@@ -254,6 +254,9 @@ class Settings(commands.Cog):
             user.save()
         return user
 
+    async def retrieve_birthdays(self, date):
+        return User.objects(birthday=date)
+
     async def cases(self, id: int) -> Cases:
         """Return the Document representing the cases of a user, whose ID is given by `id`
         If the user doesn't have a Cases document in the database, first create that.

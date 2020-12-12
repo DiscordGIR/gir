@@ -698,6 +698,40 @@ class ModActions(commands.Cog):
 
         await ctx.message.reply(f"{user.mention} was put on clem.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
 
+    @commands.guild_only()
+    @commands.command(name="addbirthday")
+    async def addbirthday(self, ctx: commands.Context, user: discord.Member, month: int, date: int) -> None:
+        """Set user birthday (admin only)
+
+        Example usage:
+        --------------
+        `!birthday <@user/ID> <month> <date>`
+
+        Parameters
+        ----------
+        user : discord.Member
+            User to put on clem
+        """
+
+        # must be owner
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 7):
+            raise commands.BadArgument(
+                "You need to be an administrator to use that command.")
+        if user.id == self.bot.user.id:
+            await ctx.message.add_reaction("🤔")
+            raise commands.BadArgument("You can't call that on me :(")
+
+        if 0 > month or month > 12:
+            raise commands.BadArgument("Month must be between 1-12")
+        if 0 > date or date > 31:
+            raise commands.BadArgument("Date must be between 1-31")
+
+        results = await self.bot.settings.user(user.id)
+        results.birthday = [month, date]
+        results.save()
+
+        await ctx.message.reply(f"{user.mention}'s birthday was set.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
+
     @unmute.error
     @mute.error
     @liftwarn.error
