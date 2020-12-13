@@ -96,7 +96,7 @@ class UserInfo(commands.Cog):
 
     @commands.guild_only()
     @commands.command(name="userinfo", aliases=["info"])
-    async def userinfo(self, ctx: commands.Context, user: discord.Member = None) -> None:
+    async def userinfo(self, ctx: commands.Context, user: typing.Union[discord.Member, int] = None) -> None:
         """Get information about a user (join/creation date, xp, etc.), defaults to command invoker.
 
         Example usage:
@@ -108,25 +108,42 @@ class UserInfo(commands.Cog):
         user : discord.Member, optional
             User to get info about, by default the author of command, by default None
         """
+
         if user is None:
             user = ctx.author
 
+        if isinstance(user, int):
+            if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+                raise commands.BadArgument("You do not have permission to use this command.")
+            try:
+                user = await self.bot.fetch_user(user)
+            except discord.NotFound:
+                raise commands.BadArgument(
+                    f"Couldn't find user with ID {user}")
+
         bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user.id != ctx.author.id:
             await ctx.message.delete()
             raise commands.BadArgument(
-                f"Command only allowed in <#{bot_chan}>")
+                "You do not have permission to use this command.")
 
         roles = ""
-        reversed_roles = user.roles
-        reversed_roles.reverse()
-        
-        for role in reversed_roles:
-            if role != ctx.guild.default_role:
-                roles += role.mention + " "
+
+        if isinstance(user, discord.Member):
+            reversed_roles = user.roles
+            reversed_roles.reverse()
+
+            for role in reversed_roles:
+                if role != ctx.guild.default_role:
+                    roles += role.mention + " "
+            
+            joined = user.joined_at.strftime("%B %d, %Y, %I:%M %p")
+        else:
+            roles = "No roles."
+            joined = "User not in r/Jailbreak."
+
         results = (await self.bot.settings.user(user.id))
 
-        joined = user.joined_at.strftime("%B %d, %Y, %I:%M %p")
         created = user.created_at.strftime("%B %d, %Y, %I:%M %p")
 
         embed = discord.Embed(title="User Information")
