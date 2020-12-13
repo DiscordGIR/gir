@@ -54,53 +54,33 @@ async def report(bot, msg, user, invite = None):
         report_msg = await channel.send(f"{ping_string}\nMessage contained invite: {invite}", embed=embed)
     else:
         report_msg = await channel.send(ping_string, embed=embed)
-    # report_reactions = ['⚠️', '💯']
+    report_reactions = ['✅', '🆔']
 
-    # for reaction in report_reactions:
-    #     await report_msg.add_reaction(reaction)
-    await report_msg.add_reaction("✅")
+    for reaction in report_reactions:
+        await report_msg.add_reaction(reaction)
 
     def check(reaction, user):
         res = (user.id != bot.user.id
                and reaction.message == report_msg
-               and str(reaction.emoji) == "✅"
+               and str(reaction.emoji) in report_reactions
                and bot.settings.permissions.hasAtLeast(user.guild, user, 5))
-        # if not res:
-        #     await reaction.remove(user)
         return res
 
-    try:
-        reaction, _ = await bot.wait_for('reaction_add', timeout=120.0, check=check)
-    except asyncio.TimeoutError:
+    while True:
         try:
-            await report_msg.clear_reactions()
-        except Exception:
-            pass
-    else:
-        try:
-            await report_msg.delete()
-        except Exception:
-            pass
-
-    # def check(reaction, user):
-    #     return (bot.settings.permissions.hasAtLeast(user.guild, user, 5)
-    #         and reaction.message == report_msg
-    #         and str(reaction.emoji) in report_reactions)
-
-    # def check_2(reason_text, user):
-    #     return
-    # try:
-    #     reaction, warner = await bot.wait_for('reaction_add', timeout=120.0, check=check)
-    # except asyncio.TimeoutError:
-    #     await report_msg.clear_reactions()
-    # else:
-    #     await report_msg.clear_reactions()
-
-    #      try:
-    #         reaction, user = await bot.wait_for('message', timeout=30.0, check=check2)
-    #     except asyncio.TimeoutError:
-    #         await report_msg.clear_reactions()
-    #     else:
-
-    #     cmd = bot.get_command("warn")
-    #     await ctx.invoke(cmd, user, 50)
+            reaction, _ = await bot.wait_for('reaction_add', timeout=120.0, check=check)
+        except asyncio.TimeoutError:
+            try:
+                await report_msg.clear_reactions()
+                return
+            except Exception:
+                pass
+        else:
+            if str(reaction.emoji) == '✅':
+                try:
+                    await report_msg.delete()
+                except Exception:
+                    pass
+                return
+            elif str(reaction.emoji) == '🆔':
+                await channel.send(user.id, delete_after=10)
