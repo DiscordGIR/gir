@@ -1,7 +1,8 @@
-# Botty McBotface
+# GIR (Botty McBotface)
+![](https://media.discordapp.net/attachments/688121419980341282/787792406443458610/gggggggir.png)
 Moderation bot for r/Jailbreak
 
-### Prerequisites
+### Prerequisites for setup
 - Python
 - `poetry`
 - `pyenv`
@@ -26,7 +27,5 @@ BOTTY_ENV        = "DEVELOPMENT"
 7. `python main.py` - if everything was set up properly you're good to go!
 
 ### First time use
-
-If porting from Janet, run `python port.py` first (you will need the extra 4 env variables above if so).
 
 If you aren't porting from Janet, you don't have any baseline data for the bot to work. I wrote a short script `setup.py` which you should fill in with data from your own server, then run `python setup.py`
