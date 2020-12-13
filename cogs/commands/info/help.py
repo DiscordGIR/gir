@@ -13,7 +13,7 @@ class Utilities(commands.Cog):
 
     @commands.command(name="help", hidden=True)
     @commands.has_permissions(add_reactions=True, embed_links=True)
-    async def help_comm(self, ctx, command_arg=None):
+    async def help_comm(self, ctx: commands.Context, command_arg: str = None):
         """Gets all cogs and commands of mine."""
 
         await ctx.message.delete(delay=5)

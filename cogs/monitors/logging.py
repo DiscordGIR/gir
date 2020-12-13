@@ -6,7 +6,7 @@ import discord
 from discord.ext import commands
 from collections import defaultdict
 from fold_to_ascii import fold
-
+from typing import List
 
 class Logging(commands.Cog):
     def __init__(self, bot):
@@ -197,12 +197,12 @@ class Logging(commands.Cog):
         await channel.send(embed=embed)
 
     @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
+    async def on_command_error(self, ctx: commands.Context, error):
         if isinstance(error, commands.CommandNotFound):
             return
 
     @commands.Cog.listener()
-    async def on_bulk_message_delete(self, messages: [discord.Message]):
+    async def on_bulk_message_delete(self, messages: List[discord.Message]):
         """Log bulk message deletes. Messages are outputted to file and sent to #server-logs
 
         Parameters
@@ -322,7 +322,7 @@ class Logging(commands.Cog):
     #         print("NSA rate limited??")
 
     @commands.Cog.listener()
-    async def on_member_update(self, before, after):
+    async def on_member_update(self, before: discord.Message, after: discord.Message):
         if not after.guild.id == self.bot.settings.guild_id:
             return
         if not before or not after:

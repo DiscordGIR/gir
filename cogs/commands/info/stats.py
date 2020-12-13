@@ -74,7 +74,7 @@ class Stats(commands.Cog):
 
     @commands.guild_only()
     @commands.command(name="serverinfo")
-    async def serverinfo(self, ctx: discord.Client) -> None:
+    async def serverinfo(self, ctx: commands.Context) -> None:
         """Displays info about the server
 
         Example usage:

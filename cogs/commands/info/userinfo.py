@@ -33,6 +33,15 @@ class LeaderboardSource(menus.GroupByPageSource):
 
 class CasesSource(menus.GroupByPageSource):
     async def format_page(self, menu, entry):
+        pun_map = {
+            "KICK": "Kicked",
+            "BAN": "Banned",
+            "CLEM": "Clemmed",
+            "UNBAN": "Unbanned",
+            "MUTE": "Duration",
+            "REMOVEPOINTS": "Points removed"
+        }
+
         user = menu.ctx.args[2] or menu.ctx.author
         u = await menu.ctx.bot.settings.user(user.id)
         embed = discord.Embed(
@@ -40,34 +49,22 @@ class CasesSource(menus.GroupByPageSource):
         embed.set_author(name=user, icon_url=user.avatar_url)
         for case in entry.items:
             timestamp = case.date.strftime("%B %d, %Y, %I:%M %p")
-            if case._type == "WARN":
+            if case._type == "WARN" or case._type == "LIFTWARN":
                 if case.lifted:
                     embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id} [LIFTED]',
                                     value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Lifted by**: {case.lifted_by_tag}\n**Lift reason**: {case.lifted_reason}\n**Warned on**: {timestamp}', inline=True)
+                elif case._type == "LIFTWARN":
+                    embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id} [LIFTED (legacy)]',
+                                    value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Warned on**: {timestamp} UTC', inline=True)
                 else:
                     embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
                                     value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Warned on**: {timestamp} UTC', inline=True)
-            elif case._type == "LIFTWARN":
-                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id} [LIFTED]',
-                                value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Lifted by**: {case.lifted_by_tag}\n**Lift reason**: {case.lifted_reason}\n**Warned on**: {timestamp}', inline=True)
-            elif case._type == "MUTE":
+            elif case._type == "MUTE" or case._type == "REMOVEPOINTS":
                 embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
-                                value=f'**Duration**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
-            elif case._type == "REMOVEPOINTS":
+                                value=f'**{pun_map[case._type]}**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
+            elif case._type in pun_map:
                 embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
-                                value=f'**Points removed**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
-            elif case._type == "KICK":
-                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
-                                value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Kicked on**: {timestamp} UTC', inline=True)
-            elif case._type == "BAN":
-                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
-                                value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Banned on**: {timestamp} UTC', inline=True)
-            elif case._type == "CLEM":
-                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
-                                value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Clemmed on**: {timestamp} UTC', inline=True)
-            elif case._type == "UNBAN":
-                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
-                                value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Unbanned on**: {timestamp} UTC', inline=True)
+                                value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**{pun_map[case._type]} on**: {timestamp} UTC', inline=True)
             else:
                 embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
                                 value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
@@ -117,7 +114,6 @@ class UserInfo(commands.Cog):
                 raise commands.BadArgument(
                     f"Couldn't find user with ID {user}")
 
-        bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user.id != ctx.author.id:
             await ctx.message.delete()
             raise commands.BadArgument(
@@ -132,7 +128,7 @@ class UserInfo(commands.Cog):
             for role in reversed_roles:
                 if role != ctx.guild.default_role:
                     roles += role.mention + " "
-            
+
             joined = user.joined_at.strftime("%B %d, %Y, %I:%M %p") + " UTC"
         else:
             roles = "No roles."
