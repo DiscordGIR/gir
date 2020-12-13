@@ -137,14 +137,14 @@ class UserInfo(commands.Cog):
                 if role != ctx.guild.default_role:
                     roles += role.mention + " "
             
-            joined = user.joined_at.strftime("%B %d, %Y, %I:%M %p")
+            joined = user.joined_at.strftime("%B %d, %Y, %I:%M %p") + " UTC"
         else:
             roles = "No roles."
             joined = "User not in r/Jailbreak."
 
         results = (await self.bot.settings.user(user.id))
 
-        created = user.created_at.strftime("%B %d, %Y, %I:%M %p")
+        created = user.created_at.strftime("%B %d, %Y, %I:%M %p") + " UTC"
 
         embed = discord.Embed(title="User Information")
         embed.color = user.color
@@ -158,9 +158,9 @@ class UserInfo(commands.Cog):
             name="XP", value=results.xp if not results.is_xp_frozen else "0/0", inline=True)
         embed.add_field(
             name="Roles", value=roles if roles else "None", inline=False)
-        embed.add_field(name="Join date", value=f"{joined} UTC", inline=True)
+        embed.add_field(name="Join date", value=joined, inline=True)
         embed.add_field(name="Account creation date",
-                        value=f"{created} UTC", inline=True)
+                        value=created, inline=True)
         embed.set_footer(text=f"Requested by {ctx.author}")
 
         await ctx.message.reply(embed=embed)
