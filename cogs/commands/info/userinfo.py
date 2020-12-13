@@ -145,9 +145,9 @@ class UserInfo(commands.Cog):
         embed.add_field(name="Username",
                         value=f'{user} ({user.mention})', inline=True)
         embed.add_field(
-            name="Level", value=results.level if not results.is_xp_frozen else "0", inline=True)
+            name="Level", value=results.level if not results.is_clem else "0", inline=True)
         embed.add_field(
-            name="XP", value=results.xp if not results.is_xp_frozen else "0/0", inline=True)
+            name="XP", value=results.xp if not results.is_clem else "0/0", inline=True)
         embed.add_field(
             name="Roles", value=roles if roles else "None", inline=False)
         embed.add_field(name="Join date", value=joined, inline=True)
@@ -187,10 +187,11 @@ class UserInfo(commands.Cog):
         embed.color = user.top_role.color
         embed.set_author(name=user, icon_url=user.avatar_url)
         embed.add_field(
-            name="Level", value=results.level if not results.is_xp_frozen else "0", inline=True)
+            name="Level", value=results.level if not results.is_clem else "0", inline=True)
         embed.add_field(
-            name="XP", value=f'{results.xp}/{xp_for_next_level(results.level)}' if not results.is_xp_frozen else "0/0", inline=True)
-        embed.add_field(name="Rank", value=await self.bot.settings.leaderboard_rank(results.xp), inline=True)
+            name="XP", value=f'{results.xp}/{xp_for_next_level(results.level)}' if not results.is_clem else "0/0", inline=True)
+        rank, overall = await self.bot.settings.leaderboard_rank(results.xp) 
+        embed.add_field(name="Rank", value=f"{rank}/{overall}" if not results.is_clem else f"{overall}/{overall}", inline=True)
         embed.set_footer(text=f"Requested by {ctx.author}")
 
         await ctx.message.reply(embed=embed)

@@ -690,11 +690,23 @@ class ModActions(commands.Cog):
 
         results = await self.bot.settings.user(user.id)
         results.is_clem = True
-        results.xp = 0
-        results.level = 0
         results.is_xp_frozen = True
         results.warn_points = 599
         results.save()
+
+        case = Case(
+            _id=self.bot.settings.guild().case_id,
+            _type="CLEM",
+            mod_id=ctx.author.id,
+            mod_tag=str(ctx.author),
+            punishment=str(-1),
+            reason="No reason."
+        )
+
+        # increment DB's max case ID for next case
+        await self.bot.settings.inc_caseid()
+        # add case to db
+        await self.bot.settings.add_case(user.id, case)
 
         await ctx.message.reply(f"{user.mention} was put on clem.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
 

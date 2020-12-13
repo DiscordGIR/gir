@@ -97,7 +97,7 @@ class Settings(commands.Cog):
         users = User.objects().only('_id', 'xp')
         overall = users().count()
         rank = users(xp__gte=xp).count()
-        return f"{rank}/{overall}"
+        return (rank, overall)
 
     async def inc_caseid(self) -> None:
         """Increments Guild.case_id, which keeps track of the next available ID to
