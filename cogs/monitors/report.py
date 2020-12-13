@@ -3,6 +3,8 @@ import datetime
 
 import discord
 import humanize
+from data.case import Case
+from cogs.utils import logs as logging
 
 
 async def report(bot, msg, user, invite = None):
@@ -87,17 +89,46 @@ async def report(bot, msg, user, invite = None):
 async def handle_warn(bot, msg, punisher, user):
     channel = msg.guild.get_channel(bot.settings.guild().channel_reports)
 
-    def response(msg, user):
-        return msg.id == punisher.id
+    def response(message):
+        # print(message.author.id == punisher.id)
+        # print(user, punisher)
+        return message.author.id == punisher.id
+    
+    ctx = msg.channel
+    points = None
+    reason = None
+    while True:
+        prompt = await ctx.send("Please enter points for the warn.")
+        try:
+            points = await bot.wait_for('message', check=response, timeout=30)
+        except asyncio.TimeoutError:
+            await prompt.delete()
+            return
+        else:
+            try:
+                await points.delete()
+                points = int(points.content)
+                await prompt.delete()
+                if points > 0:
+                    break
+            except ValueError:
+                pass
     
     while True:
-        prompt = ctx.send("Please enter points for the warn.")
+        prompt = await ctx.send("Please enter a reason for the warn.")
         try:
-            punishment, _ = await bot.wait_for('message', check=response)
-        except:
-            pass
+            reason = await bot.wait_for('message', check=response, timeout=30)
+        except asyncio.TimeoutError:
+            await prompt.delete()
+            return
+        else:
+            await reason.delete()
+            reason = reason.content
+            await prompt.delete()
+            break
     
-
+    await warn(bot, channel, punisher, user, points, reason)
+    await msg.delete(delay=5)
 
 async def handle_mute(bot, msg, punisher, user):
     pass
@@ -109,6 +140,83 @@ async def handle_ban(bot, msg, punisher, user):
 
 async def handle_pass(bot, msg, punisher, user):
     try:
-        await report_msg.delete()
+        await msg.delete()
     except Exception:
         pass
+
+
+async def warn(bot, channel, punisher, user, points, reason):
+    reason = discord.utils.escape_markdown(reason)
+    reason = discord.utils.escape_mentions(reason)
+    guild = bot.settings.guild()
+    # prepare the case object for database
+    case = Case(
+        _id=guild.case_id,
+        _type="WARN",
+        mod_id=punisher.id,
+        mod_tag=str(punisher),
+        reason=reason,
+        punishment=str(points)
+    )
+
+    # increment case ID in database for next available case ID
+    await bot.settings.inc_caseid()
+    # add new case to DB
+    await bot.settings.add_case(user.id, case)
+    # add warnpoints to the user in DB
+    await bot.settings.inc_points(user.id, points)
+
+    # fetch latest document about user from DB
+    results = await bot.settings.user(user.id)
+    cur_points = results.warn_points
+
+    # prepare log embed, send to #public-mod-logs, user, channel where invoked
+    log = await logging.prepare_warn_log(punisher, user, case)
+    log.add_field(name="Current points", value=cur_points, inline=True)
+
+    log_kickban = None
+
+    # if cur_points >= 600:
+    #     # automatically ban user if more than 600 points
+    #     try:
+    #         await user.send("You were banned from r/Jailbreak for reaching 600 or more points.", embed=log)
+    #     except Exception:
+    #         pass
+
+    #     log_kickban = await self.add_ban_case(ctx, user, "600 or more warn points reached.")
+    #     await user.ban(reason="600 or more warn points reached.")
+
+    # elif cur_points >= 400 and not results.was_warn_kicked and isinstance(user, discord.Member):
+    #     # kick user if >= 400 points and wasn't previously kicked
+    #     await bot.settings.set_warn_kicked(user.id)
+
+    #     try:
+    #         await user.send("You were kicked from r/Jailbreak for reaching 400 or more points.", embed=log)
+    #     except Exception:
+    #         pass
+
+    #     log_kickban = await self.add_kick_case(ctx, user, "400 or more warn points reached.")
+    #     await user.kick(reason="400 or more warn points reached.")
+
+    # else:
+    if isinstance(user, discord.Member):
+        try:
+            await user.send("You were warned in r/Jailbreak.", embed=log)
+        except Exception:
+            pass
+
+    # also send response in channel where command was called
+    await channel.send(embed=log, delete_after=10)
+    # await ctx.message.delete(delay=10)
+
+    public_chan = channel.guild.get_channel(
+        bot.settings.guild().channel_public)
+    if public_chan:
+        log.remove_author()
+        log.set_thumbnail(url=user.avatar_url)
+        await public_chan.send(embed=log)
+
+        if log_kickban:
+            log_kickban.remove_author()
+            log_kickban.set_thumbnail(url=user.avatar_url)
+            await public_chan.send(embed=log_kickban)
