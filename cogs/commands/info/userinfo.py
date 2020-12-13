@@ -80,11 +80,7 @@ class MenuPages(menus.MenuPages):
     async def update(self, payload):
         if self._can_remove_reactions:
             if payload.event_type == 'REACTION_ADD':
-                await self.bot.http.remove_reaction(
-                    payload.channel_id, payload.message_id,
-                    discord.Message._emoji_reaction(
-                        payload.emoji), payload.member.id
-                )
+                await self.message.remove_reaction(payload.emoji, payload.member)
             elif payload.event_type == 'REACTION_REMOVE':
                 return
         await super().update(payload)
