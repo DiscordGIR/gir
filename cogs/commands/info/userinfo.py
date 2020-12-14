@@ -105,8 +105,10 @@ class UserInfo(commands.Cog):
         if user is None:
             user = ctx.author
 
+        is_mod = self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5)
+
         if isinstance(user, int):
-            if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+            if not is_mod:
                 raise commands.BadArgument("You do not have permission to use this command.")
             try:
                 user = await self.bot.fetch_user(user)
@@ -114,10 +116,15 @@ class UserInfo(commands.Cog):
                 raise commands.BadArgument(
                     f"Couldn't find user with ID {user}")
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user.id != ctx.author.id:
+        if not is_mod and user.id != ctx.author.id:
             await ctx.message.delete()
             raise commands.BadArgument(
                 "You do not have permission to use this command.")
+
+        bot_chan = self.bot.settings.guild().channel_botspam
+        if not is_mod and ctx.channel.id != bot_chan:
+            raise commands.BadArgument(
+                f"Command only allowed in <#{bot_chan}>")
 
         roles = ""
 
