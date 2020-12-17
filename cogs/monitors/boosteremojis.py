@@ -1,22 +1,16 @@
 import discord
 from discord.ext import commands
-import io
 import aiohttp
 import re
 from enum import Enum
 import traceback
 import asyncio
 
-class EmojiType(Enum):
-    Bad = 1
-    Emoji = 2
-    Image = 3
-    
-        
+
 class BoosterEmojis(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-    
+
     @commands.command(name='auditemojis', hidden=True)
     async def auditemojis(self, ctx: commands.Context):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
@@ -26,7 +20,7 @@ class BoosterEmojis(commands.Cog):
         channel = ctx.guild.get_channel(self.bot.settings.guild().channel_booster_emoji)
         if not channel:
             return
-        
+
         await ctx.message.delete()
         count = 0
         async for msg in channel.history():
@@ -42,11 +36,8 @@ class BoosterEmojis(commands.Cog):
             else:
                 await self.add_reactions(False, msg)
 
-            # emoji = custom_emojis[0]
-            # byte = await emoji.url.read()
-            # await channel.guild.create_custom_emoji(image=byte, name=emoji.name)
         await ctx.send(f"Found {count} emojis and added reacts for them.", delete_after=5)
-        
+
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         if not payload.member:
@@ -58,10 +49,10 @@ class BoosterEmojis(commands.Cog):
         channel = payload.member.guild.get_channel(payload.channel_id)
         try:
             msg = await channel.fetch_message(payload.message_id)
-        except:
+        except Exception:
             return
         db = self.bot.settings
-        
+
         if not msg.guild.id == db.guild_id:
             return
         if not payload.channel_id == db.guild().channel_booster_emoji:
@@ -88,15 +79,15 @@ class BoosterEmojis(commands.Cog):
         if _bytes is None:
             await msg.remove_reaction(payload.emoji, payload.member)
             return
-        
+
         if len(msg.guild.emojis) > msg.guild.emoji_limit:
             await msg.channel.send("Reached max emoji limit!", delete_after=5)
             return
-        
+
         if name is None:
             def check(m):
                 return m.author == payload.member
-            
+
             while True:
                 prompt = await channel.send("Enter name for emoji (alphanumeric and underscores)")
                 try:
@@ -121,7 +112,6 @@ class BoosterEmojis(commands.Cog):
         except Exception:
             pass
 
-
     @commands.Cog.listener()
     async def on_message(self, msg):
         if not msg.guild:
@@ -133,7 +123,7 @@ class BoosterEmojis(commands.Cog):
             return
         if not msg.channel.id == db.guild().channel_booster_emoji:
             return
-        
+
         try:
             _bytes, _ = await self.get_bytes(msg)
         except commands.BadArgument as e:
@@ -149,7 +139,7 @@ class BoosterEmojis(commands.Cog):
             name = custom_emojis[0].split(':')[1]
         custom_emojis = [int(e.split(':')[2].replace('>', '')) for e in custom_emojis]
         custom_emojis = [f"https://cdn.discordapp.com/emojis/{e}.png?v=1" for e in custom_emojis]
-        
+
         custom_emojis_gif = re.findall(r'<a:.+:\d+>|<:.+?:\d+>', msg.content)
         if len(custom_emojis_gif) == 1:
             name = custom_emojis_gif[0].split(':')[1]
