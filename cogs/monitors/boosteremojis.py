@@ -5,7 +5,7 @@ import aiohttp
 import re
 from enum import Enum
 import traceback
-
+import asyncio
 
 class EmojiType(Enum):
     Bad = 1
@@ -19,7 +19,7 @@ class BoosterEmojis(commands.Cog):
     
     @commands.command(name='auditemojis', hidden=True)
     async def auditemojis(self, ctx: commands.Context):
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 7):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
             raise commands.BadArgument(
                 "You need to be Aaron to use that command.")
 
@@ -70,7 +70,7 @@ class BoosterEmojis(commands.Cog):
             return
         if not str(payload.emoji) in ['✅', '❌']:
             return
-        if not self.bot.settings.permissions.hasAtLeast(payload.member.guild, payload.member, 7):
+        if not self.bot.settings.permissions.hasAtLeast(payload.member.guild, payload.member, 5):
             await msg.remove_reaction(payload.emoji, payload.member)
             return
 
@@ -89,23 +89,37 @@ class BoosterEmojis(commands.Cog):
             await msg.remove_reaction(payload.emoji, payload.member)
             return
         
+        if len(msg.guild.emojis) > msg.guild.emoji_limit:
+            await msg.channel.send("Reached max emoji limit!", delete_after=5)
+            return
+        
         if name is None:
             def check(m):
                 return m.author == payload.member
             
             while True:
-                prompt = await channel.send("Enter name for emoji")
-                temp = await self.bot.wait_for('message', check=check)
-                name = temp.content
-                await prompt.delete()
-                await temp.delete()
-                if len(name) > 2 and len(name) < 20:
-                    break
+                prompt = await channel.send("Enter name for emoji (alphanumeric and underscores)")
+                try:
+                    temp = await self.bot.wait_for('message', check=check, timeout=30)
+                except asyncio.TimeoutError:
+                    await prompt.delete()
+                    await msg.remove_reaction(payload.emoji, payload.member)
+                    return
+                else:
+                    name = temp.content
+                    await prompt.delete()
+                    await temp.delete()
+                    if len(name) > 2 and len(name) < 20 and re.match(r"^[a-zA-Z0-9_]*$", name):
+                        break
 
         emoji = await channel.guild.create_custom_emoji(image=_bytes, name=name)
         if emoji:
             await msg.delete()
-        await payload.member.send(emoji)
+
+        try:
+            await payload.member.send(emoji)
+        except Exception:
+            pass
 
 
     @commands.Cog.listener()
@@ -149,7 +163,7 @@ class BoosterEmojis(commands.Cog):
                 link = link.group(0)
 
         if len(custom_emojis) > 1 or len(custom_emojis_gif) > 1 or len(msg.attachments) > 1:
-            return None
+            return None, None
         elif len(custom_emojis) == 1:
             emoji = custom_emojis[0]
             return await self.do_content_parsing(emoji), name
