@@ -51,7 +51,7 @@ class Logging(commands.Cog):
         embed.add_field(
             name="Reaction", value=reaction.emoji, inline=True)
         embed.add_field(
-            name="Message", value=f"[Link]({reaction.message.jump_url})\nby {reaction.message.author} ({reaction.message.author.id})", inline=False)
+            name="Message", value=f"[Link to message]({reaction.message.jump_url})\nby {reaction.message.author} ({reaction.message.author.id})", inline=False)
         embed.timestamp = datetime.now()
         embed.set_footer(text=member.id)
 
@@ -193,7 +193,7 @@ class Logging(commands.Cog):
             name="Channel", value=message.channel.mention, inline=True)
         if len(message.content) > 400:
             message.content = message.content[0:400] + "..."
-        embed.add_field(name="Message", value=message.content, inline=False)
+        embed.add_field(name="Message", value=message.content + f"\n\n[Link to message]({message.jump_url})", inline=False)
         embed.set_footer(text=message.author.id)
         embed.timestamp = datetime.now()
         await channel.send(embed=embed)
