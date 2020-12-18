@@ -144,8 +144,8 @@ class FilterMonitor(commands.Cog):
             _id=self.bot.settings.guild().case_id,
             _type="MUTE",
             date=now,
-            mod_id=ctx.author.id,
-            mod_tag=str(ctx.author),
+            mod_id=ctx.me.id,
+            mod_tag=str(ctx.me),
             reason=reason,
         )
 
@@ -168,7 +168,7 @@ class FilterMonitor(commands.Cog):
 
         await user.add_roles(mute_role)
 
-        log = await logging.prepare_mute_log(ctx.author, user, case)
+        log = await logging.prepare_mute_log(ctx.me, user, case)
 
         public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
         if public_chan:
