@@ -125,7 +125,7 @@ class ModActions(commands.Cog):
             await self.bot.settings.set_warn_kicked(user.id)
 
             try:
-                await user.send("You were kicked from r/Jailbreak for reaching 400 or more points.", embed=log)
+                await user.send("You were kicked from r/Jailbreak for reaching 400 or more points. Please note that you will be banned at 600 points.", embed=log)
             except Exception:
                 pass
 
@@ -135,7 +135,7 @@ class ModActions(commands.Cog):
         else:
             if isinstance(user, discord.Member):
                 try:
-                    await user.send("You were warned in r/Jailbreak.", embed=log)
+                    await user.send("You were warned in r/Jailbreak. Please note that you will be kicked at 400 points and banned at 600 points.", embed=log)
                 except Exception:
                     pass
 
