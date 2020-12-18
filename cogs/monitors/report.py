@@ -21,7 +21,7 @@ async def report(bot, msg, user, invite=None):
         report_msg = await channel.send(f"{ping_string}\nMessage contained invite: {invite}", embed=embed)
     else:
         report_msg = await channel.send(ping_string, embed=embed)
-    report_reactions = ['✅', '🆔']
+    report_reactions = ['✅', '🆔', '🧹']
 
     for reaction in report_reactions:
         await report_msg.add_reaction(reaction)
@@ -51,6 +51,9 @@ async def report(bot, msg, user, invite=None):
                 return
             elif str(reaction.emoji) == '🆔':
                 await channel.send(user.id, delete_after=10)
+            elif str(reaction.emoji) == '🧹':
+                await channel.purge(limit=100)
+            
 
 
 async def prepare_embed(bot, user, msg):
