@@ -156,7 +156,7 @@ class Logging(commands.Cog):
         embed.add_field(name="Old message", value=before.content, inline=False)
         embed.add_field(name="New message", value=after.content, inline=False)
         embed.add_field(
-            name="Channel", value=before.channel.mention, inline=False)
+            name="Channel", value=before.channel.mention + f"\n\n[Link to message]({before.jump_url})", inline=False)
         embed.timestamp = datetime.now()
         embed.set_footer(text=before.author.id)
         await channel.send(embed=embed)
