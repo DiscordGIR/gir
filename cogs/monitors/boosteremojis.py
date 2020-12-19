@@ -13,6 +13,9 @@ class BoosterEmojis(commands.Cog):
 
     @commands.command(name='auditemojis', hidden=True)
     async def auditemojis(self, ctx: commands.Context):
+        """Go through booster emojis and add approve/deny reacts (admin only)
+        """
+
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 7):
             raise commands.BadArgument(
                 "You need to be Aaron to use that command.")
