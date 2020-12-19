@@ -13,7 +13,7 @@ class BoosterEmojis(commands.Cog):
 
     @commands.command(name='auditemojis', hidden=True)
     async def auditemojis(self, ctx: commands.Context):
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 7):
             raise commands.BadArgument(
                 "You need to be Aaron to use that command.")
 
