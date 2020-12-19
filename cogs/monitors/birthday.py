@@ -10,8 +10,7 @@ class Birthday(commands.Cog):
     def cog_unload(self):
         self.birthday.cancel()
 
-    # @tasks.loop(seconds=3600)
-    @tasks.loop(seconds=10)
+    @tasks.loop(seconds=900)
     async def birthday(self):
         today = datetime.today()
         date = [today.month, today.day]

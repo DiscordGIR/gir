@@ -726,16 +726,16 @@ class ModActions(commands.Cog):
         """
 
         # must be owner
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 7):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             raise commands.BadArgument(
                 "You need to be an administrator to use that command.")
         if user.id == self.bot.user.id:
             await ctx.message.add_reaction("🤔")
             raise commands.BadArgument("You can't call that on me :(")
 
-        if 0 > month or month > 12:
+        if 1 > month or month > 12:
             raise commands.BadArgument("Month must be between 1-12")
-        if 0 > date or date > 31:
+        if 1 > date or date > 31:
             raise commands.BadArgument("Date must be between 1-31")
 
         results = await self.bot.settings.user(user.id)
