@@ -25,7 +25,8 @@ initial_extensions = ['cogs.utils.settings',
                       'cogs.commands.info.userinfo',
                       'cogs.commands.info.stats',
                       'cogs.commands.info.devices',
-                      'cogs.commands.info.help'
+                      'cogs.commands.info.help',
+                      'cogs.commands.genius'
                       ]
 
 monitor_extensions = [

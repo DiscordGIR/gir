@@ -10,6 +10,7 @@ class Utilities(commands.Cog):
         self.left_col_length = 17
         self.right_col_length = 80
         self.mod_only = ["ModActions", "Filters", "BoosterEmojis"]
+        self.genius_only = ["Genius"]
 
     @commands.command(name="help", hidden=True)
     @commands.has_permissions(add_reactions=True, embed_links=True)
@@ -20,11 +21,13 @@ class Utilities(commands.Cog):
 
         if not command_arg:
             await ctx.message.add_reaction("📬")
-            string = "Get a detailed description for a specific command with `!help <command name>` ```md\n"
-
+            header = "Get a detailed description for a specific command with `!help <command name>`\n"
+            string = ""
             for cog_name in self.bot.cogs:
                 cog = self.bot.cogs[cog_name]
                 if not cog.get_commands() or (cog_name in self.mod_only and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5)):
+                    continue
+                elif not cog.get_commands() or (cog_name in self.genius_only and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4)):
                     continue
 
                 string += f"# {cog_name}\n"
@@ -35,9 +38,19 @@ class Utilities(commands.Cog):
                     cmd_desc = command.brief[0:self.right_col_length] + "..." if len(command.brief) > self.right_col_length else command.brief
                     string += f"\t- {command.name}{spaces_left}{cmd_desc}\n"
 
-            string += "```"
             try:
-                await ctx.author.send(string)
+                parts = string.split("\n")
+                group_size = 20
+                if len(parts) <= group_size:
+                    await ctx.author.send(header + "\n```md\n" + "\n".join(parts[0:group_size]) + "```")
+                else:
+                    seen = 0
+                    await ctx.author.send(header + "\n```md\n" + "\n".join(parts[seen:seen+group_size]) + "```")
+                    seen += group_size
+                    while seen < len(parts):
+                        await ctx.author.send("```md\n" + "\n".join(parts[seen:seen+group_size]) + "```")
+                        seen += group_size
+                        
             except Exception:
                 await ctx.send("I tried to DM you but couldn't. Make sure your DMs are enabled.")
 
@@ -46,6 +59,8 @@ class Utilities(commands.Cog):
             if command:
                 # print(str(command.cog))
                 if command.cog.qualified_name in self.mod_only and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+                    raise commands.BadArgument("You don't have permission to view that command.")
+                elif command.cog.qualified_name in self.genius_only and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
                     raise commands.BadArgument("You don't have permission to view that command.")
                 else:
                     await ctx.message.add_reaction("📬")
