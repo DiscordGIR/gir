@@ -31,6 +31,7 @@ initial_extensions = ['cogs.utils.settings',
 monitor_extensions = [
                 'cogs.monitors.logging',
                 'cogs.monitors.filter',
+                'cogs.monitors.boosteremojis',
                 'cogs.monitors.xp',
 ]
 

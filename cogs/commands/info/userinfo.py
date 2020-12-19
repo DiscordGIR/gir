@@ -33,6 +33,15 @@ class LeaderboardSource(menus.GroupByPageSource):
 
 class CasesSource(menus.GroupByPageSource):
     async def format_page(self, menu, entry):
+        pun_map = {
+            "KICK": "Kicked",
+            "BAN": "Banned",
+            "CLEM": "Clemmed",
+            "UNBAN": "Unbanned",
+            "MUTE": "Duration",
+            "REMOVEPOINTS": "Points removed"
+        }
+
         user = menu.ctx.args[2] or menu.ctx.author
         u = await menu.ctx.bot.settings.user(user.id)
         embed = discord.Embed(
@@ -40,34 +49,22 @@ class CasesSource(menus.GroupByPageSource):
         embed.set_author(name=user, icon_url=user.avatar_url)
         for case in entry.items:
             timestamp = case.date.strftime("%B %d, %Y, %I:%M %p")
-            if case._type == "WARN":
+            if case._type == "WARN" or case._type == "LIFTWARN":
                 if case.lifted:
                     embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id} [LIFTED]',
                                     value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Lifted by**: {case.lifted_by_tag}\n**Lift reason**: {case.lifted_reason}\n**Warned on**: {timestamp}', inline=True)
+                elif case._type == "LIFTWARN":
+                    embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id} [LIFTED (legacy)]',
+                                    value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Warned on**: {timestamp} UTC', inline=True)
                 else:
                     embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
                                     value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Warned on**: {timestamp} UTC', inline=True)
-            elif case._type == "LIFTWARN":
-                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id} [LIFTED]',
-                                value=f'**Points**: {case.punishment}\n**Reason**: {case.reason}\n**Lifted by**: {case.lifted_by_tag}\n**Lift reason**: {case.lifted_reason}\n**Warned on**: {timestamp}', inline=True)
-            elif case._type == "MUTE":
+            elif case._type == "MUTE" or case._type == "REMOVEPOINTS":
                 embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
-                                value=f'**Duration**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
-            elif case._type == "REMOVEPOINTS":
+                                value=f'**{pun_map[case._type]}**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
+            elif case._type in pun_map:
                 embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
-                                value=f'**Points removed**: {case.punishment}\n**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
-            elif case._type == "KICK":
-                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
-                                value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Kicked on**: {timestamp} UTC', inline=True)
-            elif case._type == "BAN":
-                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
-                                value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Banned on**: {timestamp} UTC', inline=True)
-            elif case._type == "CLEM":
-                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
-                                value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Clemmed on**: {timestamp} UTC', inline=True)
-            elif case._type == "UNBAN":
-                embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
-                                value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Unbanned on**: {timestamp} UTC', inline=True)
+                                value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**{pun_map[case._type]} on**: {timestamp} UTC', inline=True)
             else:
                 embed.add_field(name=f'{await determine_emoji(case._type)} Case #{case._id}',
                                 value=f'**Reason**: {case.reason}\n**Moderator**: {case.mod_tag}\n**Time**: {timestamp} UTC', inline=True)
@@ -80,11 +77,7 @@ class MenuPages(menus.MenuPages):
     async def update(self, payload):
         if self._can_remove_reactions:
             if payload.event_type == 'REACTION_ADD':
-                await self.bot.http.remove_reaction(
-                    payload.channel_id, payload.message_id,
-                    discord.Message._emoji_reaction(
-                        payload.emoji), payload.member.id
-                )
+                await self.message.remove_reaction(payload.emoji, payload.member)
             elif payload.event_type == 'REACTION_REMOVE':
                 return
         await super().update(payload)
@@ -96,7 +89,7 @@ class UserInfo(commands.Cog):
 
     @commands.guild_only()
     @commands.command(name="userinfo", aliases=["info"])
-    async def userinfo(self, ctx: commands.Context, user: discord.Member = None) -> None:
+    async def userinfo(self, ctx: commands.Context, user: typing.Union[discord.Member, int] = None) -> None:
         """Get information about a user (join/creation date, xp, etc.), defaults to command invoker.
 
         Example usage:
@@ -108,26 +101,49 @@ class UserInfo(commands.Cog):
         user : discord.Member, optional
             User to get info about, by default the author of command, by default None
         """
+
         if user is None:
             user = ctx.author
 
-        bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
+        is_mod = self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5)
+
+        if isinstance(user, int):
+            if not is_mod:
+                raise commands.BadArgument("You do not have permission to use this command.")
+            try:
+                user = await self.bot.fetch_user(user)
+            except discord.NotFound:
+                raise commands.BadArgument(
+                    f"Couldn't find user with ID {user}")
+
+        if not is_mod and user.id != ctx.author.id:
             await ctx.message.delete()
+            raise commands.BadArgument(
+                "You do not have permission to use this command.")
+
+        bot_chan = self.bot.settings.guild().channel_botspam
+        if not is_mod and ctx.channel.id != bot_chan:
             raise commands.BadArgument(
                 f"Command only allowed in <#{bot_chan}>")
 
         roles = ""
-        reversed_roles = user.roles
-        reversed_roles.reverse()
-        
-        for role in reversed_roles:
-            if role != ctx.guild.default_role:
-                roles += role.mention + " "
+
+        if isinstance(user, discord.Member):
+            reversed_roles = user.roles
+            reversed_roles.reverse()
+
+            for role in reversed_roles:
+                if role != ctx.guild.default_role:
+                    roles += role.mention + " "
+
+            joined = user.joined_at.strftime("%B %d, %Y, %I:%M %p") + " UTC"
+        else:
+            roles = "No roles."
+            joined = "User not in r/Jailbreak."
+
         results = (await self.bot.settings.user(user.id))
 
-        joined = user.joined_at.strftime("%B %d, %Y, %I:%M %p")
-        created = user.created_at.strftime("%B %d, %Y, %I:%M %p")
+        created = user.created_at.strftime("%B %d, %Y, %I:%M %p") + " UTC"
 
         embed = discord.Embed(title="User Information")
         embed.color = user.color
@@ -136,14 +152,14 @@ class UserInfo(commands.Cog):
         embed.add_field(name="Username",
                         value=f'{user} ({user.mention})', inline=True)
         embed.add_field(
-            name="Level", value=results.level if not results.is_xp_frozen else "0", inline=True)
+            name="Level", value=results.level if not results.is_clem else "0", inline=True)
         embed.add_field(
-            name="XP", value=results.xp if not results.is_xp_frozen else "0/0", inline=True)
+            name="XP", value=results.xp if not results.is_clem else "0/0", inline=True)
         embed.add_field(
             name="Roles", value=roles if roles else "None", inline=False)
-        embed.add_field(name="Join date", value=f"{joined} UTC", inline=True)
+        embed.add_field(name="Join date", value=joined, inline=True)
         embed.add_field(name="Account creation date",
-                        value=f"{created} UTC", inline=True)
+                        value=created, inline=True)
         embed.set_footer(text=f"Requested by {ctx.author}")
 
         await ctx.message.reply(embed=embed)
@@ -178,10 +194,11 @@ class UserInfo(commands.Cog):
         embed.color = user.top_role.color
         embed.set_author(name=user, icon_url=user.avatar_url)
         embed.add_field(
-            name="Level", value=results.level if not results.is_xp_frozen else "0", inline=True)
+            name="Level", value=results.level if not results.is_clem else "0", inline=True)
         embed.add_field(
-            name="XP", value=f'{results.xp}/{xp_for_next_level(results.level)}' if not results.is_xp_frozen else "0/0", inline=True)
-        embed.add_field(name="Rank", value=await self.bot.settings.leaderboard_rank(results.xp), inline=True)
+            name="XP", value=f'{results.xp}/{xp_for_next_level(results.level)}' if not results.is_clem else "0/0", inline=True)
+        rank, overall = await self.bot.settings.leaderboard_rank(results.xp) 
+        embed.add_field(name="Rank", value=f"{rank}/{overall}" if not results.is_clem else f"{overall}/{overall}", inline=True)
         embed.set_footer(text=f"Requested by {ctx.author}")
 
         await ctx.message.reply(embed=embed)

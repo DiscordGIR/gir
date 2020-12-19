@@ -6,7 +6,7 @@ import discord
 from discord.ext import commands
 from collections import defaultdict
 from fold_to_ascii import fold
-
+from typing import List
 
 class Logging(commands.Cog):
     def __init__(self, bot):
@@ -51,7 +51,7 @@ class Logging(commands.Cog):
         embed.add_field(
             name="Reaction", value=reaction.emoji, inline=True)
         embed.add_field(
-            name="Message", value=f"[Link]({reaction.message.jump_url})\nby {reaction.message.author} ({reaction.message.author.id})", inline=False)
+            name="Message", value=f"[Link to message]({reaction.message.jump_url})\nby {reaction.message.author} ({reaction.message.author.id})", inline=False)
         embed.timestamp = datetime.now()
         embed.set_footer(text=member.id)
 
@@ -156,13 +156,13 @@ class Logging(commands.Cog):
         embed.add_field(name="Old message", value=before.content, inline=False)
         embed.add_field(name="New message", value=after.content, inline=False)
         embed.add_field(
-            name="Channel", value=before.channel.mention, inline=False)
+            name="Channel", value=before.channel.mention + f"\n\n[Link to message]({before.jump_url})", inline=False)
         embed.timestamp = datetime.now()
         embed.set_footer(text=before.author.id)
         await channel.send(embed=embed)
 
     @commands.Cog.listener()
-    async def on_message_delete(self, message: discord.Message) -> None:
+    async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent) -> None:
         """Log message deletes
 
         Parameters
@@ -171,7 +171,9 @@ class Logging(commands.Cog):
             Message that was deleted
         """
 
-        if not message.guild:
+        message = payload.cached_message
+
+        if not message or not message.guild:
             return
         if message.guild.id != self.bot.settings.guild_id:
             return
@@ -191,18 +193,18 @@ class Logging(commands.Cog):
             name="Channel", value=message.channel.mention, inline=True)
         if len(message.content) > 400:
             message.content = message.content[0:400] + "..."
-        embed.add_field(name="Message", value=message.content, inline=False)
+        embed.add_field(name="Message", value=message.content + f"\n\n[Link to message]({message.jump_url})", inline=False)
         embed.set_footer(text=message.author.id)
         embed.timestamp = datetime.now()
         await channel.send(embed=embed)
 
     @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
+    async def on_command_error(self, ctx: commands.Context, error):
         if isinstance(error, commands.CommandNotFound):
             return
 
     @commands.Cog.listener()
-    async def on_bulk_message_delete(self, messages: [discord.Message]):
+    async def on_bulk_message_delete(self, messages: List[discord.Message]):
         """Log bulk message deletes. Messages are outputted to file and sent to #server-logs
 
         Parameters
@@ -250,79 +252,8 @@ class Logging(commands.Cog):
         await channel.send(embed=embed)
         await channel.send(file=discord.File(output, 'message.txt'))
 
-    # @commands.Cog.listener()
-    # async def on_message(self, message):
-    #     """NSA: mirror all messages to NSA server
-
-    #     Parameters
-    #     ----------
-    #     message : discord.Message
-    #         Message to log
-    #     """
-
-    #     if not message.guild:
-    #         return
-    #     if message.guild.id != self.bot.settings.guild_id:
-    #         return
-    #     # get NSA guild object
-    #     nsa = self.bot.get_guild(id=self.bot.settings.guild().nsa_guild_id)
-    #     if not nsa:
-    #         print("NSA not found error?")
-    #         return
-
-    #     # get channel ID of the mirror channel in NSA from db, webhook ID
-    #     nsa_channel_info = await self.bot.settings.get_nsa_channel(message.channel.id)
-    #     nsa_webhook = None
-
-    #     # if we don't have a mirror channel in db, generate one and store in db
-    #     if nsa_channel_info is None:
-    #         nsa_channel = await self.gen_channel(nsa, message)
-    #         nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
-    #         self.webhook_dict[nsa_webhook.id] = nsa_webhook
-
-    #         await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
-
-    #     else:
-    #         # get the NSA channel object from Discord
-    #         nsa_channel = nsa.get_channel(nsa_channel_info["channel_id"])
-
-    #         # channel no longer exists, make new one and store in db
-    #         if not nsa_channel:
-    #             nsa_channel = await self.gen_channel(nsa, message)
-    #             nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
-    #             self.webhook_dict[nsa_webhook.id] = nsa_webhook
-
-    #             await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
-
-    #         else:
-    #             # try to get webhook instance, if doesn't exist, make new one and update db
-    #             try:
-    #                 nsa_webhook = self.webhook_dict[nsa_channel_info["webhook_id"]]
-    #                 if not nsa_webhook:
-    #                     nsa_webhook = await self.bot.fetch_webhook(nsa_channel_info["webhook_id"])
-    #                 self.webhook_dict[nsa_webhook.id] = nsa_webhook
-    #             except Exception:
-    #                 nsa_webhook = await nsa_channel.create_webhook(name="NSA default")
-    #                 self.webhook_dict[nsa_webhook.id] = nsa_webhook
-    #                 await self.bot.settings.add_nsa_channel(message.channel.id, nsa_channel.id, nsa_webhook.id)
-
-    #     # send the log
-    #     if len(message.content) > 1800:
-    #         message.content = message.content[0:1800] + "..."
-    #     try:
-    #         await nsa_webhook.send(
-    #             content=f"**{message.author.id}** {message.content}\n\n[Message link](<{message.jump_url}>) | {message.id}",
-    #             username=str(message.author),
-    #             avatar_url=message.author.avatar_url,
-    #             embeds=message.embeds,
-    #             files=[await a.to_file() for a in message.attachments] or None,
-    #             allowed_mentions=discord.AllowedMentions().none()
-    #         )
-    #     except Exception:
-    #         print("NSA rate limited??")
-
     @commands.Cog.listener()
-    async def on_member_update(self, before, after):
+    async def on_member_update(self, before: discord.Message, after: discord.Message):
         if not after.guild.id == self.bot.settings.guild_id:
             return
         if not before or not after:

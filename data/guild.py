@@ -18,6 +18,7 @@ class Guild(mongoengine.Document):
     channel_reports           = mongoengine.IntField()
     channel_botspam           = mongoengine.IntField()
     channel_emoji_log         = mongoengine.IntField()
+    channel_booster_emoji     = mongoengine.IntField()
     
 
     emoji_logging_webhook     = mongoengine.IntField()

@@ -128,3 +128,17 @@ async def remove_mute(id: int) -> None:
                     await user.send(embed=log)
                 except Exception:
                     pass
+            else:
+                case = Case(
+                    _id=bot_global.settings.guild().case_id,
+                    _type="UNMUTE",
+                    mod_id=bot_global.user.id,
+                    mod_tag=str(bot_global.user),
+                    reason="Temporary mute expired.",
+                )
+                await bot_global.settings.inc_caseid()
+                await bot_global.settings.add_case(id, case)
+
+                u = await bot_global.settings.user(id=id)
+                u.is_muted = False
+                u.save()

@@ -17,7 +17,7 @@ class Devices(commands.Cog):
         self.possible_devices = ['iphone', 'ipod', 'ipad', 'homepod', 'apple']
 
     @commands.guild_only()
-    @commands.max_concurrency(1,per=commands.BucketType.member,wait=False)
+    @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
     @commands.bot_has_guild_permissions(change_nickname=True)
     @commands.command(name="adddevice")
     async def adddevice(self, ctx: commands.Context, *, device: str) -> None:
@@ -97,7 +97,7 @@ class Devices(commands.Cog):
         prompt = await ctx.message.reply(f"Please enter a version number ('or 'cancel' to cancel).\nHere are the 5 most recent...\n{', '.join(firmware['version'] for firmware in firmwares[0:5])}")
         while True:
             # prompt user to input an iOS version they want to put in their nickname
-            
+
             try:
                 msg = await self.bot.wait_for('message', check=check)
             except asyncio.TimeoutError:
@@ -167,7 +167,7 @@ class Devices(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_guild_permissions(change_nickname=True)
     @commands.command(name="listdevices")
-    async def listdevices(self, ctx) -> None:
+    async def listdevices(self, ctx: commands.Context) -> None:
         """List all possible devices you can set your nickname to.
 
         Example usage:
@@ -217,7 +217,7 @@ class Devices(commands.Cog):
 
         await ctx.message.reply(embed=embed)
 
-    async def check_permissions(self, ctx):
+    async def check_permissions(self, ctx: commands.Context):
         # non-mods can only use this in #bot-commands
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
@@ -225,7 +225,7 @@ class Devices(commands.Cog):
                 f"Command only allowed in <#{bot_chan}>")
 
         if ctx.me.top_role < ctx.author.top_role:
-             raise commands.BadArgument(
+            raise commands.BadArgument(
                 f"Your top role is higher than mine. I can't change your nickname :(")
 
     @removedevice.error

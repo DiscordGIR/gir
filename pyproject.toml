@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "bottymcbotface"
+version = "0.1.0"
+description = "A Discord bot for r/Jailbreak server"
+authors = ["SlimShadyIAm <me@slim.rocks>"]
+
+[tool.poetry.dependencies]
+python = "^3.9.0"
+"discord.py" = {git = "https://github.com/Rapptz/discord.py"}
+python-dotenv = "^0.15.0"
+discord-ext-menus = {git = "https://github.com/Rapptz/discord-ext-menus"}
+mongoengine = "^0.21.0"
+apscheduler = "^3.6.3"
+humanize = "^3.2.0"
+pytimeparse = "^1.1.8"
+psutil = "^5.7.3"
+python-dateutil = "^2.8.1"
+fold-to-ascii = "^1.0.2"
+
+[tool.poetry.dev-dependencies]
+pylama = "^7.7.1"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
