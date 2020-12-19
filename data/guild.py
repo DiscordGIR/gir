@@ -12,6 +12,7 @@ class Guild(mongoengine.Document):
     role_memberedition        = mongoengine.IntField()
     role_member               = mongoengine.IntField()
     role_dev                  = mongoengine.IntField()
+    role_birthday             = mongoengine.IntField()
     
     channel_public            = mongoengine.IntField()
     channel_private           = mongoengine.IntField()
@@ -19,7 +20,6 @@ class Guild(mongoengine.Document):
     channel_botspam           = mongoengine.IntField()
     channel_emoji_log         = mongoengine.IntField()
     channel_booster_emoji     = mongoengine.IntField()
-    
 
     emoji_logging_webhook     = mongoengine.IntField()
     nsa_guild_id              = mongoengine.IntField()

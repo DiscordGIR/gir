@@ -60,6 +60,20 @@ class Tasks():
         self.tasks.add_job(unmute_callback, 'date', id=str(
             id), next_run_time=date, args=[id], misfire_grace_time=3600)
 
+    def schedule_remove_bday(self, id: int, date: datetime) -> None:
+        """Create a task to remove birthday role from user given by ID `id`, at time `date`
+
+        Parameters
+        ----------
+        id : int
+            User to remove role
+        date : datetime.datetime
+            When to remove role
+        """
+
+        self.tasks.add_job(remove_bday_callback, 'date', id=str(
+            id), next_run_time=date, args=[id], misfire_grace_time=3600)
+
     def cancel_unmute(self, id: int) -> None:
         """When we manually unmute a user given by ID `id`, stop the task to unmute them.
 
@@ -142,3 +156,38 @@ async def remove_mute(id: int) -> None:
                 u = await bot_global.settings.user(id=id)
                 u.is_muted = False
                 u.save()
+
+
+def remove_bday_callback(id: int) -> None:
+    """Callback function for actually unmuting. Creates asyncio task
+    to do the actual unmute.
+
+    Parameters
+    ----------
+    id : int
+        User who we want to unmute
+    """
+
+    bot_global.loop.create_task(remove_bday(id))
+
+
+async def remove_bday(id: int) -> None:
+    """Remove the bday role of the user given by ID `id`
+
+    Parameters
+    ----------
+    id : int
+        User to remove role of
+    """
+
+    guild = bot_global.get_guild(bot_global.settings.guild_id)
+    if guild is None:
+        return
+
+    bday_role = bot_global.settings.guild().role_birthday
+    bday_role = guild.get_role(bday_role)
+    if bday_role is None:
+        return
+
+    user = guild.get_member(id)
+    await user.remove_roles(bday_role)
