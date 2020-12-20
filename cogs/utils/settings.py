@@ -85,11 +85,24 @@ class Settings(commands.Cog):
         }
         g.save()
 
+    async def all_rero_mappings(self):
+        g = self.guild()
+        current = g.reaction_role_mapping
+        return current
+    
     async def add_rero_mapping(self, mapping):
         g = self.guild()
         current = g.reaction_role_mapping
         the_key = list(mapping.keys())[0]
         current[str(the_key)] = mapping[the_key]
+        g.reaction_role_mapping = current
+        g.save()
+    
+    async def append_rero_mapping(self, mapping):
+        g = self.guild()
+        current = g.reaction_role_mapping
+        the_key = list(mapping.keys())[0]
+        current[str(the_key)] = current[str(the_key)] | mapping[the_key]
         g.reaction_role_mapping = current
         g.save()
         
@@ -99,7 +112,14 @@ class Settings(commands.Cog):
             return g.reaction_role_mapping[id]
         else:
             return None
-
+        
+    async def delete_rero_mapping(self, id):
+        g = self.guild()
+        if str(id) in g.reaction_role_mapping.keys():
+            print("BIG HERE")
+            g.reaction_role_mapping.pop(str(id))
+            g.save()
+            
     async def save_emoji_webhook(self, id):
         g = Guild.objects(_id=self.guild_id).first()
         g.emoji_logging_webhook = id
