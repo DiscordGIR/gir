@@ -61,7 +61,7 @@ class ReactionRoles(commands.Cog):
                     stack = await delete_stack(stack)
                     break
                 
-                if isinstance (reaction.emoji, discord.PartialEmoji) or not (isinstance(reaction.emoji, discord.Emoji) and reaction.emoji.available):
+                if isinstance (reaction.emoji, discord.PartialEmoji) or (isinstance(reaction.emoji, discord.Emoji) and not reaction.emoji.available):
                     stack = await delete_stack(stack)
                     await ctx.send("That emoji is not available to me :(", delete_after=5)
                     continue
@@ -92,6 +92,7 @@ class ReactionRoles(commands.Cog):
         print(reaction_mapping)
         await self.bot.settings.add_rero_mapping(reaction_mapping)
         the_string = "Done! We added the following emotes:\n"
+        await message.clear_reactions()
         for r in reactions:
             the_string += f"Reaction {str(r)} will give role <@&{reaction_mapping[message.id][str(r.emoji)]}>\n"
             await message.add_reaction(r)
