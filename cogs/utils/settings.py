@@ -92,6 +92,13 @@ class Settings(commands.Cog):
         current[str(the_key)] = mapping[the_key]
         g.reaction_role_mapping = current
         g.save()
+        
+    async def get_rero_mapping(self, id):
+        g = self.guild()
+        if id in g.reaction_role_mapping:
+            return g.reaction_role_mapping[id]
+        else:
+            return None
 
     async def save_emoji_webhook(self, id):
         g = Guild.objects(_id=self.guild_id).first()

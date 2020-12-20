@@ -101,7 +101,39 @@ class ReactionRoles(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
-        pass
+        if payload.member.bot:
+            return
+        if not payload.guild_id:
+            return
+        if payload.channel_id != self.bot.settings.guild().channel_reaction_roles:
+            return
+        
+        channel = payload.member.guild.get_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+        
+        mapping = await self.bot.settings.get_rero_mapping(str(payload.message_id))
+        if mapping is None:
+            await message.remove_reaction(payload.emoji, payload.member)
+            return
+        
+        if str(payload.emoji) not in mapping:
+            await message.remove_reaction(payload.emoji, payload.member)
+            return
+        
+        role = payload.member.guild.get_role(mapping[str(payload.emoji)])
+        if role is None:
+            await message.remove_reaction(payload.emoji)
+            return
+        
+        try:
+            if role not in payload.member.roles:
+                await payload.member.add_roles(role)
+            else:
+                await payload.member.remove_roles(role)
+        except Exception:
+            pass
+        
+        await message.remove_reaction(payload.emoji, payload.member)
     
     @addreaction.error
     async def info_error(self, ctx, error):
