@@ -33,6 +33,7 @@ monitor_extensions = [
                 'cogs.monitors.logging',
                 'cogs.monitors.filter',
                 'cogs.monitors.boosteremojis',
+                'cogs.monitors.reactionroles',
                 'cogs.monitors.birthday',
                 'cogs.monitors.xp',
 ]

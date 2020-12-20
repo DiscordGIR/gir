@@ -85,6 +85,14 @@ class Settings(commands.Cog):
         }
         g.save()
 
+    async def add_rero_mapping(self, mapping):
+        g = self.guild()
+        current = g.reaction_role_mapping
+        the_key = list(mapping.keys())[0]
+        current[str(the_key)] = mapping[the_key]
+        g.reaction_role_mapping = current
+        g.save()
+
     async def save_emoji_webhook(self, id):
         g = Guild.objects(_id=self.guild_id).first()
         g.emoji_logging_webhook = id
