@@ -83,9 +83,9 @@ class BoosterEmojis(commands.Cog):
             await msg.remove_reaction(payload.emoji, payload.member)
             return
 
-        if len(msg.guild.emojis) > msg.guild.emoji_limit:
-            await msg.channel.send("Reached max emoji limit!", delete_after=5)
-            return
+        # if len(msg.guild.emojis) > msg.guild.emoji_limit:
+        #     await msg.channel.send("Reached max emoji limit!", delete_after=5)
+        #     return
 
         if name is None:
             def check(m):
