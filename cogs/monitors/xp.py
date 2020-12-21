@@ -56,7 +56,7 @@ class Xp(commands.Cog):
         await self.add_new_roles(message, roles_to_add)
 
     async def assess_new_roles(self, new_level, db):
-        roles_to_add = [db.role_member]
+        roles_to_add = []
         if 15 <= new_level:
             roles_to_add.append(db.role_memberplus)
         if 30 <= new_level:
