@@ -298,6 +298,44 @@ class ModActions(commands.Cog):
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(kick_members=True)
+    @commands.command(name="roblox")
+    async def roblox(self, ctx: commands.Context, user: discord.Member) -> None:
+        """Kick a Roblox user and tell them where to go (mod only)
+
+        Example usage:
+        --------------
+        `!roblox <@user/ID>`
+
+        Parameters
+        ----------
+        user : discord.Member
+            User to kick
+        """
+        
+        await self.check_permissions(ctx, user)
+
+        reason = "This Discord server is for iOS jailbreaking, not Roblox. The roblox server can be found at https://disord.gg/jailbreak. Thank you!"
+        log = await self.add_kick_case(ctx, user, reason)
+
+        try:
+            await user.send("You were kicked from r/Jailbreak", embed=log)
+        except Exception:
+            pass
+
+        await user.kick(reason=reason)
+
+        await ctx.message.reply(embed=log, delete_after=10)
+        await ctx.message.delete(delay=10)
+
+        public_chan = ctx.guild.get_channel(
+            self.bot.settings.guild().channel_public)
+        if public_chan:
+            log.remove_author()
+            log.set_thumbnail(url=user.avatar_url)
+            await public_chan.send(embed=log)
+            
+    @commands.guild_only()
+    @commands.bot_has_guild_permissions(kick_members=True)
     @commands.command(name="kick")
     async def kick(self, ctx: commands.Context, user: discord.Member, *, reason: str = "No reason.") -> None:
         """Kick a user (mod only)
@@ -752,6 +790,7 @@ class ModActions(commands.Cog):
     @warn.error
     @purge.error
     @kick.error
+    @roblox.error
     @clem.error
     @removepoints.error
     async def info_error(self, ctx, error):
