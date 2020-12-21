@@ -61,9 +61,9 @@ class Birthday(commands.Cog):
             raise commands.BadArgument(
                 f"Command only allowed in <#{bot_chan}>")
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 1):
+        if not (self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 1) or user.premium_since is not None):
             raise commands.BadArgument(
-                "You need to be at least Member+ to use that command.")
+                "You need to be at least Member+ or a Nitro booster to use that command.")
         try:
             datetime(year=2020, month=month, day=date, hour=12)
         except ValueError:

@@ -774,6 +774,13 @@ class ModActions(commands.Cog):
         results.birthday_excluded = True
         results.birthday = None
         results.save()
+        
+        birthday_role = ctx.guild.get_role(self.bot.settings.guild().role_birthday)
+        if birthday_role is None:
+            return
+
+        if birthday_role in user.roles:
+            await user.remove_roles(birthday_role)
 
         await ctx.message.reply(f"{user.mention} was banned from birthdays.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
     
@@ -803,6 +810,13 @@ class ModActions(commands.Cog):
         results = await self.bot.settings.user(user.id)
         results.birthday = None
         results.save()
+
+        birthday_role = ctx.guild.get_role(self.bot.settings.guild().role_birthday)
+        if birthday_role is None:
+            return
+
+        if birthday_role in user.roles:
+            await user.remove_roles(birthday_role)
 
         await ctx.message.reply(f"{user.mention}'s birthday was removed.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
 
