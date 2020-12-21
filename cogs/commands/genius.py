@@ -9,20 +9,19 @@ from discord.ext import commands
 class Genius(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        
+
     @commands.command(name="commonissue")
     @commands.guild_only()
+    @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
     async def commonissue(self, ctx, *, title: str):
         """Submit a new common issue (Geniuses only)
-        
+
         Example use:
         ------------
         !commonissue This is a title (you will be prompted for a description)
 
         Parameters
         ----------
-        ctx : [type]
-            [description]
         title : str
             Title for the issue
 
@@ -41,20 +40,20 @@ class Genius(commands.Cog):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
             raise commands.BadArgument(
                 "You do not have permission to use this command.")
-            
+
         channel = ctx.guild.get_channel(self.bot.settings.guild().channel_common_issues)
         if not channel:
             return
-        
+
         description = None
-        
+
         def check(m):
             return m.author == ctx.author and m.channel == ctx.channel
-        
+
         while True:
             prompt = await ctx.message.reply(f"Please enter a description for this common issue (or cancel to cancel)")
             try:
-                desc = await self.bot.wait_for('message', check=check)
+                desc = await self.bot.wait_for('message', check=check, timeout=120)
             except asyncio.TimeoutError:
                 return
             else:
@@ -65,12 +64,12 @@ class Genius(commands.Cog):
                 elif desc.content is not None and desc.content != "":
                     description = desc.content
                     break
-                    
+
         embed, f = await self.prepare_issues_embed(title, description, ctx.message)
         await channel.send(embed=embed, file=f)
         await ctx.message.reply("Done!", delete_after=5)
         await ctx.message.delete(delay=5)
-        
+
     async def prepare_issues_embed(self, title, description, message):
         embed = discord.Embed(title=title)
         embed.color = discord.Color.random()

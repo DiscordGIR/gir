@@ -11,6 +11,7 @@ class ReactionRoles(commands.Cog):
 
     @commands.command(name='setreactions', hidden=True)
     @commands.guild_only()
+    @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
     async def setreactions(self, ctx: commands.Context, message_id: int):
         """Prompt to add multiple reaction roles to a message (admin only)
 
@@ -116,6 +117,7 @@ class ReactionRoles(commands.Cog):
 
     @commands.command(name="newreaction")
     @commands.guild_only()
+    @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
     async def newreaction(self, ctx, message_id: int):
         """Add one new reaction to a given message
 
@@ -224,6 +226,7 @@ class ReactionRoles(commands.Cog):
         await ctx.send(the_string, delete_after=10)
 
     @commands.command(name="movereactions")
+    @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
     @commands.guild_only()
     async def movereactions(self, ctx, before: int, after: int):
         """Move reactions from one message to another.
@@ -431,6 +434,7 @@ class ReactionRoles(commands.Cog):
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.BotMissingPermissions)
             or isinstance(error, commands.MissingPermissions)
+            or isinstance(error, commands.MaxConcurrencyReached)
                 or isinstance(error, commands.NoPrivateMessage)):
             await self.bot.send_error(ctx, error)
         else:
