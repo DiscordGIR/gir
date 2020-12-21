@@ -772,6 +772,7 @@ class ModActions(commands.Cog):
         
         results = await self.bot.settings.user(user.id)
         results.birthday_excluded = True
+        results.birthday = None
         results.save()
 
         await ctx.message.reply(f"{user.mention} was banned from birthdays.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
@@ -866,6 +867,7 @@ class ModActions(commands.Cog):
             await user.add_roles(birthday_role)
             await user.send(f"According to my calculations, today is your birthday! We've given you the {birthday_role} role for 24 hours.")
 
+    @birthdayexclude.error
     @removebirthday.error
     @setbirthday.error
     @unmute.error
