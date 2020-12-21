@@ -313,7 +313,7 @@ class ModActions(commands.Cog):
         """
         
         await self.check_permissions(ctx, user)
-
+        reason = "This Discord server is for iOS jailbreaking, not Roblox. Please join https://discord.gg/jailbreak instead, thank you!"
         log = await self.add_kick_case(ctx, user, reason)
 
         try:
