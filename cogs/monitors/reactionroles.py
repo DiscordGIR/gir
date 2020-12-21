@@ -386,10 +386,7 @@ class ReactionRoles(commands.Cog):
         embed.color = discord.Color.purple()
         embed.set_author(name="Jailbreak Updates")
         embed.description = """
-                            If you want to be notified about Checkra1n updates click :checkra1n:
-                            If you want to be notified about Odyssey updates click :odyssey:
-                            If you want to be notified about Unc0ver updates click :unc0ver:
-                            If you want to be notified about tvOS Jailbreaks updates click :tvOSJailbreak:
+                            If you want to be notified about Checkra1n updates click :checkra1n:\nIf you want to be notified about Odyssey updates click :odyssey:\nIf you want to be notified about Unc0ver updates click :unc0ver:\nIf you want to be notified about tvOS Jailbreaks updates click :tvOSJailbreak:
                             """
         embed.description = fix_emojis(embed.description)
         await channel.send(embed=embed)
@@ -398,12 +395,7 @@ class ReactionRoles(commands.Cog):
         embed.color = discord.Color.red()
         embed.set_author(name="Software Updates")
         embed.description = """
-                            If you want to be notified about iOS updates click :iOS:
-                            If you want to be notified about iPadOS updates click :ipadOS:
-                            If you want to be notified about tvOS updates click :tvOS:
-                            If you want to be notified about macOS updates click :macOS:
-                            If you want to be notified about watchOS updates click :watchOS:
-                            If you want to be notified about any Other Apple Updates click :otherupdates:
+                            If you want to be notified about iOS updates click :iOS:\nIf you want to be notified about iPadOS updates click :ipadOS:\nIf you want to be notified about tvOS updates click :tvOS:\nIf you want to be notified about macOS updates click :macOS:\nIf you want to be notified about watchOS updates click :watchOS:\nIf you want to be notified about any Other Apple Updates click :otherupdates:
                             """
         embed.description = fix_emojis(embed.description)
         await channel.send(embed=embed)
@@ -412,10 +404,7 @@ class ReactionRoles(commands.Cog):
         embed.color = discord.Color.green()
         embed.set_author(name="Other Updates")
         embed.description = """
-                            If you want to be notified about Apple Events click :AppleEventNews:
-                            If you want to be notified about Subreddit News click :SubredditNews:
-                            If you want to be notified about any Community Events click :CommunityEvents:
-                            If you want to be notified about any Giveaways click :giveaway:
+                            If you want to be notified about Apple Events click :AppleEventNews:\nIf you want to be notified about Subreddit News click :SubredditNews:\nIf you want to be notified about any Community Events click :CommunityEvents:\nIf you want to be notified about any Giveaways click :giveaway:
                             """
         embed.description = fix_emojis(embed.description)
         await channel.send(embed=embed)
