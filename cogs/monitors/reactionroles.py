@@ -64,7 +64,7 @@ class ReactionRoles(commands.Cog):
                 return user.id == ctx.author.id and reaction.message.id == prompt_embed.id
 
             try:
-                reaction, _ = await self.bot.wait_for('reaction_add', timeout=120.0, check=check_reaction)
+                reaction, _ = await self.bot.wait_for('reaction_add', timeout=30.0, check=check_reaction)
             except asyncio.TimeoutError:
                 try:
                     stack = await delete_stack(stack)
@@ -86,7 +86,7 @@ class ReactionRoles(commands.Cog):
                     try:
                         prompt_role = await ctx.send("Please enter a role ID to use for this react (or 'cancel' to stop)")
                         stack.append(prompt_role)
-                        role_id = await self.bot.wait_for('message', check=check_msg)
+                        role_id = await self.bot.wait_for('message', check=check_msg, timeout=30.0)
                         stack.append(role_id)
                     except asyncio.TimeoutError:
                         stack = await delete_stack(stack)
@@ -174,7 +174,7 @@ class ReactionRoles(commands.Cog):
                 return user.id == ctx.author.id and reaction.message.id == prompt_embed.id
 
             try:
-                reaction, _ = await self.bot.wait_for('reaction_add', timeout=120.0, check=check_reaction)
+                reaction, _ = await self.bot.wait_for('reaction_add', timeout=30.0, check=check_reaction)
             except asyncio.TimeoutError:
                 try:
                     stack = await delete_stack(stack)
@@ -196,7 +196,7 @@ class ReactionRoles(commands.Cog):
                     try:
                         prompt_role = await ctx.send("Please enter a role ID to use for this react (or 'cancel' to stop)")
                         stack.append(prompt_role)
-                        role_id = await self.bot.wait_for('message', check=check_msg)
+                        role_id = await self.bot.wait_for('message', check=check_msg, timeout=30.0)
                         stack.append(role_id)
                     except asyncio.TimeoutError:
                         stack = await delete_stack(stack)
