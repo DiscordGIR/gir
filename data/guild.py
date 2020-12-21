@@ -1,5 +1,6 @@
 import mongoengine
 from data.filterword import FilterWord
+from data.tag import Tag
 
 class Guild(mongoengine.Document):
     _id                       = mongoengine.IntField(required=True)
@@ -29,6 +30,7 @@ class Guild(mongoengine.Document):
     nsa_mapping               = mongoengine.DictField(default={})
     logging_excluded_channels = mongoengine.ListField(default=[])
     filter_words              = mongoengine.EmbeddedDocumentListField(FilterWord, default=[])
+    tags                      = mongoengine.EmbeddedDocumentListField(Tag, default=[])
     filter_excluded_channels  = mongoengine.ListField(default=[])
     filter_excluded_guilds    = mongoengine.ListField(default=[349243932447604736])
 

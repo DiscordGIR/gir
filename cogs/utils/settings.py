@@ -7,6 +7,7 @@ from data.case import Case
 from data.cases import Cases
 from data.filterword import FilterWord
 from data.guild import Guild
+from data.tag import Tag
 from data.user import User
 from discord.ext import commands
 
@@ -179,6 +180,19 @@ class Settings(commands.Cog):
 
     async def remove_filtered_word(self, word: str):
         return Guild.objects(_id=self.guild_id).update_one(pull__filter_words__word=FilterWord(word=word).word)
+
+    async def add_tag(self, tag: Tag) -> None:
+        Guild.objects(_id=self.guild_id).update_one(push__tags=tag)
+
+    async def remove_tag(self, tag: str):
+        return Guild.objects(_id=self.guild_id).update_one(pull__tags__name=Tag(name=tag).name)
+
+    async def get_tag(self, name: str):
+        g = Guild.objects(_id=self.guild_id).first()
+        for t in g.tags:
+            if t.name == name:
+                return t
+        return None
 
     async def add_whitelisted_guild(self, id: int):
         g = Guild.objects(_id=self.guild_id)
