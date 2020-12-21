@@ -25,8 +25,6 @@ class FilterMonitor(commands.Cog):
             return
         if msg.author.bot:
             return
-        if not msg.content:
-            return
         guild = self.bot.settings.guild()
         if msg.guild.id != self.bot.settings.guild_id:
             return
@@ -59,31 +57,32 @@ class FilterMonitor(commands.Cog):
         """
         INVITE FILTER
         """
-        if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, 5):
-            invites = re.findall(self.invite_filter, msg.content, flags=re.S)
-            if invites:
-                whitelist = self.bot.settings.guild().filter_excluded_guilds
-                for invite in invites:
-                    try:
-                        invite = await self.bot.fetch_invite(invite)
+        if msg.content:
+            if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, 5):
+                invites = re.findall(self.invite_filter, msg.content, flags=re.S)
+                if invites:
+                    whitelist = self.bot.settings.guild().filter_excluded_guilds
+                    for invite in invites:
+                        try:
+                            invite = await self.bot.fetch_invite(invite)
 
-                        id = None
-                        if isinstance(invite, discord.Invite):
-                            id = invite.guild.id
-                        elif isinstance(invite, discord.PartialInviteGuild) or isinstance(invite, discord.PartialInviteChannel):
-                            id = invite.id
+                            id = None
+                            if isinstance(invite, discord.Invite):
+                                id = invite.guild.id
+                            elif isinstance(invite, discord.PartialInviteGuild) or isinstance(invite, discord.PartialInviteChannel):
+                                id = invite.id
 
-                        if id not in whitelist:
+                            if id not in whitelist:
+                                await self.delete(msg)
+                                await self.ratelimit(msg)
+                                await report(self.bot, msg, msg.author, invite)
+                                return
+
+                        except discord.errors.NotFound:
                             await self.delete(msg)
                             await self.ratelimit(msg)
                             await report(self.bot, msg, msg.author, invite)
                             return
-
-                    except discord.errors.NotFound:
-                        await self.delete(msg)
-                        await self.ratelimit(msg)
-                        await report(self.bot, msg, msg.author, invite)
-                        return
         """
         SPOILER FILTER
         """
