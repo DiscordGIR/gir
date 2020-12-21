@@ -92,7 +92,7 @@ class BoosterEmojis(commands.Cog):
                 return m.author == payload.member
 
             while True:
-                prompt = await channel.send("Enter name for emoji (alphanumeric and underscores)")
+                prompt = await channel.send("Enter name for emoji (alphanumeric and underscores) or 'cancel' to cancel.")
                 try:
                     temp = await self.bot.wait_for('message', check=check, timeout=30)
                 except asyncio.TimeoutError:
@@ -100,6 +100,12 @@ class BoosterEmojis(commands.Cog):
                     await msg.remove_reaction(payload.emoji, payload.member)
                     return
                 else:
+                    if temp.content.lower() == 'cancel':
+                        await prompt.delete()
+                        await temp.delete()
+                        await msg.remove_reaction(payload.emoji, payload.member)
+                        return
+                    
                     name = temp.content
                     await prompt.delete()
                     await temp.delete()

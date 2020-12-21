@@ -92,7 +92,7 @@ class ReactionRoles(commands.Cog):
                         stack = await delete_stack(stack)
                         return
                     else:
-                        if role_id.content == 'cancel':
+                        if role_id.content.lower() == 'cancel':
                             stack = await delete_stack(stack)
                             return
                         the_role = ctx.guild.get_role(int(role_id.content))
@@ -202,7 +202,7 @@ class ReactionRoles(commands.Cog):
                         stack = await delete_stack(stack)
                         return
                     else:
-                        if role_id.content == 'cancel':
+                        if role_id.content.lower() == 'cancel':
                             stack = await delete_stack(stack)
                             return
                         the_role = ctx.guild.get_role(int(role_id.content))
