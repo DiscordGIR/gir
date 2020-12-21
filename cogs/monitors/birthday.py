@@ -24,6 +24,8 @@ class Birthday(commands.Cog):
         if not birthday_role:
             return
         for person in birthdays:
+            if person.birthday_excluded:
+                continue
             user = guild.get_member(person._id)
             if birthday_role in user.roles:
                 continue
@@ -68,7 +70,11 @@ class Birthday(commands.Cog):
             raise commands.BadArgument("You gave an invalid date.")
 
         results = await self.bot.settings.user(user.id)
-        if results.birthday is not None and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+
+        if results.birthday_excluded:
+            raise commands.BadArgument("You are banned from birthdays.")
+
+        if results.birthday != [] and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
             raise commands.BadArgument(
                 "You already have a birthday set! You need to ask a mod to change it.")
 

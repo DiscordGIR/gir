@@ -6,6 +6,7 @@ class User(mongoengine.Document):
     is_xp_frozen        = mongoengine.BooleanField(default=False, required=True)
     is_muted            = mongoengine.BooleanField(default=False, required=True)
     was_warn_kicked     = mongoengine.BooleanField(default=False, required=True)
+    birthday_excluded   = mongoengine.BooleanField(default=False, required=True)
     
     xp                  = mongoengine.IntField(default=0, required=True)
     level               = mongoengine.IntField(default=0, required=True)

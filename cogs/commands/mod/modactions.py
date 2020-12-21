@@ -748,6 +748,65 @@ class ModActions(commands.Cog):
         await ctx.message.reply(f"{user.mention} was put on clem.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
 
     @commands.guild_only()
+    @commands.command(name="birthdayexclude")
+    async def birthdayexclude(self, ctx: commands.Context, user: discord.Member) -> None:
+        """Remove a user's birthday (mod only)
+
+        Example usage:
+        --------------
+        `!birthdayexclude <@user/ID>`
+
+        Parameters
+        ----------
+        user : discord.Member
+            User to ban from birthdays
+        """
+
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+            raise commands.BadArgument(
+                "You need to be at least a Moderator to use that command.")
+
+        if user.id == self.bot.user.id:
+            await ctx.message.add_reaction("🤔")
+            raise commands.BadArgument("You can't call that on me :(")
+        
+        results = await self.bot.settings.user(user.id)
+        results.birthday_excluded = True
+        results.save()
+
+        await ctx.message.reply(f"{user.mention} was banned from birthdays.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
+    
+    @commands.guild_only()
+    @commands.command(name="removebirthday")
+    async def removebirthday(self, ctx: commands.Context, user: discord.Member) -> None:
+        """Remove a user's birthday (mod only)
+
+        Example usage:
+        --------------
+        `!removebirthday <@user/ID>`
+
+        Parameters
+        ----------
+        user : discord.Member
+            User to remove birthday of
+        """
+
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+            raise commands.BadArgument(
+                "You need to be at least a Moderator to use that command.")
+
+        if user.id == self.bot.user.id:
+            await ctx.message.add_reaction("🤔")
+            raise commands.BadArgument("You can't call that on me :(")
+        
+        results = await self.bot.settings.user(user.id)
+        results.birthday = None
+        results.save()
+
+        await ctx.message.reply(f"{user.mention}'s birthday was removed.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
+
+        
+    @commands.guild_only()
     @commands.command(name="setbirthday")
     async def setbirthday(self, ctx: commands.Context, user: discord.Member, month: int, date: int) -> None:
         """Override a user's birthday (mod only)
@@ -759,7 +818,11 @@ class ModActions(commands.Cog):
         Parameters
         ----------
         user : discord.Member
-            User to put on clem
+            User whose bithday to set
+        month : int
+            Month of birthday
+        date : int
+            Date of birthday
         """
 
         # must be owner
@@ -781,6 +844,9 @@ class ModActions(commands.Cog):
         results.save()
 
         await ctx.message.reply(f"{user.mention}'s birthday was set.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
+
+        if results.birthday_excluded:
+            return
         
         today = datetime.datetime.today()
         if today.month == month and today.day == date:
@@ -790,7 +856,7 @@ class ModActions(commands.Cog):
 
             if birthday_role in user.roles:
                 return
-            
+
             try:
                 time = datetime.datetime.now() + datetime.timedelta(days=1)
                 self.bot.settings.tasks.schedule_remove_bday(user.id, time)
@@ -800,6 +866,7 @@ class ModActions(commands.Cog):
             await user.add_roles(birthday_role)
             await user.send(f"According to my calculations, today is your birthday! We've given you the {birthday_role} role for 24 hours.")
 
+    @removebirthday.error
     @setbirthday.error
     @unmute.error
     @mute.error
