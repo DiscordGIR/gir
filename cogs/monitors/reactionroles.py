@@ -12,6 +12,18 @@ class ReactionRoles(commands.Cog):
     @commands.command(name='setreactions', hidden=True)
     @commands.guild_only()
     async def setreactions(self, ctx: commands.Context, message_id: int):
+        """Prompt to add multiple reaction roles to a message (admin only)
+
+        Example usage
+        -------------
+        !setreactions <message ID>
+
+        Parameters
+        ----------
+        message_id : int
+            ID of message to add reactions to
+        """
+
         if not ctx.guild.id == self.bot.settings.guild_id:
             return
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
@@ -94,9 +106,12 @@ class ReactionRoles(commands.Cog):
         await self.bot.settings.add_rero_mapping(reaction_mapping)
         the_string = "Done! We added the following emotes:\n"
         await message.clear_reactions()
-        for r in reactions:
-            the_string += f"Reaction {str(r)} will give role <@&{reaction_mapping[message.id][str(r.emoji)]}>\n"
-            await message.add_reaction(r)
+
+        async with ctx.channel.typing():
+            for r in reactions:
+                the_string += f"Reaction {str(r)} will give role <@&{reaction_mapping[message.id][str(r.emoji)]}>\n"
+                await message.add_reaction(r)
+
         await ctx.send(the_string, delete_after=10)
 
     @commands.command(name="newreaction")
@@ -152,6 +167,7 @@ class ReactionRoles(commands.Cog):
         while True:
             prompt_embed = await ctx.send("Add the reaction to this message that you want to watch for (or :white_check_mark: to cancel).")
             stack.append(prompt_embed)
+
             def check_reaction(reaction, user):
                 return user.id == ctx.author.id and reaction.message.id == prompt_embed.id
 
@@ -199,9 +215,12 @@ class ReactionRoles(commands.Cog):
 
         await self.bot.settings.append_rero_mapping(reaction_mapping)
         the_string = "Done! We added the following emotes:\n"
-        for r in reactions:
-            the_string += f"Reaction {str(r)} will give role <@&{reaction_mapping[message.id][str(r.emoji)]}>\n"
-            await message.add_reaction(r)
+
+        async with ctx.channel.typing():
+            for r in reactions:
+                the_string += f"Reaction {str(r)} will give role <@&{reaction_mapping[message.id][str(r.emoji)]}>\n"
+                await message.add_reaction(r)
+
         await ctx.send(the_string, delete_after=10)
 
     @commands.command(name="movereactions")
@@ -252,18 +271,26 @@ class ReactionRoles(commands.Cog):
 
         await ctx.message.delete()
         rero_mapping = {after: rero_mapping}
+
         await self.bot.settings.add_rero_mapping(rero_mapping)
         await self.bot.settings.delete_rero_mapping(before)
-        the_string = "Done! We added the following emotes:\n"
+
         await after_message.clear_reactions()
-        for r in rero_mapping[after]:
-            the_string += f"Reaction {str(r)} will give role <@&{rero_mapping[after][r]}>\n"
-            await after_message.add_reaction(r)
+
+        the_string = "Done! We added the following emotes:\n"
+        async with ctx.channel.typing():
+            for r in rero_mapping[after]:
+                the_string += f"Reaction {str(r)} will give role <@&{rero_mapping[after][r]}>\n"
+                await after_message.add_reaction(r)
+
         await ctx.send(the_string, delete_after=10)
 
     @commands.command(name="repostreactions")
     @commands.guild_only()
     async def repostreactions(self, ctx):
+        """Repost all reactions to messages with reaction roles (admin only)
+        """
+
         if not ctx.guild.id == self.bot.settings.guild_id:
             return
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
@@ -279,14 +306,15 @@ class ReactionRoles(commands.Cog):
         if rero_mapping is None or rero_mapping == {}:
             raise commands.BadArgument("Nothing to do.")
 
-        for m in rero_mapping:
-            try:
-                message = await channel.fetch_message(int(m))
-            except Exception:
-                continue
-            await message.clear_reactions()
-            for r in rero_mapping[m]:
-                await message.add_reaction(r)
+        async with ctx.channel.typing():
+            for m in rero_mapping:
+                try:
+                    message = await channel.fetch_message(int(m))
+                except Exception:
+                    continue
+                await message.clear_reactions()
+                for r in rero_mapping[m]:
+                    await message.add_reaction(r)
 
         await ctx.message.delete()
         await ctx.send("Done!", delete_after=5)
@@ -388,6 +416,9 @@ class ReactionRoles(commands.Cog):
                             """
         embed.description = fix_emojis(embed.description)
         await channel.send(embed=embed)
+
+        await ctx.message.delete()
+        await ctx.send("Done!", delete_after=5)
 
     @postembeds.error
     @newreaction.error
