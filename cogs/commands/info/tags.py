@@ -133,6 +133,18 @@ class Tags(commands.Cog):
     @commands.guild_only()
     @commands.command(name="tag", aliases=['t'])
     async def tag(self, ctx, name: str):
+        """Use a tag with a given name.
+        
+        Example usage
+        -------------
+        !t roblox
+
+        Parameters
+        ----------
+        name : str
+            Name of tag to use
+        """
+
         name = name.lower()
         tag = await self.bot.settings.get_tag(name)
         
