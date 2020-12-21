@@ -314,7 +314,6 @@ class ModActions(commands.Cog):
         
         await self.check_permissions(ctx, user)
 
-        reason = "This Discord server is for iOS jailbreaking, not Roblox. The roblox server can be found at https://disord.gg/jailbreak. Thank you!"
         log = await self.add_kick_case(ctx, user, reason)
 
         try:
@@ -749,13 +748,13 @@ class ModActions(commands.Cog):
         await ctx.message.reply(f"{user.mention} was put on clem.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
 
     @commands.guild_only()
-    @commands.command(name="addbirthday")
-    async def addbirthday(self, ctx: commands.Context, user: discord.Member, month: int, date: int) -> None:
-        """Set user birthday (admin only)
+    @commands.command(name="setbirthday")
+    async def setbirthday(self, ctx: commands.Context, user: discord.Member, month: int, date: int) -> None:
+        """Override a user's birthday (mod only)
 
         Example usage:
         --------------
-        `!birthday <@user/ID> <month> <date>`
+        `!setbirthday <@user/ID> <month (int)> <date (int)>`
 
         Parameters
         ----------
@@ -764,24 +763,44 @@ class ModActions(commands.Cog):
         """
 
         # must be owner
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
             raise commands.BadArgument(
-                "You need to be an administrator to use that command.")
+                "You need to be at least a Moderator to use that command.")
+
         if user.id == self.bot.user.id:
             await ctx.message.add_reaction("🤔")
             raise commands.BadArgument("You can't call that on me :(")
 
-        if 1 > month or month > 12:
-            raise commands.BadArgument("Month must be between 1-12")
-        if 1 > date or date > 31:
-            raise commands.BadArgument("Date must be between 1-31")
+        try:
+            datetime.datetime(year=2020, month=month, day=date, hour=12)
+        except ValueError:
+            raise commands.BadArgument("You gave an invalid date.")
 
         results = await self.bot.settings.user(user.id)
         results.birthday = [month, date]
         results.save()
 
         await ctx.message.reply(f"{user.mention}'s birthday was set.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
+        
+        today = datetime.datetime.today()
+        if today.month == month and today.day == date:
+            birthday_role = ctx.guild.get_role(self.bot.settings.guild().role_birthday)
+            if birthday_role is None:
+                return
 
+            if birthday_role in user.roles:
+                return
+            
+            try:
+                time = datetime.datetime.now() + datetime.timedelta(days=1)
+                self.bot.settings.tasks.schedule_remove_bday(user.id, time)
+            except Exception as e:
+                print(e)
+                return
+            await user.add_roles(birthday_role)
+            await user.send(f"According to my calculations, today is your birthday! We've given you the {birthday_role} role for 24 hours.")
+
+    @setbirthday.error
     @unmute.error
     @mute.error
     @liftwarn.error
