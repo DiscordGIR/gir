@@ -818,9 +818,9 @@ class ModActions(commands.Cog):
         if birthday_role in user.roles:
             await user.remove_roles(birthday_role)
 
-        await ctx.message.reply(f"{user.mention}'s birthday was removed.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
+        await ctx.message.reply(f"{user.mention}'s birthday was removed.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False), delete_after=5)
+        await ctx.message.delete(delay=5)
 
-        
     @commands.guild_only()
     @commands.command(name="setbirthday")
     async def setbirthday(self, ctx: commands.Context, user: discord.Member, month: int, date: int) -> None:
@@ -858,7 +858,8 @@ class ModActions(commands.Cog):
         results.birthday = [month, date]
         results.save()
 
-        await ctx.message.reply(f"{user.mention}'s birthday was set.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
+        await ctx.message.reply(f"{user.mention}'s birthday was set.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False), delete_after=5)
+        await ctx.message.delete(delay=5)
 
         if results.birthday_excluded:
             return

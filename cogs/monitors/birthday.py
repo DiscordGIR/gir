@@ -40,7 +40,7 @@ class Birthday(commands.Cog):
     @commands.guild_only()
     @commands.command(name="mybirthday")
     async def mybirthday(self, ctx: commands.Context, month: int, date: int) -> None:
-        """Set your birthday. The birthday role will be given to you on the given day.
+        """Set your birthday. The birthday role will be given to you on that day. THIS COMMAND IS ONE TIME USE ONLY!
 
         Example usage:
         --------------
@@ -80,18 +80,19 @@ class Birthday(commands.Cog):
 
         results.birthday = [month, date]
         results.save()
-        
-        await ctx.message.reply(f"{user.mention}'s birthday was set.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
-        
+
+        await ctx.message.reply(f"{user.mention}'s birthday was set.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False), delete_after=5)
+        await ctx.message.delete(delay=5)
+
         today = datetime.today()
         if today.month == month and today.day == date:
             birthday_role = ctx.guild.get_role(self.bot.settings.guild().role_birthday)
             if birthday_role is None:
                 return
-            
+
             if birthday_role in user.roles:
                 return
-            
+
             try:
                 time = datetime.now() + timedelta(days=1)
                 self.bot.settings.tasks.schedule_remove_bday(user.id, time)
@@ -99,9 +100,6 @@ class Birthday(commands.Cog):
                 return
             await user.add_roles(birthday_role)
             await user.send(f"According to my calculations, today is your birthday! We've given you the {birthday_role} role for 24 hours.")
-
-
-
 
     @mybirthday.error
     async def info_error(self, ctx, error):
