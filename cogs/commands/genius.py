@@ -25,16 +25,8 @@ class Genius(commands.Cog):
         title : str
             Title for the issue
 
-        Returns
-        -------
-        [type]
-            [description]
-
-        Raises
-        ------
-        commands.BadArgument
-            [description]
         """
+
         if not ctx.guild.id == self.bot.settings.guild_id:
             return
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
@@ -69,6 +61,54 @@ class Genius(commands.Cog):
         await channel.send(embed=embed, file=f)
         await ctx.message.reply("Done!", delete_after=5)
         await ctx.message.delete(delay=5)
+        
+    @commands.command(name="postembed")
+    @commands.guild_only()
+    @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
+    async def postembed(self, ctx, *, title: str):
+        """Post an embed in the current channel (Geniuses only)
+
+        Example use:
+        ------------
+        !postembed This is a title (you will be prompted for a description)
+
+        Parameters
+        ----------
+        title : str
+            Title for the embed
+        
+        """
+
+        if not ctx.guild.id == self.bot.settings.guild_id:
+            return
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
+            raise commands.BadArgument(
+                "You do not have permission to use this command.")
+
+        channel = ctx.channel
+        description = None
+
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+
+        while True:
+            prompt = await ctx.message.reply(f"Please enter a description for this embed (or cancel to cancel)")
+            try:
+                desc = await self.bot.wait_for('message', check=check, timeout=120)
+            except asyncio.TimeoutError:
+                return
+            else:
+                await desc.delete()
+                await prompt.delete()
+                if desc.content.lower() == "cancel":
+                    return
+                elif desc.content is not None and desc.content != "":
+                    description = desc.content
+                    break
+
+        embed, f = await self.prepare_issues_embed(title, description, ctx.message)
+        await channel.send(embed=embed, file=f)
+        await ctx.message.delete()
 
     async def prepare_issues_embed(self, title, description, message):
         embed = discord.Embed(title=title)
@@ -82,6 +122,7 @@ class Genius(commands.Cog):
         embed.timestamp = datetime.datetime.now()
         return embed, f
 
+    @postembed.error
     @commonissue.error
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
