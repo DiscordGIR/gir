@@ -1,5 +1,6 @@
 # GIR (Botty McBotface)
 ![](https://media.discordapp.net/attachments/688121419980341282/787792406443458610/gggggggir.png)
+
 Moderation bot for r/Jailbreak
 
 ### Prerequisites for setup
