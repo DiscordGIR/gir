@@ -21,6 +21,7 @@ def get_prefix(bot, message):
 
 initial_extensions = ['cogs.utils.settings',
                       'cogs.commands.mod.modactions',
+                      'cogs.commands.mod.modutils',
                       'cogs.commands.mod.filter',
                       'cogs.commands.info.userinfo',
                       'cogs.commands.info.stats',
