@@ -72,7 +72,7 @@ class Tasks():
         """
 
         self.tasks.add_job(remove_bday_callback, 'date', id=str(
-            id), next_run_time=date, args=[id], misfire_grace_time=3600)
+            id+1), next_run_time=date, args=[id], misfire_grace_time=3600)
 
     def cancel_unmute(self, id: int) -> None:
         """When we manually unmute a user given by ID `id`, stop the task to unmute them.
