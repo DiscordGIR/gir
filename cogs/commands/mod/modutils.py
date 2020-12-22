@@ -61,14 +61,19 @@ class ModUtils(commands.Cog):
         u, case_count = await self.bot.settings.transfer_profile(oldmember.id, newmember.id)
 
         embed = discord.Embed(title="Transferred profile")
-        embed.description = f"We transferred {oldmember.mention}'s profile to {newmember.mention}'"
+        embed.description = f"We transferred {oldmember.mention}'s profile to {newmember.mention}"
+        embed.color = discord.Color.blurple()
         embed.add_field(name="Level", value=u.level)
         embed.add_field(name="XP", value=u.xp)
         embed.add_field(name="Warnpoints", value=f"{u.warn_points} points")
         embed.add_field(name="Cases", value=f"We transfered {case_count} cases")
 
-        await ctx.message.reply(embed=embed, delete_after=10)
-        await ctx.message.delete(delay=10)
+        await ctx.message.reply(embed=embed)
+        
+        try:
+            await newmember.send(f"{ctx.author} has transferred your profile from {oldmember}", embed=embed)
+        except Exception:
+            pass
 
     @commands.guild_only()
     @commands.command(name="clem")
