@@ -8,6 +8,7 @@ import re
 class ReactionRoles(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.cached_messages = {}
 
     @commands.command(name='setreactions', hidden=True)
     @commands.guild_only()
@@ -332,7 +333,11 @@ class ReactionRoles(commands.Cog):
             return
 
         channel = payload.member.guild.get_channel(payload.channel_id)
-        message = await channel.fetch_message(payload.message_id)
+        if payload.message_id not in self.cached_messages:
+            message = await channel.fetch_message(payload.message_id)
+            self.cached_messages[payload.message_id] = message
+        else:
+            message = self.cached_messages[payload.message_id]
 
         mapping = await self.bot.settings.get_rero_mapping(str(payload.message_id))
         if mapping is None:
