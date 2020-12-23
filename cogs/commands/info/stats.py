@@ -134,6 +134,7 @@ class Stats(commands.Cog):
         await ctx.message.reply(embed=embed)
 
     @serverinfo.error
+    @roleinfo.error
     @stats.error
     @ping.error
     async def info_error(self, ctx, error):
