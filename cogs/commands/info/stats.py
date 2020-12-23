@@ -17,6 +17,34 @@ class Stats(commands.Cog):
         self.start_time = datetime.datetime.now()
 
     @commands.guild_only()
+    @commands.command(name="roleinfo")
+    async def roleinfo(self, ctx: commands.Context, role: discord.Role) -> None:
+        """Get number of users of a role
+
+        Example usage
+        -------------
+        `!roleinfo <@role/ID>`
+
+        Parameters
+        ----------
+        role : discord.Role
+            Role to get info of
+
+        """
+
+        bot_chan = self.bot.settings.guild().channel_botspam
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
+            raise commands.BadArgument(
+                f"Command only allowed in <#{bot_chan}>")
+
+        embed = discord.Embed(title="Role Statistics")
+        embed.description = f"{len(role.members)} members have role {role.mention}"
+        embed.color = role.color
+        embed.set_footer(text=f"Requested by {ctx.author}")
+
+        await ctx.message.reply(embed=embed)
+
+    @commands.guild_only()
     @commands.command(name="ping")
     async def ping(self, ctx: commands.Context) -> None:
         """Pong
