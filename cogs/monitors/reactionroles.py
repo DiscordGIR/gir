@@ -366,6 +366,9 @@ class ReactionRoles(commands.Cog):
     @commands.command(name="postembeds")
     @commands.guild_only()
     async def postembeds(self, ctx):
+        """Post the reaction role embeds (admin only)
+        """
+
         if not ctx.guild.id == self.bot.settings.guild_id:
             return
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):

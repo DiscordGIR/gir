@@ -13,6 +13,7 @@ class Utilities(commands.Cog):
         self.genius_only = ["Genius"]
 
     @commands.command(name="help", hidden=True)
+    @commands.guild_only()
     @commands.has_permissions(add_reactions=True, embed_links=True)
     async def help_comm(self, ctx: commands.Context, command_arg: str = None):
         """Gets all cogs and commands of mine."""
@@ -25,11 +26,18 @@ class Utilities(commands.Cog):
             string = ""
             for cog_name in self.bot.cogs:
                 cog = self.bot.cogs[cog_name]
-                if not cog.get_commands() or (cog_name in self.mod_only and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5)):
+                is_admin = self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6)
+                is_mod = self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5)
+                is_genius = self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4)
+                submod = ctx.guild.get_role(self.bot.settings.guild().role_sub_mod)
+                
+                if not cog.get_commands() or (cog_name in self.mod_only and not is_mod):
                     continue
-                elif not cog.get_commands() or (cog_name in self.genius_only and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4)):
+                elif not cog.get_commands() or (cog_name in self.genius_only and not is_genius):
                     continue
-
+                elif cog_name == "SubNews" and not (submod in ctx.author.roles or is_admin):
+                    continue
+                
                 string += f"== {cog_name} ==\n"
 
                 for command in cog.get_commands():

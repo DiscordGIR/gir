@@ -19,25 +19,23 @@ def get_prefix(bot, message):
     return commands.when_mentioned_or(*prefixes)(bot, message)
 
 
-initial_extensions = ['cogs.utils.settings',
-                      'cogs.commands.mod.modactions',
-                      'cogs.commands.mod.modutils',
-                      'cogs.commands.mod.filter',
-                      'cogs.commands.info.userinfo',
-                      'cogs.commands.info.stats',
-                      'cogs.commands.info.devices',
-                      'cogs.commands.info.tags',
-                      'cogs.commands.info.help',
-                      'cogs.commands.genius'
-                      ]
-
-monitor_extensions = [
-                'cogs.monitors.logging',
-                'cogs.monitors.filter',
-                'cogs.monitors.boosteremojis',
-                'cogs.monitors.reactionroles',
-                'cogs.monitors.birthday',
-                'cogs.monitors.xp',
+initial_extensions = [
+                    'cogs.commands.mod.modactions',
+                    'cogs.commands.mod.modutils',
+                    'cogs.commands.misc.genius',
+                    'cogs.commands.misc.subnews',
+                    'cogs.commands.info.devices',
+                    'cogs.commands.info.help',
+                    'cogs.commands.info.stats',
+                    'cogs.commands.info.tags',
+                    'cogs.commands.info.userinfo',
+                    'cogs.commands.mod.filter',
+                    'cogs.monitors.birthday',
+                    'cogs.monitors.boosteremojis',
+                    'cogs.monitors.filter',
+                    'cogs.monitors.logging',
+                    'cogs.monitors.reactionroles',
+                    'cogs.monitors.xp',
 ]
 
 intents = discord.Intents.default()
@@ -50,8 +48,20 @@ bot = commands.Bot(command_prefix=get_prefix,
                    intents=intents, allowed_mentions=mentions)
 bot.max_messages = 10000
 
+
+async def send_error(ctx, error):
+    embed = discord.Embed(title=":(\nYour command ran into a problem")
+    embed.color = discord.Color.red()
+    embed.description = discord.utils.escape_markdown(f'{error}')
+    await ctx.send(embed=embed, delete_after=8)
+
+
 # Here we load our extensions(cogs) listed above in [initial_extensions].
 if __name__ == '__main__':
+    bot.owner_id = int(os.environ.get("BOTTY_OWNER"))
+    bot.load_extension('cogs.utils.settings')
+    bot.settings = bot.get_cog("Settings")
+    bot.send_error = send_error
     bot.remove_command("help")
     for extension in initial_extensions:
         bot.load_extension(extension)
@@ -74,24 +84,9 @@ class NewHelpCommand(commands.DefaultHelpCommand):
         return "Command not found!"
 
 
-async def send_error(ctx, error):
-    embed = discord.Embed(title=":(\nYour command ran into a problem")
-    embed.color = discord.Color.red()
-    embed.description = discord.utils.escape_markdown(f'{error}')
-    await ctx.send(embed=embed, delete_after=8)
-
-
 @bot.event
 async def on_ready():
-    # bot.help_command = NewHelpCommand()
-    bot.settings = bot.get_cog("Settings")
-    bot.send_error = send_error
-    bot.owner_id = int(os.environ.get("BOTTY_OWNER"))
-
     await bot.wait_until_ready()
-
-    for extension in monitor_extensions:
-        bot.load_extension(extension)
 
     print(
         f'\n\nLogged in as: {bot.user.name} - {bot.user.id}\nVersion: {discord.__version__}\n')
