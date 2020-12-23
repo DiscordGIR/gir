@@ -1,6 +1,7 @@
 import datetime
 import traceback
 import typing
+import humanize
 
 import discord
 from data.case import Case
@@ -11,23 +12,26 @@ class ModUtils(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def check_permissions(self, ctx, user: typing.Union[discord.Member, int] = None):
-        if isinstance(user, discord.Member):
-            if user.id == ctx.author.id:
-                await ctx.message.add_reaction("🤔")
-                raise commands.BadArgument("You can't call that on yourself.")
-            if user.id == self.bot.user.id:
-                await ctx.message.add_reaction("🤔")
-                raise commands.BadArgument("You can't call that on me :(")
+    @commands.guild_only()
+    @commands.command(name="rundown", aliases=['rd'])
+    async def rundown(self, ctx: commands.Context, user: discord.Member) -> None:
+        """Get information about a user (join/creation date, xp, etc.), defaults to command invoker.
 
-        # must be at least a mod
+        Example usage:
+        --------------
+        `!userinfo <@user/ID (optional)>`
+
+        Parameters
+        ----------
+        user : discord.Member, optional
+            User to get info about, by default the author of command, by default None
+        """
+
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
             raise commands.BadArgument(
-                "You do not have permission to use this command.")
-        if user:
-            if isinstance(user, discord.Member):
-                if user.top_role >= ctx.author.top_role:
-                    raise commands.BadArgument(
-                        message=f"{user.mention}'s top role is the same or higher than yours!")
+                "You need to be at least a Moderator to use that command.")
+
+        await ctx.message.reply(embed=await self.prepare_rundown_embed(ctx, user))
 
     @commands.guild_only()
     @commands.command(name="transferprofile")
@@ -259,10 +263,64 @@ class ModUtils(commands.Cog):
             await user.add_roles(birthday_role)
             await user.send(f"According to my calculations, today is your birthday! We've given you the {birthday_role} role for 24 hours.")
 
+    async def prepare_rundown_embed(self, ctx, user):
+        user_info = await self.bot.settings.user(user.id)
+        joined = user.joined_at.strftime("%B %d, %Y, %I:%M %p")
+        created = user.created_at.strftime("%B %d, %Y, %I:%M %p")
+        rd = await self.bot.settings.rundown(user.id)
+        rd_text = ""
+        for r in rd:
+            if r._type == "WARN":
+                r.punishment += " points"
+            rd_text += f"**{r._type}** - {r.punishment} - {r.reason} - {humanize.naturaltime(datetime.datetime.now() - r.date)}\n"
+
+        reversed_roles = user.roles
+        reversed_roles.reverse()
+
+        roles = ""
+        for role in reversed_roles[0:4]:
+            if role != user.guild.default_role:
+                roles += role.mention + " "
+        roles = roles.strip() + "..."
+
+        embed = discord.Embed(title="Rundown")
+        embed.color = user.top_role.color
+        embed.set_thumbnail(url=user.avatar_url)
+
+        embed.add_field(name="Member", value=f"{user} ({user.mention}, {user.id})")
+        embed.add_field(name="Join date", value=f"{joined} UTC")
+        embed.add_field(name="Account creation date",
+                        value=f"{created} UTC")
+        embed.add_field(name="Warn points",
+                        value=user_info.warn_points, inline=True)
+
+        if user_info.is_clem:
+            embed.add_field(
+                name="XP", value="*this user is clemmed*", inline=True)
+        else:
+            embed.add_field(
+                name="XP", value=f"{user_info.xp} XP", inline=True)
+            embed.add_field(
+                name="Level", value=f"Level {user_info.level}", inline=True)
+
+        embed.add_field(
+            name="Roles", value=roles if roles else "None", inline=False)
+
+        if len(rd) > 0:
+            embed.add_field(name=f"{len(rd)} most recent cases",
+                            value=rd_text, inline=False)
+        else:
+            embed.add_field(name=f"Recent cases",
+                            value="This user has no cases.", inline=False)
+        embed.set_footer(text=f"Requested by {ctx.author}")
+
+        return embed
+
     @birthdayexclude.error
     @removebirthday.error
     @setbirthday.error
     @transferprofile.error
+    @rundown.error
     @clem.error
     async def info_error(self, ctx, error):
         if (isinstance(error, commands.MissingRequiredArgument)

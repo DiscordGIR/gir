@@ -84,6 +84,19 @@ async def prepare_embed(bot, user, msg):
                     value=f"{created} UTC", inline=True)
     embed.add_field(name="Warn points",
                     value=user_info.warn_points, inline=True)
+
+    reversed_roles = user.roles
+    reversed_roles.reverse()
+
+    roles = ""
+    for role in reversed_roles[0:4]:
+        if role != user.guild.default_role:
+            roles += role.mention + " "
+    roles = roles.strip() + "..."
+
+    embed.add_field(
+        name="Roles", value=roles if roles else "None", inline=False)
+
     if len(rd) > 0:
         embed.add_field(name=f"{len(rd)} most recent cases",
                         value=rd_text, inline=True)
