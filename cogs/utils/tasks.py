@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 
 import discord
+import random
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.jobstores.mongodb import MongoDBJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -84,6 +85,22 @@ class Tasks():
         """
 
         self.tasks.remove_job(str(id), 'default')
+
+    def schedule_end_giveaway(self, channel_id: int, message_id: int, date: datetime) -> None:
+        """
+        Create a task to end a giveaway with message ID `id`, at date `date`
+
+        Parameters
+        ----------
+        channel_id : int
+            ID of the channel that the giveaway is in
+        message_id : int
+            Giveaway message ID
+        date : datetime.datetime
+            When to end the giveaway
+        """
+
+        self.tasks.add_job(end_giveaway_callback, 'date', id=str(channel_id+1), next_run_time=date, args=[channel_id, message_id], misfire_grace_time=3600)
 
 
 def unmute_callback(id: int) -> None:
@@ -191,3 +208,50 @@ async def remove_bday(id: int) -> None:
 
     user = guild.get_member(id)
     await user.remove_roles(bday_role)
+
+def end_giveaway_callback(channel_id: int, message_id: int) -> None:
+    """
+    Callback function for ending a giveaway
+
+    Parameters
+    ----------
+    channel_id : int
+        ID of the channel that the giveaway is in
+    message_id : int
+        Message ID of the giveaway
+    """
+
+    bot_global.loop.create_task(end_giveaway(channel_id, message_id))
+
+async def end_giveaway(channel_id: int, message_id: int) -> None:
+    """
+    End a giveaway.
+
+    Parameters
+    ----------
+    channel_id : int
+        ID of the channel that the giveaway is in
+    message_id : int
+        Message ID of the giveaway
+    """
+
+    guild = bot_global.get_guild(bot_global.settings.guild_id)
+    channel = guild.get_channel(channel_id)
+    message = await channel.fetch_message(message_id)
+
+    embed = message.embeds[0]
+    embed.set_footer(text="Ended")
+    embed.timestamp = datetime.now()
+
+    reaction = message.reactions[0]
+    reacted_users = await reaction.users().flatten()
+    reacted_ids = [user.id for user in reacted_users]
+    reacted_ids.remove(bot_global.user.id)
+
+    await bot_global.settings.add_giveaway(id=message.id, name=embed.title, entries=reacted_ids)
+
+    rand_id = random.choice(reacted_ids)
+
+    await message.edit(embed=embed)
+    await message.clear_reactions()
+    await channel.send(f"Congratulations <@{rand_id}>! You won the giveaway of **{embed.title}**!")

@@ -9,6 +9,7 @@ from data.filterword import FilterWord
 from data.guild import Guild
 from data.tag import Tag
 from data.user import User
+from data.giveaway import Giveaway
 from discord.ext import commands
 
 
@@ -376,6 +377,42 @@ class Settings(commands.Cog):
         cases = sorted(cases, key=lambda i: i['date'])
         cases.reverse()
         return cases[0:3]
+    
+    async def get_giveaway(self, id: int) -> Giveaway:
+        """
+        Return the Document representing a giveaway, whose ID (message ID) is given by `id`
+        If the giveaway doesn't exist in the database, then None is returned.
+
+        Parameters
+        ----------
+        id : int
+            The ID (message ID) of the giveaway
+        
+        Returns
+        -------
+        Giveaway
+        """
+        giveaway = Giveaway.objects(_id=id).first()
+        return giveaway
+    
+    async def add_giveaway(self, id: int, name: str, entries: list) -> None:
+        """
+        Add a giveaway to the database.
+
+        Parameters
+        ----------
+        id : int
+            The message ID of the giveaway
+        name : str
+            The name of the giveaway.
+        entries : list
+            A list of user IDs who have entered (reacted to) the giveaway.
+        """
+        giveaway = Giveaway()
+        giveaway._id = id
+        giveaway.name = name
+        giveaway.entries = entries
+        giveaway.save()
 
 
 class Permissions:
