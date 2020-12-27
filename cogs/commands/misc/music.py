@@ -1,11 +1,3 @@
-"""
-This example cog demonstrates basic usage of Lavalink.py, using the DefaultPlayer.
-As this example primarily showcases usage in conjunction with discord.py, you will need to make
-modifications as necessary for use with another Discord library.
-
-Usage of this cog requires Python 3.6 or higher due to the use of f-strings.
-Compatibility with Python 3.5 should be possible if f-strings are removed.
-"""
 import re
 import os
 
@@ -23,6 +15,8 @@ class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.np = None
+        self.reactions = ['⏯️', '⏭️', '⏹']
+
         guild = self.bot.get_guild(self.bot.settings.guild_id)
         self.channel = guild.get_channel(self.bot.settings.guild().channel_botspam)
         if not hasattr(bot, 'lavalink'):  # This ensures the client isn't overwritten during cog reloads.
@@ -45,6 +39,7 @@ class Music(commands.Cog):
         if not guild_check:
             return False
 
+        await ctx.message.delete()
         await self.ensure_voice(ctx)
         #  Ensure that the bot and command author share a mutual voicechannel.
 
@@ -53,14 +48,6 @@ class Music(commands.Cog):
                 f"Command only allowed in <#{self.channel.id}>")
 
         return guild_check
-
-    async def cog_command_error(self, ctx, error):
-        if isinstance(error, commands.CommandInvokeError):
-            await ctx.send(error.original)
-            # The above handles errors thrown in this cog and shows them to the user.
-            # This shouldn't be a problem as the only errors thrown in this cog are from `ensure_voice`
-            # which contain a reason string, such as "Join a voicechannel" etc. You can modify the above
-            # if you want to do things differently.
 
     async def ensure_voice(self, ctx):
         """ This check ensures that the bot and command author are in the same voicechannel. """
@@ -81,9 +68,9 @@ class Music(commands.Cog):
             # execution state of the command goes no further.
             raise commands.CommandInvokeError('Join a voicechannel first.')
 
-        # if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5): 
+        # if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
         #     if int(player.channel_id) != ctx.author.voice.channel.id:
-                
+
         #     if ctx.author.voice.channel.id != self.bot.settings.guild().channel_music:
         #         raise commands.BadArgument("Please join the Music voice channel.")
 
@@ -109,7 +96,10 @@ class Music(commands.Cog):
                 if self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
                     await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
                 else:
-                    raise commands.BadArgument('You need to be in my voicechannel.')
+                    if int(player.channel_id) == self.channel.id:
+                        await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
+                    else:
+                        raise commands.BadArgument('You need to be in my voicechannel.')
 
     async def track_hook(self, event):
         if isinstance(event, lavalink.events.QueueEndEvent):
@@ -121,6 +111,12 @@ class Music(commands.Cog):
         elif isinstance(event, lavalink.events.TrackStartEvent):
             guild = int(event.player.guild_id)
             await self.do_np(guild)
+        elif isinstance(event, lavalink.events.TrackEndEvent):
+            if self.np:
+                try:
+                    await self.np.delete()
+                except Exception:
+                    pass
 
     async def connect_to(self, guild_id: int, channel_id: str):
         """ Connects to the given voicechannel ID. A channel_id of `None` means disconnect. """
@@ -130,23 +126,95 @@ class Music(commands.Cog):
         # the bot instance is an AutoShardedBot.
 
     async def do_np(self, guild):
-        if self.np:
-            try:
-                await self.np.delete()
-            except Exception:
-                pass
-        
         player = self.bot.lavalink.player_manager.get(guild)
         track = player.current
         track = player.fetch(track.identifier)
         data = track["info"]
-        
+
         embed = discord.Embed(title="Now playing...")
         embed.add_field(name="Song", value=f"[{data.get('title')}]({data.get('uri')})", inline=False)
         embed.add_field(name="By", value=data.get('author'))
         embed.add_field(name="Duration", value=humanize.naturaldelta(datetime.timedelta(milliseconds=data.get('length'))))
-        embed.color = discord.Color.random()        
+        embed.color = discord.Color.random()
         self.np = await self.channel.send(embed=embed)
+        
+        for r in self.reactions:
+            try:
+                await self.np.add_reaction(r)
+            except Exception:
+                return
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        player = self.bot.lavalink.player_manager.get(member.guild.id)
+        if player is None or player.channel_id is None:
+            return
+        if member.bot:
+            return
+
+        chan = self.bot.get_channel(int(player.channel_id))
+        if len(chan.members) == 1 and chan.members[0].id == self.bot.user.id:
+            await player.set_pause(True)
+            embed = discord.Embed()
+            embed.description = "There's no one in the music channel. Paused the song!"
+            embed.color = discord.Color.blurple()
+            await self.channel.send(embed=embed, delete_after=5)
+        elif len(chan.members) > 1:
+            await player.set_pause(False)
+            embed = discord.Embed()
+            embed.description = "Resuming previous!"
+            embed.color = discord.Color.blurple()
+            await self.channel.send(embed=embed, delete_after=5)
+
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction, user):
+        if user.bot:
+            return
+        if reaction.message.guild is None:
+            return
+        if reaction.message.author.id != self.bot.user.id:
+            return
+        if reaction.message.channel.id != self.channel.id:
+            return
+        if str(reaction.emoji) not in self.reactions:
+            return
+        else:
+            await reaction.message.remove_reaction(reaction, user)
+        
+        player = self.bot.lavalink.player_manager.get(reaction.message.guild.id)
+        ctx = self.channel
+        
+        if str(reaction.emoji) == '⏯️':
+            if not player.paused:
+                await player.set_pause(True)
+                embed = discord.Embed()
+                embed.description = f"{user.mention}: Paused the song!"
+                embed.color = discord.Color.blurple()
+                await ctx.send(embed=embed, delete_after=5)
+            else:
+                await player.set_pause(False)
+                embed = discord.Embed()
+                embed.description = f"{user.mention}: Resumed the song!"
+                embed.color = discord.Color.blurple()
+                await ctx.send(embed=embed, delete_after=5)
+                
+        elif str(reaction.emoji) == '⏭️':
+            await player.skip()
+            embed = discord.Embed()
+            embed.description = f"{user.mention}: Skipped the song!"
+            embed.color = discord.Color.blurple()
+            await ctx.send(embed=embed, delete_after=5)
+        
+        elif str(reaction.emoji) == '⏹':
+            player.queue.clear()
+            # Stop the current track so Lavalink consumes less resources.
+            await player.stop()
+            # Disconnect from the voice channel.
+            await self.connect_to(user.guild.id, None)
+            embed = discord.Embed()
+            embed.description = f"Disconnected and cleared queue."
+            embed.color = discord.Color.blurple()
+            await ctx.send(embed=embed, delete_after=5)
 
     @commands.command(aliases=['p'])
     async def play(self, ctx, *, query: str):
@@ -167,7 +235,7 @@ class Music(commands.Cog):
         # Results could be None if Lavalink returns an invalid response (non-JSON/non-200 (OK)).
         # ALternatively, resullts['tracks'] could be an empty array if the query yielded no tracks.
         if not results or not results['tracks']:
-            return await ctx.send('Nothing found!')
+            raise commands.BadArgument("Couldn't find a suitable video to play.")
 
         embed = discord.Embed(color=discord.Color.blurple())
 
@@ -230,7 +298,7 @@ class Music(commands.Cog):
         embed.color = discord.Color.blurple()
         for i, song in enumerate(upcoming):
             embed.add_field(name=f"{i+1}. {song.title}", value=f"Requested by <@{song.requester}>", inline=False)
-
+        embed.set_footer(text=f"{len(upcoming)} songs out of {len(player.queue)}")
         await ctx.send(embed=embed)
 
     @commands.guild_only()
@@ -249,7 +317,7 @@ class Music(commands.Cog):
 
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
-        await player.set_volume(vol * 10)
+        await player.set_volume(vol)
         embed = discord.Embed()
         embed.description = f'{ctx.author.mention} set the volume to **{vol}%**'
         embed.color = discord.Color.blurple()
@@ -265,7 +333,10 @@ class Music(commands.Cog):
             raise commands.BadArgument('I am not currently playing anything!')
 
         await player.set_pause(True)
-        await ctx.send(f"{ctx.author.mention}: Paused the song!")
+        embed = discord.Embed()
+        embed.description = f"{ctx.author.mention}: Paused the song!"
+        embed.color = discord.Color.blurple()
+        await ctx.send(embed=embed, delete_after=5)
 
     @commands.guild_only()
     @commands.command(name='resume')
@@ -286,9 +357,12 @@ class Music(commands.Cog):
 
         if not player.is_playing:
             raise commands.BadArgument('I am not currently playing anything!')
-        
+
         await player.skip()
-        await ctx.send(f'**`{ctx.author}`**: Skipped the song!')
+        embed = discord.Embed()
+        embed.description = f"{ctx.author.mention}: Skipped the song!"
+        embed.color = discord.Color.blurple()
+        await ctx.send(embed=embed, delete_after=5)
 
 
     @commands.command(name="stop", aliases=['dc'])
@@ -307,8 +381,11 @@ class Music(commands.Cog):
         await player.stop()
         # Disconnect from the voice channel.
         await self.connect_to(ctx.guild.id, None)
-        await ctx.send('*⃣ | Disconnected.')
- 
+        embed = discord.Embed()
+        embed.description = f"Disconnected and cleared queue."
+        embed.color = discord.Color.blurple()
+        await ctx.send(embed=embed, delete_after=5)
+
     @resume_.error
     @pause_.error
     @disconnect.error
