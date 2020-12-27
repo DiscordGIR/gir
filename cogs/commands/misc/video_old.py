@@ -2,10 +2,18 @@ import youtube_dl as ytdl
 import discord
 
 YTDL_OPTS = {
-    "default_search": "ytsearch",
-    "format": "bestaudio/best",
-    "quiet": True,
-    "extract_flat": "in_playlist"
+    'format': 'bestaudio/best',
+    'outtmpl': 'downloads/%(title)s.%(ext)s',
+    'restrictfilenames': True,
+    'noplaylist': True,
+    'nocheckcertificate': True,
+    'ignoreerrors': False,
+    'logtostderr': False,
+    'quiet': True,
+    'forceduration':True,
+    'no_warnings': True,
+    'default_search': 'auto',
+    'source_address': '0.0.0.0'
 }
 
 
@@ -27,13 +35,15 @@ class Video:
 
     def _get_info(self, video_url):
         with ytdl.YoutubeDL(YTDL_OPTS) as ydl:
-            info = ydl.extract_info(video_url, download=True)
+            info = ydl.extract_info(video_url, download=False)
             video = None
             if "_type" in info and info["_type"] == "playlist":
                 return self._get_info(
                     info["entries"][0]["url"])  # get info for first video
             else:
                 video = info
+                
+            print(video)
             return video
 
     def get_embed(self):
