@@ -226,14 +226,22 @@ class Music(commands.Cog):
 
     @commands.command(aliases=['p'])
     async def play(self, ctx, *, query: str):
-        """ Searches and plays a song from a given query. """
-        # Get the player for this guild from cache.
+        """Plays song from YouTube link or search term.
+        
+        Example usage
+        -------------
+        `!play xo tour llif3`
+
+        Parameters
+        ----------
+        query : str
+            Search term
+        """
+
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         # Remove leading and trailing <>. <> may be used to suppress embedding links in Discord.
         query = query.strip('<>')
 
-        # Check if the user input might be a URL. If it isn't, we can Lavalink do a YouTube search for it instead.
-        # SoundCloud searching is possible by prefixing "scsearch:" instead.
         if not url_rx.match(query):
             query = f'ytsearch:{query}'
 
@@ -259,6 +267,7 @@ class Music(commands.Cog):
             for track in tracks:
                 # Add all of the tracks from the playlist to the queue.
                 player.add(requester=ctx.author.id, track=track)
+                player.store(track["info"]["identifier"], track)
 
             embed.title = 'Playlist Enqueued!'
             embed.description = f'{results["playlistInfo"]["name"]} - {len(tracks)} tracks'
@@ -314,9 +323,13 @@ class Music(commands.Cog):
     async def change_volume(self, ctx, *, vol: int):
         """Change the player volume.
 
+        Example usage
+        -------------
+        `!volume 100`
+
         Parameters
         ------------
-        volume: float or int [Required]
+        volume: int
             The volume to set the player to in percentage. This must be between 1 and 100.
         """
 
