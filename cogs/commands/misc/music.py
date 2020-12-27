@@ -42,9 +42,15 @@ class Music(commands.Cog):
         #  This is essentially the same as `@commands.guild_only()`
         #  except it saves us repeating ourselves (and also a few lines).
 
-        if guild_check:
-            await self.ensure_voice(ctx)
-            #  Ensure that the bot and command author share a mutual voicechannel.
+        if not guild_check:
+            return False
+
+        await self.ensure_voice(ctx)
+        #  Ensure that the bot and command author share a mutual voicechannel.
+
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != self.channel.id:
+            raise commands.BadArgument(
+                f"Command only allowed in <#{self.channel.id}>")
 
         return guild_check
 
@@ -67,13 +73,19 @@ class Music(commands.Cog):
 
         # These are commands that require the bot to join a voicechannel (i.e. initiating playback).
         # Commands such as volume/skip etc don't require the bot to be in a voicechannel so don't need listing here.
-        should_connect = ctx.command.name in ('play',)
+        should_connect = ctx.command.name in ('play', 'pause', 'skip', 'resume', 'queue', 'volume', )
 
         if not ctx.author.voice or not ctx.author.voice.channel:
             # Our cog_command_error handler catches this and sends it to the voicechannel.
             # Exceptions allow us to "short-circuit" command invocation via checks so the
             # execution state of the command goes no further.
             raise commands.CommandInvokeError('Join a voicechannel first.')
+
+        # if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5): 
+        #     if int(player.channel_id) != ctx.author.voice.channel.id:
+                
+        #     if ctx.author.voice.channel.id != self.bot.settings.guild().channel_music:
+        #         raise commands.BadArgument("Please join the Music voice channel.")
 
         if not player.is_connected:
             if not should_connect:
@@ -85,10 +97,19 @@ class Music(commands.Cog):
                 raise commands.BadArgument('I need the `CONNECT` and `SPEAK` permissions.')
 
             player.store('channel', ctx.channel.id)
-            await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
+            if self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+                await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
+            else:
+                if ctx.author.voice.channel.id != self.bot.settings.guild().channel_music:
+                    raise commands.BadArgument("Please join the Music voice channel.")
+                else:
+                    await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
         else:
             if int(player.channel_id) != ctx.author.voice.channel.id:
-                raise commands.BadArgument('You need to be in my voicechannel.')
+                if self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+                    await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
+                else:
+                    raise commands.BadArgument('You need to be in my voicechannel.')
 
     async def track_hook(self, event):
         if isinstance(event, lavalink.events.QueueEndEvent):
@@ -270,7 +291,7 @@ class Music(commands.Cog):
         await ctx.send(f'**`{ctx.author}`**: Skipped the song!')
 
 
-    @commands.command(aliases=['dc'])
+    @commands.command(name="stop", aliases=['dc'])
     async def disconnect(self, ctx):
         """ Disconnects the player from the voice channel and clears its queue. """
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -278,11 +299,6 @@ class Music(commands.Cog):
         if not player.is_connected:
             # We can't disconnect, if we're not connected.
             return await ctx.send('Not connected.')
-
-        if not ctx.author.voice or (player.is_connected and ctx.author.voice.channel.id != int(player.channel_id)):
-            # Abuse prevention. Users not in voice channels, or not in the same voice channel as the bot
-            # may not disconnect the bot.
-            return await ctx.send('You\'re not in my voicechannel!')
 
         # Clear the queue to ensure old tracks don't start playing
         # when someone else queues something.
@@ -295,8 +311,10 @@ class Music(commands.Cog):
  
     @resume_.error
     @pause_.error
+    @disconnect.error
     @change_volume.error
     @queue_info.error
+    @skip_.error
     @play.error
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
