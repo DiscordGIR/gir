@@ -137,7 +137,7 @@ class Music(commands.Cog):
         embed.add_field(name="Duration", value=humanize.naturaldelta(datetime.timedelta(milliseconds=data.get('length'))))
         embed.color = discord.Color.random()
         self.np = await self.channel.send(embed=embed)
-        
+
         for r in self.reactions:
             try:
                 await self.np.add_reaction(r)
@@ -160,11 +160,12 @@ class Music(commands.Cog):
             embed.color = discord.Color.blurple()
             await self.channel.send(embed=embed, delete_after=5)
         elif len(chan.members) > 1:
-            await player.set_pause(False)
-            embed = discord.Embed()
-            embed.description = "Resuming previous!"
-            embed.color = discord.Color.blurple()
-            await self.channel.send(embed=embed, delete_after=5)
+            if player.paused:
+                await player.set_pause(False)
+                embed = discord.Embed()
+                embed.description = "Resuming previous!"
+                embed.color = discord.Color.blurple()
+                await self.channel.send(embed=embed, delete_after=5)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
@@ -176,14 +177,21 @@ class Music(commands.Cog):
             return
         if reaction.message.channel.id != self.channel.id:
             return
+
+        player = self.bot.lavalink.player_manager.get(reaction.message.guild.id)
+        ctx = self.channel
+        if player.channel_id is None:
+            return
         if str(reaction.emoji) not in self.reactions:
             return
         else:
             await reaction.message.remove_reaction(reaction, user)
-        
-        player = self.bot.lavalink.player_manager.get(reaction.message.guild.id)
-        ctx = self.channel
-        
+
+        vc = self.bot.get_channel(int(player.channel_id))
+        if user not in vc.members:
+            await reaction.message.remove_reaction(reaction, user)
+            return
+
         if str(reaction.emoji) == '⏯️':
             if not player.paused:
                 await player.set_pause(True)
@@ -197,14 +205,14 @@ class Music(commands.Cog):
                 embed.description = f"{user.mention}: Resumed the song!"
                 embed.color = discord.Color.blurple()
                 await ctx.send(embed=embed, delete_after=5)
-                
+
         elif str(reaction.emoji) == '⏭️':
             await player.skip()
             embed = discord.Embed()
             embed.description = f"{user.mention}: Skipped the song!"
             embed.color = discord.Color.blurple()
             await ctx.send(embed=embed, delete_after=5)
-        
+
         elif str(reaction.emoji) == '⏹':
             player.queue.clear()
             # Stop the current track so Lavalink consumes less resources.
