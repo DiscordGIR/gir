@@ -23,7 +23,6 @@ initial_extensions = [
                     'cogs.commands.mod.modactions',
                     'cogs.commands.mod.modutils',
                     'cogs.commands.misc.genius',
-                    'cogs.commands.misc.music',
                     'cogs.commands.misc.subnews',
                     'cogs.commands.info.devices',
                     'cogs.commands.info.help',
@@ -91,6 +90,7 @@ async def on_ready():
 
     print(
         f'\n\nLogged in as: {bot.user.name} - {bot.user.id}\nVersion: {discord.__version__}\n')
+    bot.load_extension('cogs.commands.misc.music')
     await bot.settings.load_tasks()
     print(f'Successfully logged in and booted...!')
 
