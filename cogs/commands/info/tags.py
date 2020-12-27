@@ -152,7 +152,7 @@ class Tags(commands.Cog):
             await ctx.message.delete()
             raise commands.BadArgument("That tag does not exist.")
         
-        await ctx.message.reply(embed=await self.tag_embed(tag))
+        await ctx.message.reply(embed=await self.tag_embed(tag), mention_author=False)
 
     @tag.error
     @taglist.error
