@@ -27,7 +27,7 @@ BOTTY_ENV        = "DEVELOPMENT"
 ```
 
 6. Download the latest version of the Lavalink jar file from [here](https://github.com/Frederikam/Lavalink/releases/), and put it in the root of the project
-7. Set up the `application.yml` as shown in the example [here](), also in the root of the project. Use the same password as in the `.env` file. You need not change anything else.
+7. Set up the `application.yml` as shown in the example [here](https://github.com/Frederikam/Lavalink/blob/master/LavalinkServer/application.yml.example/), also in the root of the project. Use the same password as in the `.env` file. You need not change anything else.
 8. Run Lavalink with `java -jar Lavalink.jar`
 9. Set up mongodb on your system
 10. `python main.py` - if everything was set up properly you're good to go!
