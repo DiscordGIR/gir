@@ -16,7 +16,6 @@ pytimeparse = "^1.1.8"
 psutil = "^5.7.3"
 python-dateutil = "^2.8.1"
 fold-to-ascii = "^1.0.2"
-youtube_dl = "^2020.12.26"
 PyNaCl = "^1.4.0"
 lavalink = "^3.1.2"
 
