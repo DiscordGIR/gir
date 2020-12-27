@@ -22,7 +22,9 @@ url_rx = re.compile(r'https?://(?:www\.)?.+')
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
+        self.np = None
+        guild = self.bot.get_guild(self.bot.settings.guild_id)
+        self.channel = guild.get_channel(self.bot.settings.guild().channel_botspam)
         if not hasattr(bot, 'lavalink'):  # This ensures the client isn't overwritten during cog reloads.
             bot.lavalink = lavalink.Client(self.bot.user.id)
             bot.lavalink.add_node('127.0.0.1', 2333, 'youshallnotpass', 'eu', 'default-node')  # Host, Port, Password, Region, Name
@@ -95,6 +97,9 @@ class Music(commands.Cog):
             # To save on resources, we can tell the bot to disconnect from the voicechannel.
             guild_id = int(event.player.guild_id)
             await self.connect_to(guild_id, None)
+        elif isinstance(event, lavalink.events.TrackStartEvent):
+            guild = int(event.player.guild_id)
+            await self.do_np(guild)
 
     async def connect_to(self, guild_id: int, channel_id: str):
         """ Connects to the given voicechannel ID. A channel_id of `None` means disconnect. """
@@ -102,6 +107,25 @@ class Music(commands.Cog):
         await ws.voice_state(str(guild_id), channel_id)
         # The above looks dirty, we could alternatively use `bot.shards[shard_id].ws` but that assumes
         # the bot instance is an AutoShardedBot.
+
+    async def do_np(self, guild):
+        if self.np:
+            try:
+                await self.np.delete()
+            except Exception:
+                pass
+        
+        player = self.bot.lavalink.player_manager.get(guild)
+        track = player.current
+        track = player.fetch(track.identifier)
+        data = track["info"]
+        
+        embed = discord.Embed(title="Now playing...")
+        embed.add_field(name="Song", value=f"[{data.get('title')}]({data.get('uri')})", inline=False)
+        embed.add_field(name="By", value=data.get('author'))
+        embed.add_field(name="Duration", value=humanize.naturaldelta(datetime.timedelta(milliseconds=data.get('length'))))
+        embed.color = discord.Color.random()        
+        self.np = await self.channel.send(embed=embed)
 
     @commands.command(aliases=['p'])
     async def play(self, ctx, *, query: str):
@@ -144,8 +168,6 @@ class Music(commands.Cog):
         else:
             track = results['tracks'][0]
             embed.title = 'Track Enqueued'
-            # embed.description = f'[{track["info"]["title"]}]({track["info"]["uri"]})'
-            print(track)
             data = track["info"]
             embed = discord.Embed(title="Added to queue")
             embed.add_field(name="Song", value=f"[{data.get('title')}]({data.get('uri')})", inline=False)
@@ -155,10 +177,11 @@ class Music(commands.Cog):
 
             # You can attach additional information to audiotracks through kwargs, however this involves
             # constructing the AudioTrack class yourself.
+            player.store(data["identifier"], track)
             track = lavalink.models.AudioTrack(track, ctx.author.id, recommended=True)
             player.add(requester=ctx.author.id, track=track)
 
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, delete_after=5)
 
         # We don't want to call .play() if the player is playing as that will effectively skip
         # the current track.
@@ -233,6 +256,19 @@ class Music(commands.Cog):
             raise commands.BadArgument('I am not currently playing anything!')
 
         await player.set_pause(False)
+
+    @commands.guild_only()
+    @commands.command(name='skip')
+    async def skip_(self, ctx):
+        """Skip the song."""
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+
+        if not player.is_playing:
+            raise commands.BadArgument('I am not currently playing anything!')
+        
+        await player.skip()
+        await ctx.send(f'**`{ctx.author}`**: Skipped the song!')
+
 
     @commands.command(aliases=['dc'])
     async def disconnect(self, ctx):
