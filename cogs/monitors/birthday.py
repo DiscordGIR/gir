@@ -29,13 +29,17 @@ class Birthday(commands.Cog):
             user = guild.get_member(person._id)
             if birthday_role in user.roles:
                 continue
+            
+            h = datetime.now().hour / 24
+            m = datetime.now().minute / 60 / 24
+
             try:
-                time = datetime.now() + timedelta(days=1)
+                time = datetime.now() + timedelta(days=1.5-h-m)
                 self.bot.settings.tasks.schedule_remove_bday(user.id, time)
             except Exception:
                 continue
             await user.add_roles(birthday_role)
-            await user.send(f"According to my calculations, today is your birthday! We've given you the {birthday_role} role for 24 hours.")
+            await user.send(f"According to my calculations, today is your birthday! We've given you the {birthday_role} role for 36 hours.")
 
     @commands.guild_only()
     @commands.command(name="mybirthday")
@@ -93,13 +97,16 @@ class Birthday(commands.Cog):
             if birthday_role in user.roles:
                 return
 
+            h = datetime.now().hour / 24
+            m = datetime.now().minute / 60 / 24
+
             try:
-                time = datetime.now() + timedelta(days=1)
+                time = datetime.now() + timedelta(days=1.5-h-m)
                 self.bot.settings.tasks.schedule_remove_bday(user.id, time)
             except Exception:
                 return
             await user.add_roles(birthday_role)
-            await user.send(f"According to my calculations, today is your birthday! We've given you the {birthday_role} role for 24 hours.")
+            await user.send(f"According to my calculations, today is your birthday! We've given you the {birthday_role} role for 36 hours.")
 
     @mybirthday.error
     async def info_error(self, ctx, error):

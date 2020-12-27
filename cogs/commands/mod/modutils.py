@@ -192,6 +192,11 @@ class ModUtils(commands.Cog):
         results.birthday = None
         results.save()
 
+        try:
+            self.bot.settings.tasks.cancel_unbirthday(user.id)
+        except Exception:
+            pass
+
         birthday_role = ctx.guild.get_role(self.bot.settings.guild().role_birthday)
         if birthday_role is None:
             return
@@ -254,8 +259,11 @@ class ModUtils(commands.Cog):
             if birthday_role in user.roles:
                 return
 
+            h = datetime.datetime.now().hour / 24
+            m = datetime.datetime.now().minute / 60 / 24
+
             try:
-                time = datetime.datetime.now() + datetime.timedelta(days=1)
+                time = datetime.datetime.now() + datetime.timedelta(days=1.5-h-m)
                 self.bot.settings.tasks.schedule_remove_bday(user.id, time)
             except Exception as e:
                 print(e)

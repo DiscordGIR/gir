@@ -85,6 +85,17 @@ class Tasks():
 
         self.tasks.remove_job(str(id), 'default')
 
+    def cancel_unbirthday(self, id: int) -> None:
+        """When we manually unset the birthday of a user given by ID `id`, stop the task to remove the role.
+
+        Parameters
+        ----------
+        id : int
+            User whose task we want to cancel
+        """
+
+        self.tasks.remove_job(str(id+1), 'default')
+
 
 def unmute_callback(id: int) -> None:
     """Callback function for actually unmuting. Creates asyncio task
