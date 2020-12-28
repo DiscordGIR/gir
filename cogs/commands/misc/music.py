@@ -16,6 +16,9 @@ class Music(commands.Cog):
         self.bot = bot
         self.np = None
         self.reactions = ['⏯️', '⏭️', '⏹']
+        self.votes = set()
+        self.vote_msg = None
+        self.vote_ratio = 0.5
 
         guild = self.bot.get_guild(self.bot.settings.guild_id)
         self.channel = guild.get_channel(self.bot.settings.guild().channel_botspam)
@@ -68,12 +71,7 @@ class Music(commands.Cog):
             # execution state of the command goes no further.
             raise commands.CommandInvokeError('Join a voicechannel first.')
 
-        # if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
-        #     if int(player.channel_id) != ctx.author.voice.channel.id:
-
-        #     if ctx.author.voice.channel.id != self.bot.settings.guild().channel_music:
-        #         raise commands.BadArgument("Please join the Music voice channel.")
-
+        # check if bot is connected to a voice channel
         if not player.is_connected:
             if not should_connect:
                 raise commands.BadArgument("I'm not connected to a voice channel!")
@@ -84,6 +82,10 @@ class Music(commands.Cog):
                 raise commands.BadArgument('I need the `CONNECT` and `SPEAK` permissions.')
 
             player.store('channel', ctx.channel.id)
+
+            # if the user is mod, join regardless of what channel they're in
+            # else, tell them to use the Music channel.
+            # only mods can move the bot
             if self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
                 await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
             else:
@@ -91,7 +93,8 @@ class Music(commands.Cog):
                     raise commands.BadArgument("Please join the Music voice channel.")
                 else:
                     await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
-        else:
+        else:  # the bot is connected to a vc
+            # the bot should join the user's vc if they are a mod, else tell them to join the same vc
             if int(player.channel_id) != ctx.author.voice.channel.id:
                 if self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
                     await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
@@ -112,6 +115,8 @@ class Music(commands.Cog):
             guild = int(event.player.guild_id)
             await self.do_np(guild)
         elif isinstance(event, lavalink.events.TrackEndEvent):
+            self.votes = set()
+            self.vote_msg = None
             if self.np:
                 try:
                     await self.np.delete()
@@ -143,6 +148,35 @@ class Music(commands.Cog):
                 await self.np.add_reaction(r)
             except Exception:
                 return
+
+    async def do_skip(self, channel, skipper, player):
+        if not player.is_playing:
+            raise commands.BadArgument('I am not currently playing anything!')
+
+        if not self.bot.settings.permissions.hasAtLeast(channel.guild, skipper, 5):
+            vc = channel.guild.get_channel(int(player.channel_id))
+            num_in_vc = len(list(filter(lambda m: not m.bot, vc.members)))
+            self.votes.add(skipper)
+
+            if self.vote_msg is not None:
+                try:
+                    await self.vote_msg.delete()
+                except Exception:
+                    pass
+
+            if len(self.votes) / num_in_vc < self.vote_ratio:
+                embed = discord.Embed(title="Vote skip")
+                embed.add_field(name="Vote skip", value=f"{len(self.votes)} out of {num_in_vc} have voted to skip. We need more than {int(self.vote_ratio * num_in_vc)}.")
+                embed.color = discord.Color.green()
+                self.vote_msg = await self.channel.send(embed=embed)
+                return
+
+        await player.skip()
+        embed = discord.Embed()
+        embed.description = f"{skipper.mention}: Skipped the song!"
+        embed.color = discord.Color.blurple()
+        await channel.send(embed=embed, delete_after=5)
+
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
@@ -207,11 +241,7 @@ class Music(commands.Cog):
                 await ctx.send(embed=embed, delete_after=5)
 
         elif str(reaction.emoji) == '⏭️':
-            await player.skip()
-            embed = discord.Embed()
-            embed.description = f"{user.mention}: Skipped the song!"
-            embed.color = discord.Color.blurple()
-            await ctx.send(embed=embed, delete_after=5)
+            await self.do_skip(reaction.message.channel, user, player)
 
         elif str(reaction.emoji) == '⏹':
             player.queue.clear()
@@ -227,7 +257,7 @@ class Music(commands.Cog):
     @commands.command(aliases=['p'])
     async def play(self, ctx, *, query: str):
         """Plays song from YouTube link or search term.
-        
+
         Example usage
         -------------
         `!play xo tour llif3`
@@ -376,14 +406,7 @@ class Music(commands.Cog):
         """Skip the song."""
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
-        if not player.is_playing:
-            raise commands.BadArgument('I am not currently playing anything!')
-
-        await player.skip()
-        embed = discord.Embed()
-        embed.description = f"{ctx.author.mention}: Skipped the song!"
-        embed.color = discord.Color.blurple()
-        await ctx.send(embed=embed, delete_after=5)
+        await self.do_skip(ctx.channel, ctx.author, player)
 
 
     @commands.command(name="stop", aliases=['dc'])

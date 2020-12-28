@@ -126,3 +126,5 @@ dmypy.json
 .vscode/
 
 application.yml
+
+logs/
