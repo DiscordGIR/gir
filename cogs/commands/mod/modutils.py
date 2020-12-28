@@ -129,6 +129,35 @@ class ModUtils(commands.Cog):
         await ctx.message.reply(f"{user.mention} was put on clem.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
 
     @commands.guild_only()
+    @commands.command(name="musicban")
+    async def musicban(self, ctx: commands.Context, user: discord.Member) -> None:
+        """Ban a user from using music commands (mod only)
+
+        Example usage:
+        --------------
+        `!musicban <@user/ID>`
+
+        Parameters
+        ----------
+        user : discord.Member
+            User to ban from music
+        """
+
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+            raise commands.BadArgument(
+                "You need to be at least a Moderator to use that command.")
+
+        if user.id == self.bot.user.id:
+            await ctx.message.add_reaction("🤔")
+            raise commands.BadArgument("You can't call that on me :(")
+
+        results = await self.bot.settings.user(user.id)
+        results.is_music_banned = True
+        results.save()
+        
+        await ctx.send("Done", delete_after=5)
+
+    @commands.guild_only()
     @commands.command(name="birthdayexclude")
     async def birthdayexclude(self, ctx: commands.Context, user: discord.Member) -> None:
         """Remove a user's birthday (mod only)

@@ -5,6 +5,7 @@ class User(mongoengine.Document):
     is_clem             = mongoengine.BooleanField(default=False, required=True)
     is_xp_frozen        = mongoengine.BooleanField(default=False, required=True)
     is_muted            = mongoengine.BooleanField(default=False, required=True)
+    is_music_banned     = mongoengine.BooleanField(default=False, required=True)
     was_warn_kicked     = mongoengine.BooleanField(default=False, required=True)
     birthday_excluded   = mongoengine.BooleanField(default=False, required=True)
     

@@ -48,6 +48,10 @@ class Music(commands.Cog):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != self.channel.id:
             raise commands.BadArgument(
                 f"Command only allowed in <#{self.channel.id}>")
+
+        if (await self.bot.settings.user(ctx.author.id)).is_music_banned:
+            raise commands.BadArgument(f"{ctx.author.mention}, you are banned from using Music commands.")
+
         await self.ensure_voice(ctx)
         return guild_check
 
@@ -255,15 +259,17 @@ class Music(commands.Cog):
             return
         if reaction.message.channel.id != self.channel.id:
             return
+        if (await self.bot.settings.user(user.id)).is_music_banned:
+            await reaction.message.remove_reaction(reaction, user)
+            return
 
         player = self.bot.lavalink.player_manager.get(reaction.message.guild.id)
         ctx = self.channel
         if player.channel_id is None:
             return
         if str(reaction.emoji) not in self.reactions:
-            return
-        else:
             await reaction.message.remove_reaction(reaction, user)
+            return
 
         vc = self.bot.get_channel(int(player.channel_id))
         if user not in vc.members:
