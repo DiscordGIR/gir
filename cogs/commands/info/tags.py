@@ -91,10 +91,13 @@ class Tags(commands.Cog):
             raise commands.BadArgument(
                 f"Command only allowed in <#{bot_chan}>")
 
-        tags = self.bot.settings.guild().tags
+        tags = sorted(self.bot.settings.guild().tags, key=lambda tag: tag.name)
 
+        if len(tags) == 0:
+            raise commands.BadArgument("There are no tags defined.")
+        
         menus = MenuPages(source=TagsSource(
-            tags, key=lambda t: 1, per_page=10), clear_reactions_after=True)
+            tags, key=lambda t: 1, per_page=12), clear_reactions_after=True)
 
         await menus.start(ctx)
 
