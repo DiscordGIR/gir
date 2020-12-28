@@ -124,3 +124,7 @@ dmypy.json
 .pyre/
 
 .vscode/
+
+application.yml
+
+logs/

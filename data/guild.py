@@ -27,6 +27,7 @@ class Guild(mongoengine.Document):
     channel_reaction_roles    = mongoengine.IntField()
     channel_reports           = mongoengine.IntField()
     channel_subnews           = mongoengine.IntField()
+    channel_music             = mongoengine.IntField()
 
     emoji_logging_webhook     = mongoengine.IntField()
     filter_excluded_channels  = mongoengine.ListField(default=[])
