@@ -16,6 +16,9 @@ class Music(commands.Cog):
         self.bot = bot
         self.np = None
         self.reactions = ['⏯️', '⏭️', '⏹']
+        self.votes = set()
+        self.vote_message = None
+        self.cur_vc_mems = 0
 
         guild = self.bot.get_guild(self.bot.settings.guild_id)
         self.channel = guild.get_channel(self.bot.settings.guild().channel_botspam)
@@ -207,11 +210,40 @@ class Music(commands.Cog):
                 await ctx.send(embed=embed, delete_after=5)
 
         elif str(reaction.emoji) == '⏭️':
-            await player.skip()
-            embed = discord.Embed()
-            embed.description = f"{user.mention}: Skipped the song!"
-            embed.color = discord.Color.blurple()
-            await ctx.send(embed=embed, delete_after=5)
+            if self.vote_message is not None and reaction.message.id == self.vote_message.id:
+                if self.bot.settings.permissions.hasAtLeast(ctx.guild, user, 5):
+                    embed = discord.Embed()
+                    embed.description = f"{user.mention} skipped the song!"
+                    embed.color = discord.Color.blurple()
+                    await ctx.send(embed=embed)
+                    await player.skip()
+                    return
+                self.votes.add(user.id)
+                voice_mem_list = vc.members
+                for i, o in enumerate(voice_mem_list):
+                    if o.bot: # get list of users in voice, not including bots
+                        del voice_mem_list[i]
+                self.cur_vc_mems = len(voice_mem_list)
+                if len(self.votes) > (self.cur_vc_mems / 2):
+                    embed = discord.Embed()
+                    embed.description = "Skipped the song!"
+                    embed.color = discord.Color.blurple()
+                    self.votes.clear()
+                    await self.vote_message.delete()
+                    self.vote_message = None
+                    await ctx.send(embed=embed)
+                    await player.skip()
+                else:
+                    embed = discord.Embed()
+                    embed.description = f"({len(self.votes)}/{self.cur_vc_mems}) Skip the song?"
+                    embed.color = discord.Color.blurple()
+                    await self.vote_message.edit(embed=embed)
+            else:
+                await player.skip()
+                embed = discord.Embed()
+                embed.description = f"{user.mention}: Skipped the song!"
+                embed.color = discord.Color.blurple()
+                await ctx.send(embed=embed, delete_after=5)
 
         elif str(reaction.emoji) == '⏹':
             player.queue.clear()
@@ -378,13 +410,53 @@ class Music(commands.Cog):
 
         if not player.is_playing:
             raise commands.BadArgument('I am not currently playing anything!')
-
-        await player.skip()
-        embed = discord.Embed()
-        embed.description = f"{ctx.author.mention}: Skipped the song!"
-        embed.color = discord.Color.blurple()
-        await ctx.send(embed=embed, delete_after=5)
-
+        
+        def is_bot(user):
+            return user.bot
+        
+        def react_check(reaction, user):
+            return reaction.message.id == self.vote_message.id and str(reaction.emoji) == "⏭️" and not user.bot and ctx.me.voice.channel.members.count(user) > 0
+        
+        voice_mem_list = ctx.me.voice.channel.members
+        for i, o in enumerate(voice_mem_list):
+            if o.bot: # get list of users in voice, not including bots
+                del voice_mem_list[i]
+        channel_mem_count = len(voice_mem_list)
+        self.cur_vc_mems = len(voice_mem_list)
+        print(f"mem ct: {channel_mem_count}")
+        
+        if self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) or channel_mem_count <= 1:
+            print("bruh?")
+            embed = discord.Embed()
+            embed.description = f"{ctx.author.mention} skipped the song!"
+            embed.color = discord.Color.blurple()
+            await ctx.send(embed=embed)
+            await player.skip()
+        else:
+            self.votes.add(ctx.author.id)
+            print(f"votes: {self.votes}")
+            vote_count = len(self.votes)
+            print(f"vote count: {vote_count}")
+            if vote_count == 1:
+                embed = discord.Embed()
+                embed.description = f"(1/{channel_mem_count}) Skip the current song?"
+                embed.color = discord.Color.blurple()
+                self.vote_message = await ctx.send(embed=embed)
+                await self.vote_message.add_reaction("⏭️")
+            if vote_count > (channel_mem_count / 2):
+                embed = self.vote_message.embeds[0]
+                embed.description = f"({vote_count}/{channel_mem_count}) Skipping the song!"
+                embed.color = discord.Color.blurple()
+                await self.vote_message.delete()
+                self.vote_message = None
+                await ctx.send(embed=embed)
+                await player.skip()
+                self.votes.clear()
+            else:
+                embed = discord.Embed()
+                embed.description = f"({vote_count}/{channel_mem_count}) Skip the current song?"
+                embed.color = discord.Color.blurple()
+                await self.vote_message.edit(embed=embed) 
 
     @commands.command(name="stop", aliases=['dc'])
     async def disconnect(self, ctx):
