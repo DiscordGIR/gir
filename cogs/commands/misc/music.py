@@ -7,8 +7,12 @@ import humanize
 import datetime
 import traceback
 from discord.ext import commands
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
 
 url_rx = re.compile(r'https?://(?:www\.)?.+')
+spotify_track = re.compile(r"[\bhttps://open.\b]*spotify[\b.com\b]*[/:]*track[/:]*[A-Za-z0-9?=]+")
+spotify_playlist = re.compile(r"[\bhttps://open.\b]*spotify[\b.com\b]*[/:]*playlist[/:]*[A-Za-z0-9?=]+")
 
 
 class Music(commands.Cog):
@@ -21,6 +25,9 @@ class Music(commands.Cog):
         self.clear_votes = set()
         self.clear_vote_msg = None
         self.vote_ratio = 0.5
+
+        self.sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id=os.environ.get("SPOTIFY_CLIENT_ID"),
+                                                           client_secret=os.environ.get("SPOTIFY_CLIENT_SECRET")))
 
         guild = self.bot.get_guild(self.bot.settings.guild_id)
         self.channel = guild.get_channel(self.bot.settings.guild().channel_botspam)
@@ -298,6 +305,7 @@ class Music(commands.Cog):
             await self.do_clear(reaction.message.channel, user, player)
 
     @commands.command(aliases=['p'])
+    @commands.cooldown(2, 10, commands.BucketType.member)
     async def play(self, ctx, *, query: str):
         """Plays song from YouTube link or search term.
 
@@ -314,12 +322,27 @@ class Music(commands.Cog):
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         # Remove leading and trailing <>. <> may be used to suppress embedding links in Discord.
         query = query.strip('<>')
-
-        if not url_rx.match(query):
-            query = f'ytsearch:{query}'
-
-        # Get the results for the query from Lavalink.
-        results = await player.node.get_tracks(query)
+        if spotify_track.match(query):
+            track = self.sp.track(query)
+            query = f"ytsearch:{track['name']} - {track['artists'][0]['name']}"
+            # Get the results for the query from Lavalink.
+            results = await player.node.get_tracks(query)
+        elif spotify_playlist.match(query):
+            playlist = self.sp.playlist(query, fields='name,tracks.items.track.name,tracks.items.track.artists')
+            results = {'loadType': "PLAYLIST_LOADED", 'tracks': [], 'playlistInfo':  {'name': playlist['name']}}
+            
+            async with ctx.channel.typing():
+                for track in playlist['tracks']['items']:
+                    track = track['track']
+                    query = f"ytsearch:{track['name']} - {track['artists'][0]['name']}"
+                    result = await player.node.get_tracks(query)
+                    results['tracks'].append(result['tracks'][0])
+                    results['playlistInfo']
+        else:
+            if not url_rx.match(query):
+                query = f'ytsearch:{query}'
+            # Get the results for the query from Lavalink.
+            results = await player.node.get_tracks(query)
 
         # Results could be None if Lavalink returns an invalid response (non-JSON/non-200 (OK)).
         # ALternatively, resullts['tracks'] could be an empty array if the query yielded no tracks.
@@ -485,6 +508,7 @@ class Music(commands.Cog):
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
             or isinstance(error, commands.CommandInvokeError)
+            or isinstance(error, commands.CommandOnCooldown)
             or isinstance(error, commands.BotMissingPermissions)
             or isinstance(error, commands.MaxConcurrencyReached)
                 or isinstance(error, commands.NoPrivateMessage)):
