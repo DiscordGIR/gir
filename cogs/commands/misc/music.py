@@ -307,7 +307,7 @@ class Music(commands.Cog):
     @commands.command(aliases=['p'])
     @commands.cooldown(2, 10, commands.BucketType.member)
     async def play(self, ctx, *, query: str):
-        """Plays song from YouTube link or search term.
+        """Plays song/playlist from YouTube/Spotify URL, URI or search term.
 
         Example usage
         -------------
