@@ -112,6 +112,7 @@ class Filters(commands.Cog):
                 "You need to be an administator or higher to use that command.")
 
         filters = self.bot.settings.guild().filter_words
+        filters = sorted(filters, key=lambda word: word.word)
 
         menus = MenuPages(source=FilterSource(
             enumerate(filters), key=lambda t: 1, per_page=12), clear_reactions_after=True)
