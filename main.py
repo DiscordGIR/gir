@@ -23,6 +23,7 @@ initial_extensions = [
                     'cogs.commands.mod.modactions',
                     'cogs.commands.mod.modutils',
                     'cogs.commands.misc.genius',
+                    'cogs.commands.misc.misc',
                     'cogs.commands.misc.subnews',
                     'cogs.commands.info.devices',
                     'cogs.commands.info.help',
