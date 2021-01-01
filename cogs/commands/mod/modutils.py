@@ -1,4 +1,5 @@
 import datetime
+import pytz
 import traceback
 import typing
 import humanize
@@ -279,20 +280,22 @@ class ModUtils(commands.Cog):
         if results.birthday_excluded:
             return
 
-        today = datetime.datetime.today()
+        eastern = pytz.timezone('US/Eastern')
+        today = datetime.datetime.today().astimezone(eastern)
         if today.month == month and today.day == date:
             birthday_role = ctx.guild.get_role(self.bot.settings.guild().role_birthday)
             if birthday_role is None:
                 return
-
+            print("here")
             if birthday_role in user.roles:
                 return
-
-            h = datetime.datetime.now().hour / 24
-            m = datetime.datetime.now().minute / 60 / 24
+            print("here2")
+            now = datetime.datetime.now(eastern)
+            h = now.hour / 24
+            m = now.minute / 60 / 24
 
             try:
-                time = datetime.datetime.now() + datetime.timedelta(days=1.5-h-m)
+                time = now + datetime.timedelta(days=1-h-m)
                 self.bot.settings.tasks.schedule_remove_bday(user.id, time)
             except Exception as e:
                 print(e)
