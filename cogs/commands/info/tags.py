@@ -11,7 +11,7 @@ class TagsSource(menus.GroupByPageSource):
         embed = discord.Embed(
             title=f'All tags', color=discord.Color.blurple())
         for tag in entry.items:
-            embed.add_field(name=tag.name, value=f"Added by: {tag.added_by_tag}")
+            embed.add_field(name=tag.name, value=f"Added by: {tag.added_by_tag}\nUsed {tag.use_count} times")
         embed.set_footer(
             text=f"Page {menu.current_page +1} of {self.get_max_pages()}")
         return embed
@@ -77,7 +77,7 @@ class Tags(commands.Cog):
         embed.description = tag.content
         embed.timestamp = tag.added_date
         embed.color = discord.Color.blue()
-        embed.set_footer(text=f"Added by {tag.added_by_tag}")
+        embed.set_footer(text=f"Added by {tag.added_by_tag} | Used {tag.use_count} times")
         return embed
 
     @commands.guild_only()
