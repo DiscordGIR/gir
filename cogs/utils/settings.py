@@ -395,7 +395,7 @@ class Settings(commands.Cog):
         giveaway = Giveaway.objects(_id=id).first()
         return giveaway
     
-    async def add_giveaway(self, id: int, name: str, entries: list) -> None:
+    async def add_giveaway(self, id: int, channel: int, name: str, entries: list, winners: int) -> None:
         """
         Add a giveaway to the database.
 
@@ -403,15 +403,21 @@ class Settings(commands.Cog):
         ----------
         id : int
             The message ID of the giveaway
+        channel : int
+            The channel ID that the giveaway is in
         name : str
             The name of the giveaway.
         entries : list
             A list of user IDs who have entered (reacted to) the giveaway.
+        winners : int
+            The amount of winners that will be selected at the end of the giveaway.
         """
         giveaway = Giveaway()
         giveaway._id = id
+        giveaway.channel = channel
         giveaway.name = name
         giveaway.entries = entries
+        giveaway.winners = winners
         giveaway.save()
 
 

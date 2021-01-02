@@ -86,7 +86,7 @@ class Tasks():
 
         self.tasks.remove_job(str(id), 'default')
 
-    def schedule_end_giveaway(self, channel_id: int, message_id: int, date: datetime) -> None:
+    def schedule_end_giveaway(self, channel_id: int, message_id: int, date: datetime, winners: int) -> None:
         """
         Create a task to end a giveaway with message ID `id`, at date `date`
 
@@ -100,7 +100,7 @@ class Tasks():
             When to end the giveaway
         """
 
-        self.tasks.add_job(end_giveaway_callback, 'date', id=str(channel_id+1), next_run_time=date, args=[channel_id, message_id], misfire_grace_time=3600)
+        self.tasks.add_job(end_giveaway_callback, 'date', id=str(message_id+1), next_run_time=date, args=[channel_id, message_id, winners], misfire_grace_time=3600)
 
 
 def unmute_callback(id: int) -> None:
@@ -209,7 +209,7 @@ async def remove_bday(id: int) -> None:
     user = guild.get_member(id)
     await user.remove_roles(bday_role)
 
-def end_giveaway_callback(channel_id: int, message_id: int) -> None:
+def end_giveaway_callback(channel_id: int, message_id: int, winners: int) -> None:
     """
     Callback function for ending a giveaway
 
@@ -221,9 +221,9 @@ def end_giveaway_callback(channel_id: int, message_id: int) -> None:
         Message ID of the giveaway
     """
 
-    bot_global.loop.create_task(end_giveaway(channel_id, message_id))
+    bot_global.loop.create_task(end_giveaway(channel_id, message_id, winners))
 
-async def end_giveaway(channel_id: int, message_id: int) -> None:
+async def end_giveaway(channel_id: int, message_id: int, winners: int) -> None:
     """
     End a giveaway.
 
@@ -248,10 +248,26 @@ async def end_giveaway(channel_id: int, message_id: int) -> None:
     reacted_ids = [user.id for user in reacted_users]
     reacted_ids.remove(bot_global.user.id)
 
-    await bot_global.settings.add_giveaway(id=message.id, name=embed.title, entries=reacted_ids)
-
-    rand_id = random.choice(reacted_ids)
+    if len(reacted_ids) < winners:
+        winners = len(reacted_ids)
+    await bot_global.settings.add_giveaway(id=message.id, channel=channel_id, name=embed.title, entries=reacted_ids, winners=winners)
+    
+    rand_ids = random.sample(reacted_ids, winners)
+    mentions = []
+    for user_id in rand_ids:
+        member = guild.get_member(user_id)
+        while member is None or member.mention in mentions: # ensure that member hasn't left the server while simultaneously ensuring that we don't add duplicate members if we select a new random one
+            member = guild.get_member(random.choice(g.entries))
+        mentions.append(member.mention)
 
     await message.edit(embed=embed)
     await message.clear_reactions()
-    await channel.send(f"Congratulations <@{rand_id}>! You won the giveaway of **{embed.title}**!")
+
+    if not mentions:
+        await channel.send(f"No winner was selected for the giveaway of **{embed.title}** because nobody entered.")
+        return
+
+    if winners == 1:
+        await channel.send(f"Congratulations {mentions[0]}! You won the giveaway of **{embed.title}**!")
+    else:
+        await channel.send(f"Congratulations {', '.join(mentions)}! You won the giveaway of **{embed.title}**!")
