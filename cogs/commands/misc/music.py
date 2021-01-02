@@ -172,8 +172,9 @@ class Music(commands.Cog):
     async def do_skip(self, channel, skipper, player):
         if not player.is_playing:
             raise commands.BadArgument('I am not currently playing anything!')
-
-        if not self.bot.settings.permissions.hasAtLeast(channel.guild, skipper, 5):
+        
+        # bypass vote if skipper is a mod or original requester of the song.
+        if int(player.current.requester) != skipper.id and not self.bot.settings.permissions.hasAtLeast(channel.guild, skipper, 5):
             vc = channel.guild.get_channel(int(player.channel_id))
             num_in_vc = len(list(filter(lambda m: not m.bot, vc.members)))
             self.skip_votes.add(skipper)
@@ -229,8 +230,6 @@ class Music(commands.Cog):
         embed.description = f"Cleared queue."
         embed.color = discord.Color.blurple()
         await channel.send(embed=embed, delete_after=5)
-
-
     
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):

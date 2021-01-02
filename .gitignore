@@ -128,3 +128,5 @@ dmypy.json
 application.yml
 
 logs/
+
+.pylintrc
