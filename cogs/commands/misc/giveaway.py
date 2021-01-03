@@ -125,7 +125,7 @@ class Giveaway(commands.Cog):
         embed.set_footer(text="Ends")
 
         message = await channel.send(embed=embed)
-        await message.add_reaction("✅")
+        await message.add_reaction("🎉")
 
         await ctx.message.delete()
 
