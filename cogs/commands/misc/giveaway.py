@@ -84,15 +84,15 @@ class Giveaway(commands.Cog):
                 },
             'sponsor': {
                 'convertor': commands.MemberConverter().convert,
-                'prompt': "Enter the sponsor's user ID (or type cancel to cancel)"
+                'prompt': "Tag or give the ID of the sponsor of this giveaway (or type cancel to cancel)"
                 },
             'time': {
                 'convertor': pytimeparse.parse,
-                'prompt': "Enter the time until the giveaway ends (or type cancel to cancel)"
+                'prompt': "How long should this giveaway last? (e.g 10m) (or type cancel to cancel)"
                 },
             'winners': {
                 'convertor': int,
-                'prompt': "Enter the amount of winners for the giveaway (or type cancel to cancel)"
+                'prompt': "How many winners should this giveaway have? (or type cancel to cancel)"
                 },
             'channel': {
                 'convertor': commands.TextChannelConverter().convert,
@@ -124,7 +124,7 @@ class Giveaway(commands.Cog):
         embed.timestamp = end_time
         embed.set_footer(text="Ends")
 
-        message = await channel.send(embed=embed)
+        message = await responses['channel'].send(embed=embed)
         await message.add_reaction("🎉")
 
         await ctx.message.delete()
@@ -218,7 +218,6 @@ class Giveaway(commands.Cog):
             or isinstance(error, commands.MaxConcurrencyReached)
                 or isinstance(error, commands.NoPrivateMessage)):
             await self.bot.send_error(ctx, error)
-            traceback.print_exc()
         else:
             await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
