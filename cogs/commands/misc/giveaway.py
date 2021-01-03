@@ -20,7 +20,7 @@ class Giveaway(commands.Cog):
         def wait_check(m):
             return m.author == ctx.author and m.channel == ctx.channel
         ret = None
-        prompt = await ctx.send(question)
+        prompt = await ctx.send(embed=discord.Embed(description=question, color=discord.Color.blurple()))
         try:
             response = await self.bot.wait_for('message', check=wait_check, timeout=120)
         except asyncio.TimeoutError:
@@ -122,6 +122,7 @@ class Giveaway(commands.Cog):
         embed = discord.Embed(title=responses['name'])
         embed.description = f"Hosted by {responses['sponsor'].mention}\n{responses['winners']} {'winner' if responses['winners'] == 1 else 'winners'}"
         embed.timestamp = end_time
+        embed.color = discord.Color.random()
         embed.set_footer(text="Ends")
 
         message = await responses['channel'].send(embed=embed)
