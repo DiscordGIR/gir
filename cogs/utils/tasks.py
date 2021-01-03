@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 
 import discord
+import random
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.jobstores.mongodb import MongoDBJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -87,15 +88,28 @@ class Tasks():
 
     def cancel_unbirthday(self, id: int) -> None:
         """When we manually unset the birthday of a user given by ID `id`, stop the task to remove the role.
-
-        Parameters
+         Parameters
         ----------
         id : int
             User whose task we want to cancel
         """
-
         self.tasks.remove_job(str(id+1), 'default')
+        
+    def schedule_end_giveaway(self, channel_id: int, message_id: int, date: datetime, winners: int) -> None:
+        """
+        Create a task to end a giveaway with message ID `id`, at date `date`
 
+        Parameters
+        ----------
+        channel_id : int
+            ID of the channel that the giveaway is in
+        message_id : int
+            Giveaway message ID
+        date : datetime.datetime
+            When to end the giveaway
+        """
+
+        self.tasks.add_job(end_giveaway_callback, 'date', id=str(message_id+2), next_run_time=date, args=[channel_id, message_id, winners], misfire_grace_time=3600)
 
 def unmute_callback(id: int) -> None:
     """Callback function for actually unmuting. Creates asyncio task
@@ -202,3 +216,69 @@ async def remove_bday(id: int) -> None:
 
     user = guild.get_member(id)
     await user.remove_roles(bday_role)
+
+def end_giveaway_callback(channel_id: int, message_id: int, winners: int) -> None:
+    """
+    Callback function for ending a giveaway
+
+    Parameters
+    ----------
+    channel_id : int
+        ID of the channel that the giveaway is in
+    message_id : int
+        Message ID of the giveaway
+    """
+
+    bot_global.loop.create_task(end_giveaway(channel_id, message_id, winners))
+
+async def end_giveaway(channel_id: int, message_id: int, winners: int) -> None:
+    """
+    End a giveaway.
+
+    Parameters
+    ----------
+    channel_id : int
+        ID of the channel that the giveaway is in
+    message_id : int
+        Message ID of the giveaway
+    """
+
+    guild = bot_global.get_guild(bot_global.settings.guild_id)
+    channel = guild.get_channel(channel_id)
+    message = await channel.fetch_message(message_id)
+
+    embed = message.embeds[0]
+    embed.set_footer(text="Ended")
+    embed.timestamp = datetime.now()
+
+    reaction = message.reactions[0]
+    reacted_users = await reaction.users().flatten()
+    reacted_ids = [user.id for user in reacted_users]
+    reacted_ids.remove(bot_global.user.id)
+
+    if len(reacted_ids) < winners:
+        winners = len(reacted_ids)
+
+    rand_ids = random.sample(reacted_ids, winners)
+    winner_ids = []
+    mentions = []
+    for user_id in rand_ids:
+        member = guild.get_member(user_id)
+        while member is None or member.mention in mentions: # ensure that member hasn't left the server while simultaneously ensuring that we don't add duplicate members if we select a new random one
+            member = guild.get_member(random.choice(g.entries))
+        mentions.append(member.mention)
+        winner_ids.append(member.id)
+
+    await bot_global.settings.add_giveaway(id=message.id, channel=channel_id, name=embed.title, entries=reacted_ids, winners=winners, ended=True, prev_winners=winner_ids)
+    
+    await message.edit(embed=embed)
+    await message.clear_reactions()
+
+    if not mentions:
+        await channel.send(f"No winner was selected for the giveaway of **{embed.title}** because nobody entered.")
+        return
+
+    if winners == 1:
+        await channel.send(f"Congratulations {mentions[0]}! You won the giveaway of **{embed.title}**!")
+    else:
+        await channel.send(f"Congratulations {', '.join(mentions)}! You won the giveaway of **{embed.title}**!")
