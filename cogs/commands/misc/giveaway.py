@@ -3,14 +3,19 @@ import asyncio
 import datetime
 import pytimeparse
 import random
+import traceback
 from cogs.utils.tasks import end_giveaway
 from discord.ext import commands
+
 
 class Giveaway(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def prompt(self, ctx, question: str):
+    async def prompt(self, ctx, data, _type):
+        question = data['prompt']
+        convertor = data['convertor']
+        
         def wait_check(m):
             return m.author == ctx.author and m.channel == ctx.channel
         ret = None
@@ -25,9 +30,12 @@ class Giveaway(commands.Cog):
             if response.content.lower() == "cancel":
                 return
             elif response.content is not None and response.content != "":
-                ret = response
+                if _type in ['name', 'winners', 'time']:
+                    ret = convertor(response.content)
+                else:
+                    ret = await convertor(ctx, response.content)
         return ret
-    
+
     #@commands.command(name="giveaway")
     @commands.guild_only()
     @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
@@ -47,179 +55,219 @@ class Giveaway(commands.Cog):
         """
 
         if ctx.invoked_subcommand is None:
-            await ctx.send("Invalid giveaway subcommand passed. Options: `start`, `reroll`, `end`")
-    
+            raise commands.BadArgument("Invalid giveaway subcommand passed. Options: `start`, `reroll`, `end`")
+
     @giveaway.command()
-    async def start(self, ctx, *args):
-        name = None
-        sponsor = None
-        time = None
-        winners = None
-        channel = None
-        if len(args) <= 0: # we have to prompt for everything
+    # async def start(self, ctx, *args):
+    async def start(self, ctx, sponsor: discord.Member = None, time: str = None, winners: int = -1, channel: discord.TextChannel = None):
+        prompts = {
+            'name': {
+                'convertor': str,
+                'prompt': "Enter a name for the giveaway (or type cancel to cancel)"
+                },
+            'sponsor': {
+                'convertor': commands.MemberConverter().convert,
+                'prompt': "Enter the sponsor's user ID (or type cancel to cancel)"
+                },
+            'time': {
+                'convertor': pytimeparse.parse,
+                'prompt': "Enter the time until the giveaway ends (or type cancel to cancel)"
+                },
+            'winners': {
+                'convertor': int,
+                'prompt': "Enter the amount of winners for the giveaway (or type cancel to cancel)"
+                },
+            'channel': {
+                'convertor': commands.TextChannelConverter().convert,
+                'prompt': "Mention the channel to post the giveaway in (or type cancel to cancel)"
+                }
+        }
 
-            name = await self.prompt(ctx=ctx, question="Enter a name for the giveaway (or type cancel to cancel)")
-            if name is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.", delete_after=5)
-                return
-            name = name.content
+        responses = {
+            'name': None,
+            'sponsor': sponsor,
+            'time': pytimeparse.parse(time) if time is not None else None,
+            'winners': winners,
+            'channel': channel
+        }
 
-            sponsor = await self.prompt(ctx, "Enter the sponsor's user ID (or type cancel to cancel)")
-            if sponsor is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.", delete_after=5)
-                return
-            sponsor = int(sponsor.content)
+        for response in responses:
+            if responses[response] is None:
+                res = await self.prompt(ctx=ctx, data=prompts[response], _type=response)
+                if res is None:
+                    await ctx.message.delete()
+                    raise commands.BadArgument("Command cancelled.")
+                responses[response] = res
+        # name = None
+        # sponsor = None
+        # time = None
+        # winners = None
+        # channel = None
+        # if len(args) <= 0: # we have to prompt for everything
 
-            time = await self.prompt(ctx, "Enter the time until the giveaway ends (or type cancel to cancel)")
-            if time is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.", delete_after=5)
-                return
-            time = time.content
+        #     name = await self.prompt(ctx=ctx, question="Enter a name for the giveaway (or type cancel to cancel)")
+        #     if name is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Command cancelled.", delete_after=5)
+        #         return
+        #     name = name.content
 
-            winners = await self.prompt(ctx, "Enter the amount of winners for the giveaway (or type cancel to cancel)")
-            if winners is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.", delete_after=5)
-                return
-            winners = int(winners.content)
+        #     sponsor = await self.prompt(ctx, "Enter the sponsor's user ID (or type cancel to cancel)")
+        #     if sponsor is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Command cancelled.", delete_after=5)
+        #         return
+        #     sponsor = int(sponsor.content)
 
-            channel = await self.prompt(ctx, "Mention the channel to post the giveaway in (or type cancel to cancel)")
-            if channel is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.", delete_after=5)
-                return
-            channel = channel.channel_mentions[0]
-            if channel is None:
-                await ctx.message.delete()
-                await ctx.send("Could not find a channel with the mention you provided.")
-                return
+        #     time = await self.prompt(ctx, "Enter the time until the giveaway ends (or type cancel to cancel)")
+        #     if time is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Command cancelled.", delete_after=5)
+        #         return
+        #     time = time.content
 
-        elif len(args) == 1:
+        #     winners = await self.prompt(ctx, "Enter the amount of winners for the giveaway (or type cancel to cancel)")
+        #     if winners is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Command cancelled.", delete_after=5)
+        #         return
+        #     winners = int(winners.content)
 
-            name = args[0]
+        #     channel = await self.prompt(ctx, "Mention the channel to post the giveaway in (or type cancel to cancel)")
+        #     if channel is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Command cancelled.", delete_after=5)
+        #         return
+        #     channel = channel.channel_mentions[0]
+        #     if channel is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Could not find a channel with the mention you provided.")
+        #         return
 
-            sponsor = await self.prompt(ctx, "Enter the sponsor's user ID (or type cancel to cancel)")
-            if sponsor is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.", delete_after=5)
-                return
-            sponsor = int(sponsor.content)
+        # elif len(args) == 1:
 
-            time = await self.prompt(ctx, "Enter the time until the giveaway ends (or type cancel to cancel)")
-            if time is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.", delete_after=5)
-                return
-            time = time.content
+        #     name = args[0]
 
-            winners = await self.prompt(ctx, "Enter the amount of winners for the giveaway (or type cancel to cancel)")
-            if winners is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.", delete_after=5)
-                return
-            winners = int(winners.content)
+        #     sponsor = await self.prompt(ctx, "Enter the sponsor's user ID (or type cancel to cancel)")
+        #     if sponsor is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Command cancelled.", delete_after=5)
+        #         return
+        #     sponsor = int(sponsor.content)
 
-            channel = await self.prompt(ctx, "Mention the channel to post the giveaway in (or type cancel to cancel)")
-            if channel is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.", delete_after=5)
-                return
-            channel = channel.channel_mentions[0]
-            if channel is None:
-                await ctx.message.delete()
-                await ctx.send("Could not find a channel with the mention you provided.")
-                return
-                
-        elif len(args) == 2:
-            name = args[0]
-            sponsor = args[1]
+        #     time = await self.prompt(ctx, "Enter the time until the giveaway ends (or type cancel to cancel)")
+        #     if time is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Command cancelled.", delete_after=5)
+        #         return
+        #     time = time.content
 
-            time = await self.prompt(ctx, "Enter the time until the giveaway ends (or type cancel to cancel)")
-            if time is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.", delete_after=5)
-                return
-            time = time.content
+        #     winners = await self.prompt(ctx, "Enter the amount of winners for the giveaway (or type cancel to cancel)")
+        #     if winners is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Command cancelled.", delete_after=5)
+        #         return
+        #     winners = int(winners.content)
 
-            winners = await self.prompt(ctx, "Enter the amount of winners for the giveaway (or type cancel to cancel)")
-            if winners is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.", delete_after=5)
-                return
-            winners = int(winners.content)
+        #     channel = await self.prompt(ctx, "Mention the channel to post the giveaway in (or type cancel to cancel)")
+        #     if channel is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Command cancelled.", delete_after=5)
+        #         return
+        #     channel = channel.channel_mentions[0]
+        #     if channel is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Could not find a channel with the mention you provided.")
+        #         return
 
-            channel = await self.prompt(ctx, "Mention the channel to post the giveaway in (or type cancel to cancel)")
-            if channel is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.", delete_after=5)
-                return
-            channel = channel.channel_mentions[0]
-            if channel is None:
-                await ctx.message.delete()
-                await ctx.send("Could not find a channel with the mention you provided.")
-                return
+        # elif len(args) == 2:
+        #     name = args[0]
+        #     sponsor = args[1]
 
-        elif len(args) == 3:
-            name = args[0]
-            sponsor = args[1]
-            time = args[2]
+        #     time = await self.prompt(ctx, "Enter the time until the giveaway ends (or type cancel to cancel)")
+        #     if time is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Command cancelled.", delete_after=5)
+        #         return
+        #     time = time.content
 
-            winners = await self.prompt(ctx, "Enter the amount of winners for the giveaway (or type cancel to cancel)")
-            if winners is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.", delete_after=5)
-                return
-            winners = int(winners.content)
+        #     winners = await self.prompt(ctx, "Enter the amount of winners for the giveaway (or type cancel to cancel)")
+        #     if winners is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Command cancelled.", delete_after=5)
+        #         return
+        #     winners = int(winners.content)
 
-            channel = await self.prompt(ctx, "Mention the channel to post the giveaway in (or type cancel to cancel)")
-            if channel is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.", delete_after=5)
-                return
-            channel = channel.channel_mentions[0]
-            if channel is None:
-                await ctx.message.delete()
-                await ctx.send("Could not find a channel with the mention you provided.")
-                return
-        
-        elif len(args) == 4:
-            name = args[0]
-            sponsor = args[1]
-            time = args[2]
-            winners = int(args[3])
+        #     channel = await self.prompt(ctx, "Mention the channel to post the giveaway in (or type cancel to cancel)")
+        #     if channel is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Command cancelled.", delete_after=5)
+        #         return
+        #     channel = channel.channel_mentions[0]
+        #     if channel is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Could not find a channel with the mention you provided.")
+        #         return
 
-            channel = await self.prompt(ctx, "Mention the channel to post the giveaway in (or type cancel to cancel)")
-            if channel is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.", delete_after=5)
-                return
-            channel = channel.channel_mentions[0]
-            if channel is None:
-                await ctx.message.delete()
-                await ctx.send("Could not find a channel with the mention you provided.")
-                return
-        
-        elif len(args) >= 5:
-            name = args[0]
-            sponsor = args[1]
-            time = args[2]
-            winners = int(args[3])
-            channel = ctx.message.channel_mentions[0]
-            if channel is None:
-                await ctx.message.delete()
-                await ctx.send("Could not find a channel with the mention you provided.")
-                return
-        
-        if name is not None and sponsor is not None and time is not None and winners is not None and channel is not None:
+        # elif len(args) == 3:
+        #     name = args[0]
+        #     sponsor = args[1]
+        #     time = args[2]
+
+        #     winners = await self.prompt(ctx, "Enter the amount of winners for the giveaway (or type cancel to cancel)")
+        #     if winners is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Command cancelled.", delete_after=5)
+        #         return
+        #     winners = int(winners.content)
+
+        #     channel = await self.prompt(ctx, "Mention the channel to post the giveaway in (or type cancel to cancel)")
+        #     if channel is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Command cancelled.", delete_after=5)
+        #         return
+        #     channel = channel.channel_mentions[0]
+        #     if channel is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Could not find a channel with the mention you provided.")
+        #         return
+
+        # elif len(args) == 4:
+        #     name = args[0]
+        #     sponsor = args[1]
+        #     time = args[2]
+        #     winners = int(args[3])
+
+        #     channel = await self.prompt(ctx, "Mention the channel to post the giveaway in (or type cancel to cancel)")
+        #     if channel is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Command cancelled.", delete_after=5)
+        #         return
+        #     channel = channel.channel_mentions[0]
+        #     if channel is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Could not find a channel with the mention you provided.")
+        #         return
+
+        # elif len(args) >= 5:
+        #     name = args[0]
+        #     sponsor = args[1]
+        #     time = args[2]
+        #     winners = int(args[3])
+        #     channel = ctx.message.channel_mentions[0]
+        #     if channel is None:
+        #         await ctx.message.delete()
+        #         await ctx.send("Could not find a channel with the mention you provided.")
+        #         return
+
+        # if name is not None and sponsor is not None and time is not None and winners is not None and channel is not None:
+        if None not in responses.values():
             now = datetime.datetime.now()
-            delta = pytimeparse.parse(time)
+            delta = responses['time']
             end_time = now + datetime.timedelta(seconds=delta)
 
-            embed = discord.Embed(title=name)
-            embed.description = f"Hosted by <@{sponsor}>\n{winners} {'winner' if winners == 1 else 'winners'}"
+            embed = discord.Embed(title=responses['name'])
+            embed.description = f"Hosted by {responses['sponsor'].mention}>\n{responses['winners']} {'winner' if responses['winners'] == 1 else 'winners'}"
             embed.timestamp = end_time
             embed.set_footer(text="Ends")
 
@@ -228,11 +276,11 @@ class Giveaway(commands.Cog):
 
             await ctx.message.delete()
 
-            self.bot.settings.tasks.schedule_end_giveaway(channel_id=channel.id, message_id=message.id, date=end_time, winners=winners)
+            self.bot.settings.tasks.schedule_end_giveaway(channel_id=channel.id, message_id=message.id, date=end_time, winners=responses['winners'])
         else:
             await ctx.message.delete()
             await ctx.send("Command cancelled.")
-    
+
     @giveaway.command()
     async def reroll(self, ctx, *args):
         message_id = None
@@ -245,7 +293,7 @@ class Giveaway(commands.Cog):
             message_id = int(message_id.content)
         else:
             message_id = int(args[0])
-        
+
         g = await self.bot.settings.get_giveaway(id=message_id)
 
         if g is None:
@@ -266,14 +314,14 @@ class Giveaway(commands.Cog):
         if not mentions:
             await ctx.send(f"There are no entries for the giveaway of **{embed.title}**.")
             return
-        
+
         channel = ctx.guild.get_channel(g.channel)
 
         if g.winners == 1:
             await channel.send(f"**Reroll**\nThe new winner of the giveaway of **{g.name}** is {mentions[0]}! Congratulations!")
         else:
             await channel.send(f"**Reroll**\nThe new winners of the giveaway of **{g.name}** are {', '.join(mentions)}! Congratulations!")
-    
+
     @giveaway.command()
     async def end(self, ctx, *args):
         channel = None
@@ -355,10 +403,30 @@ class Giveaway(commands.Cog):
             message_id = int(args[0])
 
             winners = int(args[0])
-        
+
         await ctx.message.delete()
         self.bot.settings.tasks.tasks.remove_job(str(message_id + 1), 'default')
         await end_giveaway(channel.id, message_id, winners)
-            
+
+    @giveaway.error
+    @start.error   
+    async def info_error(self, ctx, error):
+        await ctx.message.delete(delay=5)
+        if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, commands.BadArgument)
+            or isinstance(error, commands.BadUnionArgument)
+            or isinstance(error, commands.MissingPermissions)
+            or isinstance(error, commands.CommandInvokeError)
+            or isinstance(error, commands.CommandOnCooldown)
+            or isinstance(error, commands.BotMissingPermissions)
+            or isinstance(error, commands.MaxConcurrencyReached)
+                or isinstance(error, commands.NoPrivateMessage)):
+            await self.bot.send_error(ctx, error)
+            traceback.print_exc()
+        else:
+            await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
+            traceback.print_exc()
+
+
 def setup(bot):
     bot.add_cog(Giveaway(bot))
