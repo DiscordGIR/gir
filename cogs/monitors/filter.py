@@ -21,7 +21,14 @@ class FilterMonitor(commands.Cog):
         self.spam_cooldown = commands.CooldownMapping.from_cooldown(2, 10.0, commands.BucketType.user)
 
     @commands.Cog.listener()
-    async def on_message(self, msg):
+    async def on_message(self, msg: discord.Message):
+        await self.filter(msg)
+
+    @commands.Cog.listener()
+    async def on_message_edit(self, before: discord.Message, after: discord.Message):
+        await self.filter(after)
+
+    async def filter(self, msg):
         if not msg.guild:
             return
         if msg.author.bot:

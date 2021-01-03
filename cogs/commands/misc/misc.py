@@ -33,7 +33,11 @@ class Misc(commands.Cog):
                 raise commands.BadArgument("This command is on cooldown.")
 
         await ctx.message.delete()
-        await ctx.send(emoji.url)
+        embed = discord.Embed()
+        embed.set_image(url=emoji.url)
+        embed.color = discord.Color.random()
+        embed.set_footer(text=f"Requested by {ctx.author}")
+        await ctx.send(embed=embed)
 
     async def ratelimit(self, message):
         bucket = self.spam_cooldown.get_bucket(message)
@@ -60,7 +64,11 @@ class Misc(commands.Cog):
                 f"Command only allowed in <#{bot_chan}>")
 
         await ctx.message.delete()
-        await ctx.send(member.avatar_url)
+        embed = discord.Embed(title=f"{member}'s avatar")
+        embed.set_image(url=member.avatar_url)
+        embed.color = discord.Color.random()
+        embed.set_footer(text=f"Requested by {ctx.author}")
+        await ctx.send(embed=embed)
 
     @jumbo.error
     @avatar.error

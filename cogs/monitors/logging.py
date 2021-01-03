@@ -148,7 +148,7 @@ class Logging(commands.Cog):
         channel = before.guild.get_channel(self.bot.settings.guild().channel_private)
 
         embed = discord.Embed(title="Message Updated")
-        embed.color = discord.Color.purple()
+        embed.color = discord.Color.orange()
         embed.set_thumbnail(url=before.author.avatar_url)
         embed.add_field(
             name="User", value=f'{before.author} ({before.author.mention})', inline=False)
