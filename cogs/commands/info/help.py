@@ -90,17 +90,9 @@ class Utilities(commands.Cog):
                     raise commands.BadArgument("You don't have permission to view that command.")
                 else:
                     await ctx.message.add_reaction("📬")
-                    string = f"Results for {command_arg.lower()} ```md\n"
-                    
-                    # prefix = self.bot.command_prefix()[0]
-                    args = ""
-                    for thing in command.clean_params:
-                        args += f"<{str(thing)}> "
-                    string += f"!{command.name} {args}\n\n{command.help}"
-                    string += "\n```"
-                    
+                    embed = await self.get_usage_embed(ctx, command)
                     try:
-                        await ctx.author.send(string)
+                        await ctx.author.send(embed=embed)
                     except Exception:
                         await ctx.send("I tried to DM you but couldn't. Make sure your DMs are enabled.")
             else:
@@ -126,28 +118,33 @@ class Utilities(commands.Cog):
         await ctx.message.delete(delay=5)
         command = self.bot.get_command(command_arg.lower())
         if command:
-            # print(str(command.cog))
-            if command.cog.qualified_name in self.mod_only and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
-                raise commands.BadArgument("You don't have permission to view that command.")
-            elif command.cog.qualified_name in self.genius_only and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
-                raise commands.BadArgument("You don't have permission to view that command.")
-            else:
-                args = ""
-                for thing in command.clean_params:
-                    args += f"<{str(thing)}> "
-                    
-                embed = discord.Embed(title=f"!{command.name} {args}")
-                parts = command.help.split("\n\n")
-                embed.description = parts[0] + '\n\n'
-                for part in parts[1:len(parts)]:
-                    embed.description += "```\n"
-                    embed.description += part
-                    embed.description += "\n```"
-                embed.color = discord.Color.random()
-                
-                await ctx.send(embed=embed)
+            embed = await self.get_usage_embed(ctx, command)
+            await ctx.send(embed=embed)
         else:
             await ctx.send("Command not found.", delete_after=5)
+
+    async def get_usage_embed(self, ctx, command):
+        if command.cog.qualified_name in self.mod_only and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+            raise commands.BadArgument("You don't have permission to view that command.")
+        elif command.cog.qualified_name in self.genius_only and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
+            raise commands.BadArgument("You don't have permission to view that command.")
+        else:
+            args = ""
+            for thing in command.clean_params:
+                args += f"<{str(thing)}> "
+
+            if command.full_parent_name:
+                embed = discord.Embed(title=f"!{command.full_parent_name} {command.name} {args}")
+            else:
+                embed = discord.Embed(title=f"!{command.name} {args}")
+            parts = command.help.split("\n\n")
+            embed.description = parts[0] + '\n\n'
+            for part in parts[1:len(parts)]:
+                embed.description += "```\n"
+                embed.description += part
+                embed.description += "\n```"
+            embed.color = discord.Color.random()
+            return embed
 
     @usage.error
     @help_comm.error
