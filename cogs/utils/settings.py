@@ -192,6 +192,8 @@ class Settings(commands.Cog):
         g = Guild.objects(_id=self.guild_id).first()
         for t in g.tags:
             if t.name == name:
+                t.use_count += 1
+                g.save()
                 return t
         return None
 

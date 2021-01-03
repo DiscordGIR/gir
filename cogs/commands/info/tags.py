@@ -11,7 +11,7 @@ class TagsSource(menus.GroupByPageSource):
         embed = discord.Embed(
             title=f'All tags', color=discord.Color.blurple())
         for tag in entry.items:
-            embed.add_field(name=tag.name, value=f"Added by: {tag.added_by_tag}")
+            embed.add_field(name=tag.name, value=f"Added by: {tag.added_by_tag}\nUsed {tag.use_count} times")
         embed.set_footer(
             text=f"Page {menu.current_page +1} of {self.get_max_pages()}")
         return embed
@@ -77,7 +77,7 @@ class Tags(commands.Cog):
         embed.description = tag.content
         embed.timestamp = tag.added_date
         embed.color = discord.Color.blue()
-        embed.set_footer(text=f"Added by {tag.added_by_tag}")
+        embed.set_footer(text=f"Added by {tag.added_by_tag} | Used {tag.use_count} times")
         return embed
 
     @commands.guild_only()
@@ -91,10 +91,13 @@ class Tags(commands.Cog):
             raise commands.BadArgument(
                 f"Command only allowed in <#{bot_chan}>")
 
-        tags = self.bot.settings.guild().tags
+        tags = sorted(self.bot.settings.guild().tags, key=lambda tag: tag.name)
 
+        if len(tags) == 0:
+            raise commands.BadArgument("There are no tags defined.")
+        
         menus = MenuPages(source=TagsSource(
-            tags, key=lambda t: 1, per_page=10), clear_reactions_after=True)
+            tags, key=lambda t: 1, per_page=12), clear_reactions_after=True)
 
         await menus.start(ctx)
 
@@ -152,7 +155,7 @@ class Tags(commands.Cog):
             await ctx.message.delete()
             raise commands.BadArgument("That tag does not exist.")
         
-        await ctx.message.reply(embed=await self.tag_embed(tag))
+        await ctx.message.reply(embed=await self.tag_embed(tag), mention_author=False)
 
     @tag.error
     @taglist.error

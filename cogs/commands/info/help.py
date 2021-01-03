@@ -93,6 +93,50 @@ class Utilities(commands.Cog):
             else:
                 await ctx.send("Command not found.", delete_after=5)
 
+    @commands.command(name="usage", hidden=True)
+    @commands.guild_only()
+    @commands.has_permissions(add_reactions=True, embed_links=True)
+    async def usage(self, ctx: commands.Context, command_arg: str):
+        """Show usage of one command
+
+        Parameters
+        ----------
+        command_arg : str
+            Name of command
+        """
+        
+        bot_chan = self.bot.settings.guild().channel_botspam
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
+            raise commands.BadArgument(
+                f"Command only allowed in <#{bot_chan}>")
+
+        await ctx.message.delete(delay=5)
+        command = self.bot.get_command(command_arg.lower())
+        if command:
+            # print(str(command.cog))
+            if command.cog.qualified_name in self.mod_only and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+                raise commands.BadArgument("You don't have permission to view that command.")
+            elif command.cog.qualified_name in self.genius_only and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
+                raise commands.BadArgument("You don't have permission to view that command.")
+            else:
+                args = ""
+                for thing in command.clean_params:
+                    args += f"<{str(thing)}> "
+                    
+                embed = discord.Embed(title=f"!{command.name} {args}")
+                parts = command.help.split("\n\n")
+                embed.description = parts[0] + '\n\n'
+                for part in parts[1:len(parts)]:
+                    embed.description += "```\n"
+                    embed.description += part
+                    embed.description += "\n```"
+                embed.color = discord.Color.random()
+                
+                await ctx.send(embed=embed)
+        else:
+            await ctx.send("Command not found.", delete_after=5)
+
+    @usage.error
     @help_comm.error
     async def info_error(self, ctx, error):
         if (isinstance(error, commands.MissingRequiredArgument)

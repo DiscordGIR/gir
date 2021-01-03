@@ -55,11 +55,14 @@ class Logging(commands.Cog):
         embed.timestamp = datetime.now()
         embed.set_footer(text=member.id)
 
-        await webhook.send(
-            username=str(self.bot.user.name),
-            avatar_url=self.bot.user.avatar_url,
-            embed=embed
-        )
+        try:
+            await webhook.send(
+                username=str(self.bot.user.name),
+                avatar_url=self.bot.user.avatar_url,
+                embed=embed
+            )
+        except Exception:
+            pass
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member) -> None:
@@ -311,11 +314,6 @@ class Logging(commands.Cog):
                     if word.word.lower() in folded_message.lower():
                         await member.edit(nick="change name pls", reason=f"filter triggered ({nick})")
 
-        # for word in guild.filter_words:
-        #     if not self.bot.settings.permissions.hasAtLeast(member.guild, member, word.bypass):
-        #         if word.word in nick:
-                    # await member.edit(nick="change name pls", reason=f"filter triggered ({nick})")
-
     async def member_roles_update(self, before, after, roles, added):
         embed = discord.Embed()
         if added:
@@ -336,29 +334,6 @@ class Logging(commands.Cog):
         private = after.guild.get_channel(self.bot.settings.guild().channel_private)
         if private:
             await private.send(embed=embed)
-
-    async def gen_channel(self, nsa, message):
-        main_category_name = message.channel.category.name
-        nsa_category = discord.utils.get(
-            nsa.categories, name=main_category_name)
-        if not nsa_category:
-            nsa_category = await nsa.create_category(main_category_name, position=message.channel.category.position)
-
-        test_channel = discord.utils.get(nsa_category.channels, name=message.channel.name)
-        if test_channel:
-            return test_channel
-        else:
-            return await nsa_category.create_text_channel(name=message.channel.name, position=message.channel.position)
-
-    async def info_error(self, ctx, error):
-        if (isinstance(error, commands.MissingRequiredArgument)
-            or isinstance(error, commands.BadArgument)
-            or isinstance(error, commands.BadUnionArgument)
-            or isinstance(error, commands.MissingPermissions)
-                or isinstance(error, commands.NoPrivateMessage)):
-            await self.bot.send_error(ctx, error)
-        else:
-            traceback.print_exc()
 
 
 def setup(bot):

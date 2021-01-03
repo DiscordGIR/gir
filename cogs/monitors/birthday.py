@@ -1,5 +1,6 @@
 import discord
 from datetime import datetime, timedelta
+import pytz
 import traceback
 from discord.ext import tasks, commands
 
@@ -13,7 +14,8 @@ class Birthday(commands.Cog):
 
     @tasks.loop(seconds=900)
     async def birthday(self):
-        today = datetime.today()
+        eastern = pytz.timezone('US/Eastern')
+        today = datetime.today().astimezone(eastern)
         date = [today.month, today.day]
         birthdays = await self.bot.settings.retrieve_birthdays(date)
         guild = self.bot.get_guild(self.bot.settings.guild_id)
@@ -29,13 +31,19 @@ class Birthday(commands.Cog):
             user = guild.get_member(person._id)
             if birthday_role in user.roles:
                 continue
+            
+            now = datetime.now(eastern)
+            h = now.hour / 24
+            m = now.minute / 60 / 24
+
             try:
-                time = datetime.now() + timedelta(days=1)
+                time = now + timedelta(days=1-h-m)
                 self.bot.settings.tasks.schedule_remove_bday(user.id, time)
-            except Exception:
+            except Exception as e:
+                print(e)
                 continue
             await user.add_roles(birthday_role)
-            await user.send(f"According to my calculations, today is your birthday! We've given you the {birthday_role} role for 24 hours.")
+            await user.send(f"According to my calculations, today is your birthday! We've given you the {birthday_role} role for 36 hours.")
 
     @commands.guild_only()
     @commands.command(name="mybirthday")
@@ -84,7 +92,8 @@ class Birthday(commands.Cog):
         await ctx.message.reply(f"{user.mention}'s birthday was set.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False), delete_after=5)
         await ctx.message.delete(delay=5)
 
-        today = datetime.today()
+        eastern = pytz.timezone('US/Eastern')
+        today = datetime.today().astimezone(eastern)
         if today.month == month and today.day == date:
             birthday_role = ctx.guild.get_role(self.bot.settings.guild().role_birthday)
             if birthday_role is None:
@@ -92,9 +101,13 @@ class Birthday(commands.Cog):
 
             if birthday_role in user.roles:
                 return
+            
+            now = datetime.now(eastern)
+            h = now.hour / 24
+            m = now.minute / 60 / 24
 
             try:
-                time = datetime.now() + timedelta(days=1)
+                time = now + timedelta(days=1-h-m)
                 self.bot.settings.tasks.schedule_remove_bday(user.id, time)
             except Exception:
                 return

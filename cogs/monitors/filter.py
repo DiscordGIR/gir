@@ -1,5 +1,6 @@
 import datetime
 import re
+import string
 import traceback
 
 import cogs.utils.logs as logging
@@ -30,7 +31,6 @@ class FilterMonitor(commands.Cog):
             return
         if msg.channel.id in guild.filter_excluded_channels:
             return
-
         """
         BAD WORD FILTER
         """
@@ -39,13 +39,18 @@ class FilterMonitor(commands.Cog):
 
         tr = {ord(a): ord(b) for a, b in zip(*symbols)}
 
-        folded_message = fold(msg.content.translate(tr).lower())
+        folded_message = fold(msg.content.translate(tr).lower()).lower()
+        folded_without_spaces = "".join(folded_message.split())
+        folded_without_spaces_and_punctuation = folded_without_spaces.translate(str.maketrans('', '', string.punctuation))
 
         if folded_message:
             reported = False
             for word in guild.filter_words:
                 if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, word.bypass):
-                    if word.word.lower() in folded_message.lower():
+                    if (word.word.lower() in folded_message) or \
+                        (word.word != "fag" and word.word.lower() in folded_without_spaces_and_punctuation):
+                        # remove all whitespace, punctuation in message and run filter again
+                        # prevent a potential false positive, sorry for langauge :(
                         await self.delete(msg)
                         if not reported:
                             await self.ratelimit(msg)
@@ -53,7 +58,6 @@ class FilterMonitor(commands.Cog):
                         if word.notify:
                             await report(self.bot, msg, msg.author)
                             return
-
         """
         INVITE FILTER
         """

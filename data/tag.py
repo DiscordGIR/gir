@@ -7,4 +7,5 @@ class Tag(mongoengine.EmbeddedDocument):
     added_by_tag = mongoengine.StringField()
     added_by_id  = mongoengine.IntField()
     added_date   = mongoengine.DateTimeField(default=datetime.now)
+    use_count    = mongoengine.IntField(default=0)
  

@@ -86,6 +86,15 @@ class Tasks():
 
         self.tasks.remove_job(str(id), 'default')
 
+    def cancel_unbirthday(self, id: int) -> None:
+        """When we manually unset the birthday of a user given by ID `id`, stop the task to remove the role.
+         Parameters
+        ----------
+        id : int
+            User whose task we want to cancel
+        """
+        self.tasks.remove_job(str(id+1), 'default')
+        
     def schedule_end_giveaway(self, channel_id: int, message_id: int, date: datetime, winners: int) -> None:
         """
         Create a task to end a giveaway with message ID `id`, at date `date`
@@ -101,7 +110,6 @@ class Tasks():
         """
 
         self.tasks.add_job(end_giveaway_callback, 'date', id=str(message_id+1), next_run_time=date, args=[channel_id, message_id, winners], misfire_grace_time=3600)
-
 
 def unmute_callback(id: int) -> None:
     """Callback function for actually unmuting. Creates asyncio task

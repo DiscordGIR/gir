@@ -1,4 +1,5 @@
 import datetime
+import pytz
 import traceback
 import typing
 import humanize
@@ -129,6 +130,35 @@ class ModUtils(commands.Cog):
         await ctx.message.reply(f"{user.mention} was put on clem.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
 
     @commands.guild_only()
+    @commands.command(name="musicban")
+    async def musicban(self, ctx: commands.Context, user: discord.Member) -> None:
+        """Ban a user from using music commands (mod only)
+
+        Example usage:
+        --------------
+        `!musicban <@user/ID>`
+
+        Parameters
+        ----------
+        user : discord.Member
+            User to ban from music
+        """
+
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+            raise commands.BadArgument(
+                "You need to be at least a Moderator to use that command.")
+
+        if user.id == self.bot.user.id:
+            await ctx.message.add_reaction("🤔")
+            raise commands.BadArgument("You can't call that on me :(")
+
+        results = await self.bot.settings.user(user.id)
+        results.is_music_banned = True
+        results.save()
+        
+        await ctx.send("Done", delete_after=5)
+
+    @commands.guild_only()
     @commands.command(name="birthdayexclude")
     async def birthdayexclude(self, ctx: commands.Context, user: discord.Member) -> None:
         """Remove a user's birthday (mod only)
@@ -192,6 +222,11 @@ class ModUtils(commands.Cog):
         results.birthday = None
         results.save()
 
+        try:
+            self.bot.settings.tasks.cancel_unbirthday(user.id)
+        except Exception:
+            pass
+
         birthday_role = ctx.guild.get_role(self.bot.settings.guild().role_birthday)
         if birthday_role is None:
             return
@@ -245,17 +280,22 @@ class ModUtils(commands.Cog):
         if results.birthday_excluded:
             return
 
-        today = datetime.datetime.today()
+        eastern = pytz.timezone('US/Eastern')
+        today = datetime.datetime.today().astimezone(eastern)
         if today.month == month and today.day == date:
             birthday_role = ctx.guild.get_role(self.bot.settings.guild().role_birthday)
             if birthday_role is None:
                 return
-
+            print("here")
             if birthday_role in user.roles:
                 return
+            print("here2")
+            now = datetime.datetime.now(eastern)
+            h = now.hour / 24
+            m = now.minute / 60 / 24
 
             try:
-                time = datetime.datetime.now() + datetime.timedelta(days=1)
+                time = now + datetime.timedelta(days=1-h-m)
                 self.bot.settings.tasks.schedule_remove_bday(user.id, time)
             except Exception as e:
                 print(e)
