@@ -16,7 +16,7 @@ class Giveaway(commands.Cog):
     async def prompt(self, ctx, data, _type):
         question = data['prompt']
         convertor = data['convertor']
-        
+
         def wait_check(m):
             return m.author == ctx.author and m.channel == ctx.channel
         ret = None
@@ -50,13 +50,7 @@ class Giveaway(commands.Cog):
     @commands.group()
     async def giveaway(self, ctx):
         """
-        Start or manage giveaways (Admin only)
-
-        Example Use:
-        ------------
-        !giveaway start (You will be prompted for a name, sponsor, the time until end, the amount of winners, and the channel)
-        !giveaway end (You will be prompted for the message ID of the giveaway)
-        !giveaway reroll (You will be prompted for the message ID of the giveaway)
+        Manage giveaways using !giveaway <action>, choosing from below...
         """
 
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
@@ -69,6 +63,30 @@ class Giveaway(commands.Cog):
     @giveaway.command()
     # async def start(self, ctx, *args):
     async def start(self, ctx, sponsor: discord.Member = None, time: str = None, winners: int = -1, channel: discord.TextChannel = None):
+        """Start a giveaway. Use `!giveaway start` and follow the prompts, or see the example.
+
+        Example Use:
+        ------------
+        !giveaway start (You will be prompted for all info)
+        !giveaway start @habibi test#1531 30s 1 #bot-commands
+
+        Parameters
+        ----------
+        sponsor : discord.Member
+            Who sponsored the giveaway
+        time : str, optional
+            When to end, by default None
+        winners : int
+            How many winners
+        channel : discord.TextChannel, optional
+            Channel to post giveway in
+
+        Raises
+        ------
+        commands.BadArgument
+            [description]
+        """
+
         prompts = {
             'name': {
                 'convertor': str,
@@ -125,11 +143,23 @@ class Giveaway(commands.Cog):
         giveaway.save()
 
         await ctx.send(f"Giveaway started!", embed=embed, delete_after=10)
-        
+
         self.bot.settings.tasks.schedule_end_giveaway(channel_id=channel.id, message_id=message.id, date=end_time, winners=responses['winners'])
 
     @giveaway.command()
     async def reroll(self, ctx, message: discord.Message):
+        """Pick a new winner of an already ended giveaway.
+
+        Example usage
+        -------------
+        !giveaway reroll 795120157679812670
+
+        Parameters
+        ----------
+        message : discord.Message
+            ID of the giveaway message
+        """
+
         g = await self.bot.settings.get_giveaway(id=message.id)
 
         if g is None:
@@ -140,7 +170,7 @@ class Giveaway(commands.Cog):
             raise commands.BadArgument(f"There are no entries for the giveaway of **{g.name}**.")
         elif len(g.entries) <= len(g.previous_winners):
             raise commands.BadArgument("No more winners are possible!")
-        
+
         the_winner = None
         while the_winner is None:
             random_id = random.choice(g.entries)
@@ -152,7 +182,7 @@ class Giveaway(commands.Cog):
 
         g.previous_winners.append(the_winner.id)
         g.save()
-        
+
         await ctx.message.delete()
         channel = ctx.guild.get_channel(g.channel)
 
@@ -163,6 +193,18 @@ class Giveaway(commands.Cog):
 
     @giveaway.command()
     async def end(self, ctx, message: discord.Message):
+        """End a giveaway early
+
+        Example usage
+        -------------
+        !giveaway end 795120157679812670
+
+        Parameters
+        ----------
+        message : discord.Message
+            ID of the giveaway message
+        """
+
         giveaway = self.bot.settings.get_giveaway(_id=message.id)
         if giveaway is None:
             raise commands.BadArgument("A giveaway with that ID was not found.")
@@ -172,9 +214,9 @@ class Giveaway(commands.Cog):
         await end_giveaway(message.channel.id, message.id, giveaway.winners)
 
     @giveaway.error
-    @start.error   
-    @end.error   
-    @reroll.error   
+    @start.error
+    @end.error
+    @reroll.error
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)

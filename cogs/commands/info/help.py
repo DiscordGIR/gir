@@ -9,7 +9,7 @@ class Utilities(commands.Cog):
         self.bot = bot
         self.left_col_length = 17
         self.right_col_length = 80
-        self.mod_only = ["ModActions", "ModUtils", "Filters", "BoosterEmojis", "ReactionRoles"]
+        self.mod_only = ["ModActions", "ModUtils", "Filters", "BoosterEmojis", "ReactionRoles", "Giveaway"]
         self.genius_only = ["Genius"]
 
     @commands.command(name="help", hidden=True)
@@ -48,8 +48,9 @@ class Utilities(commands.Cog):
                     else:
                         command.brief = "No description."
                     cmd_desc = command.brief[0:self.right_col_length] + "..." if len(command.brief) > self.right_col_length else command.brief
-                    string += f"\t* {command.name}{spaces_left} :: {cmd_desc}\n"
+
                     if isinstance(command, commands.core.Group):
+                        string += f"\t* {command.name}{spaces_left} :: {cmd_desc}\n"
                         for c in command.commands:
                             spaces_left = ' ' * (self.left_col_length - len(c.name)-4)
                             if c.help is not None:
@@ -58,6 +59,8 @@ class Utilities(commands.Cog):
                                 c.brief = "No description."
                             cmd_desc = c.brief[0:self.right_col_length] + "..." if len(c.brief) > self.right_col_length else c.brief
                             string += f"\t\t* {c.name}{spaces_left} :: {cmd_desc}\n"
+                    else:
+                        string += f"\t* {command.name}{spaces_left} :: {cmd_desc}\n"
 
                 string += "\n"
 
