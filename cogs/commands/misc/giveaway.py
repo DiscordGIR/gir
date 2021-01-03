@@ -148,6 +148,7 @@ class Giveaway(commands.Cog):
             print(the_winner.id not in g.previous_winners)
             if the_winner is not None and the_winner.id not in g.previous_winners:
                 break
+            the_winner = None
 
         g.previous_winners.append(the_winner.id)
         g.save()
