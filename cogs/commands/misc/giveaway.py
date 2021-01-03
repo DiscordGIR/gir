@@ -5,6 +5,7 @@ import pytimeparse
 import random
 import traceback
 from cogs.utils.tasks import end_giveaway
+from data.giveaway import Giveaway as GiveawayDB
 from discord.ext import commands
 
 
@@ -32,6 +33,8 @@ class Giveaway(commands.Cog):
             elif response.content is not None and response.content != "":
                 if _type in ['name', 'winners', 'time']:
                     ret = convertor(response.content)
+                    if _type == 'winners' and ret < 1:
+                        raise commands.BadArgument("Can't have less than 1 winner")
                     if ret is None:
                         raise commands.BadArgument(f"Improper value given for {_type}")
                 else:
@@ -55,6 +58,10 @@ class Giveaway(commands.Cog):
         !giveaway end (You will be prompted for the message ID of the giveaway)
         !giveaway reroll (You will be prompted for the message ID of the giveaway)
         """
+
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise commands.BadArgument(
+                "You need to be an administrator or higher to use that command.")
 
         if ctx.invoked_subcommand is None:
             raise commands.BadArgument("Invalid giveaway subcommand passed. Options: `start`, `reroll`, `end`")
@@ -89,7 +96,7 @@ class Giveaway(commands.Cog):
             'name': None,
             'sponsor': sponsor,
             'time': pytimeparse.parse(time) if time is not None else None,
-            'winners': winners,
+            'winners': None if winners < 1 else winners,
             'channel': channel
         }
 
@@ -114,6 +121,11 @@ class Giveaway(commands.Cog):
 
         await ctx.message.delete()
 
+        giveaway = GiveawayDB(_id=message.id, channel=responses['channel'].id, name=responses['name'], winners=responses['winners'])
+        giveaway.save()
+
+        await ctx.send(f"Giveaway started!", embed=embed, delete_after=10)
+        
         self.bot.settings.tasks.schedule_end_giveaway(channel_id=channel.id, message_id=message.id, date=end_time, winners=responses['winners'])
 
     @giveaway.command()
@@ -158,93 +170,19 @@ class Giveaway(commands.Cog):
             await channel.send(f"**Reroll**\nThe new winners of the giveaway of **{g.name}** are {', '.join(mentions)}! Congratulations!")
 
     @giveaway.command()
-    async def end(self, ctx, *args):
-        channel = None
-        message_id = None
-        winners = None
-        if len(args) <= 0:
-
-            c_msg = await self.prompt(ctx, "Mention the channel that the giveaway is in (or type cancel to cancel)")
-            if c_msg is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.")
-                return
-            channel = c_msg.channel_mentions[0]
-            if channel is None:
-                await ctx.message.delete()
-                await ctx.send("Could not find a channel from what you provided.")
-                return
-
-            message_id = await self.prompt(ctx, "Enter the message ID of the giveaway to end early (or type cancel to cancel)")
-            if message_id is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.")
-                return
-            message_id = int(message_id.content)
-
-            winners = await self.prompt(ctx, "Enter amount of winners to select (or type cancel to cancel)")
-            if winners is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled", delete_after=5)
-                return
-            winners = int(winners.content)
-
-        elif len(args) == 1:
-
-            channel = ctx.message.channel_mentions[0]
-            if channel is None:
-                await ctx.message.delete()
-                await ctx.send("Could not find a channel from what you provided.")
-                return
-
-            message_id = await self.prompt(ctx, "Enter the message ID of the giveaway to end early (or type cancel to cancel)")
-            if message_id is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.")
-                return
-            message_id = int(message_id.content)
-
-            winners = await self.prompt(ctx, "Enter amount of winners to select (or type cancel to cancel)")
-            if winners is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled", delete_after=5)
-                return
-            winners = int(winners.content)
-
-        elif len(args) == 2:
-            channel = ctx.message.channel_mentions[0]
-            if channel is None:
-                await ctx.message.delete()
-                await ctx.send("Could not find a channel from what you provided.")
-                return
-
-            message_id = int(args[1])
-
-            winners = await self.prompt(ctx, "Enter amount of winners to select (or type cancel to cancel)")
-            if winners is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled", delete_after=5)
-                return
-            winners = int(winners.content)
-
-        else:
-
-            channel = ctx.message.channel_mentions[0]
-            if channel is None:
-                await ctx.message.delete()
-                await ctx.send("Could not find a channel from what you provided.")
-                return
-
-            message_id = int(args[0])
-
-            winners = int(args[0])
+    async def end(self, ctx, message: discord.Message):
+        giveaway = GiveawayDB.objects(_id=message.id).first()
+        if giveaway is None:
+            raise commands.BadArgument("A giveaway with that ID was not found.")
 
         await ctx.message.delete()
-        self.bot.settings.tasks.tasks.remove_job(str(message_id + 1), 'default')
-        await end_giveaway(channel.id, message_id, winners)
+        self.bot.settings.tasks.tasks.remove_job(str(message.id + 2), 'default')
+        await end_giveaway(message.channel.id, message.id, giveaway.winners)
 
     @giveaway.error
     @start.error   
+    @end.error   
+    @reroll.error   
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)

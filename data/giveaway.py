@@ -4,7 +4,7 @@ class Giveaway(mongoengine.Document):
     _id             = mongoengine.IntField(required=True)
     channel         = mongoengine.IntField()
     name            = mongoengine.StringField()
-    entries         = mongoengine.ListField(mongoengine.IntField())
+    entries         = mongoengine.ListField(mongoengine.IntField(), default=[])
     winners         = mongoengine.IntField()
 
     meta = {

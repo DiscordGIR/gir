@@ -109,7 +109,7 @@ class Tasks():
             When to end the giveaway
         """
 
-        self.tasks.add_job(end_giveaway_callback, 'date', id=str(message_id+1), next_run_time=date, args=[channel_id, message_id, winners], misfire_grace_time=3600)
+        self.tasks.add_job(end_giveaway_callback, 'date', id=str(message_id+2), next_run_time=date, args=[channel_id, message_id, winners], misfire_grace_time=3600)
 
 def unmute_callback(id: int) -> None:
     """Callback function for actually unmuting. Creates asyncio task
