@@ -134,7 +134,7 @@ class Giveaway(commands.Cog):
 
         await ctx.send(f"Giveaway started!", embed=embed, delete_after=10)
 
-        self.bot.settings.tasks.schedule_end_giveaway(channel_id=channel.id, message_id=message.id, date=end_time, winners=responses['winners'])
+        self.bot.settings.tasks.schedule_end_giveaway(channel_id=responses['channel'].id, message_id=message.id, date=end_time, winners=responses['winners'])
 
     @giveaway.command()
     async def reroll(self, ctx, message: discord.Message):
