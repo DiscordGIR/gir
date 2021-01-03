@@ -15,7 +15,7 @@ class Utilities(commands.Cog):
     @commands.command(name="help", hidden=True)
     @commands.guild_only()
     @commands.has_permissions(add_reactions=True, embed_links=True)
-    async def help_comm(self, ctx: commands.Context, command_arg: str = None):
+    async def help_comm(self, ctx: commands.Context, *, command_arg: str = None):
         """Gets all cogs and commands of mine."""
 
         await ctx.message.delete(delay=5)
@@ -109,7 +109,7 @@ class Utilities(commands.Cog):
     @commands.command(name="usage", hidden=True)
     @commands.guild_only()
     @commands.has_permissions(add_reactions=True, embed_links=True)
-    async def usage(self, ctx: commands.Context, command_arg: str):
+    async def usage(self, ctx: commands.Context, *, command_arg: str):
         """Show usage of one command
 
         Parameters

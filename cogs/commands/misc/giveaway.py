@@ -75,11 +75,6 @@ class Giveaway(commands.Cog):
             How many winners
         channel : discord.TextChannel, optional
             Channel to post giveway in
-
-        Raises
-        ------
-        commands.BadArgument
-            [description]
         """
 
         prompts = {
