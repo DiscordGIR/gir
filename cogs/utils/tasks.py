@@ -258,16 +258,19 @@ async def end_giveaway(channel_id: int, message_id: int, winners: int) -> None:
 
     if len(reacted_ids) < winners:
         winners = len(reacted_ids)
-    await bot_global.settings.add_giveaway(id=message.id, channel=channel_id, name=embed.title, entries=reacted_ids, winners=winners)
-    
+
     rand_ids = random.sample(reacted_ids, winners)
+    winner_ids = []
     mentions = []
     for user_id in rand_ids:
         member = guild.get_member(user_id)
         while member is None or member.mention in mentions: # ensure that member hasn't left the server while simultaneously ensuring that we don't add duplicate members if we select a new random one
             member = guild.get_member(random.choice(g.entries))
         mentions.append(member.mention)
+        winner_ids.append(member.id)
 
+    await bot_global.settings.add_giveaway(id=message.id, channel=channel_id, name=embed.title, entries=reacted_ids, winners=winners, ended=True, prev_winners=winner_ids)
+    
     await message.edit(embed=embed)
     await message.clear_reactions()
 

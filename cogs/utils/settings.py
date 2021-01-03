@@ -397,7 +397,7 @@ class Settings(commands.Cog):
         giveaway = Giveaway.objects(_id=id).first()
         return giveaway
     
-    async def add_giveaway(self, id: int, channel: int, name: str, entries: list, winners: int) -> None:
+    async def add_giveaway(self, id: int, channel: int, name: str, entries: list, winners: int, ended: bool = False, prev_winners=[]) -> None:
         """
         Add a giveaway to the database.
 
@@ -420,6 +420,8 @@ class Settings(commands.Cog):
         giveaway.name = name
         giveaway.entries = entries
         giveaway.winners = winners
+        giveaway.is_ended = ended
+        giveaway.previous_winners = prev_winners
         giveaway.save()
 
 

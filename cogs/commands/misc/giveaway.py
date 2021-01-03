@@ -129,49 +129,40 @@ class Giveaway(commands.Cog):
         self.bot.settings.tasks.schedule_end_giveaway(channel_id=channel.id, message_id=message.id, date=end_time, winners=responses['winners'])
 
     @giveaway.command()
-    async def reroll(self, ctx, *args):
-        message_id = None
-        if len(args) <= 0:
-            message_id = await self.prompt(ctx, "Enter the message ID of the giveaway to reroll (or type cancel to cancel)")
-            if message_id is None:
-                await ctx.message.delete()
-                await ctx.send("Command cancelled.")
-                return
-            message_id = int(message_id.content)
-        else:
-            message_id = int(args[0])
-
-        g = await self.bot.settings.get_giveaway(id=message_id)
+    async def reroll(self, ctx, message: discord.Message):
+        g = await self.bot.settings.get_giveaway(id=message.id)
 
         if g is None:
-            await ctx.message.delete()
-            await ctx.send("Couldn't find an ended giveaway by the provided ID.")
-            return
+            raise commands.BadArgument("Couldn't find an ended giveaway by the provided ID.")
+        elif not g.is_ended:
+            raise commands.BadArgument("That giveaway hasn't ended yet!")
+        elif len(g.entries) == 0:
+            raise commands.BadArgument(f"There are no entries for the giveaway of **{g.name}**.")
+        elif len(g.entries) <= len(g.previous_winners):
+            raise commands.BadArgument("No more winners are possible!")
+        
+        the_winner = None
+        while the_winner is None:
+            random_id = random.choice(g.entries)
+            the_winner = ctx.guild.get_member(random_id)
+            print(the_winner.id not in g.previous_winners)
+            if the_winner is not None and the_winner.id not in g.previous_winners:
+                break
 
-        new_rand_ids = random.sample(g.entries, g.winners)
-        mentions = []
-        for user_id in new_rand_ids:
-            member = ctx.guild.get_member(user_id)
-            while member is None or member.mention in mentions: # ensure that member hasn't left the server while simultaneously ensuring that we don't add duplicate members if we select a new random one
-                member = ctx.guild.get_member(random.choice(g.entries))
-            mentions.append(member.mention)
-
+        g.previous_winners.append(the_winner.id)
+        g.save()
+        
         await ctx.message.delete()
-
-        if not mentions:
-            await ctx.send(f"There are no entries for the giveaway of **{embed.title}**.")
-            return
-
         channel = ctx.guild.get_channel(g.channel)
 
-        if g.winners == 1:
-            await channel.send(f"**Reroll**\nThe new winner of the giveaway of **{g.name}** is {mentions[0]}! Congratulations!")
-        else:
-            await channel.send(f"**Reroll**\nThe new winners of the giveaway of **{g.name}** are {', '.join(mentions)}! Congratulations!")
+        # if g.winners == 1:
+        await channel.send(f"**Reroll**\nThe new winner of the giveaway of **{g.name}** is {the_winner.mention}! Congratulations!")
+        # else:
+        #     await channel.send(f"**Reroll**\nThe new winners of the giveaway of **{g.name}** are {', '.join(mentions)}! Congratulations!")
 
     @giveaway.command()
     async def end(self, ctx, message: discord.Message):
-        giveaway = GiveawayDB.objects(_id=message.id).first()
+        giveaway = self.bot.settings.get_giveaway(_id=message.id)
         if giveaway is None:
             raise commands.BadArgument("A giveaway with that ID was not found.")
 
