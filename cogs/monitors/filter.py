@@ -55,9 +55,8 @@ class FilterMonitor(commands.Cog):
             for word in guild.filter_words:
                 if not self.bot.settings.permissions.hasAtLeast(msg.guild, msg.author, word.bypass):
                     if (word.word.lower() in folded_message) or \
-                        (word.word != "fag" and word.word.lower() in folded_without_spaces_and_punctuation):
+                        (not word.false_positive and word.word.lower() in folded_without_spaces_and_punctuation):
                         # remove all whitespace, punctuation in message and run filter again
-                        # prevent a potential false positive, sorry for langauge :(
                         await self.delete(msg)
                         if not reported:
                             await self.ratelimit(msg)
@@ -134,7 +133,7 @@ class FilterMonitor(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
-        await self.on_message(after)
+        await self.filter(after)
 
     async def mute(self, ctx: commands.Context, user: discord.Member) -> None:
         dur = "15m"
