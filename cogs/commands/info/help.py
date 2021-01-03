@@ -41,6 +41,7 @@ class Utilities(commands.Cog):
                 string += f"== {cog_name} ==\n"
 
                 for command in cog.get_commands():
+                    # print(type(command), command)
                     spaces_left = ' ' * (self.left_col_length - len(command.name))
                     if command.help is not None:
                         command.brief = command.help.split("\n")[0]
@@ -48,6 +49,15 @@ class Utilities(commands.Cog):
                         command.brief = "No description."
                     cmd_desc = command.brief[0:self.right_col_length] + "..." if len(command.brief) > self.right_col_length else command.brief
                     string += f"\t* {command.name}{spaces_left} :: {cmd_desc}\n"
+                    if isinstance(command, commands.core.Group):
+                        for c in command.commands:
+                            spaces_left = ' ' * (self.left_col_length - len(c.name)-4)
+                            if c.help is not None:
+                                c.brief = c.help.split("\n")[0]
+                            else:
+                                c.brief = "No description."
+                            cmd_desc = c.brief[0:self.right_col_length] + "..." if len(c.brief) > self.right_col_length else c.brief
+                            string += f"\t\t* {c.name}{spaces_left} :: {cmd_desc}\n"
 
                 string += "\n"
 
