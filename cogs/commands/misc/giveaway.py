@@ -41,12 +41,8 @@ class Giveaway(commands.Cog):
                     ret = await convertor(ctx, response.content)
         return ret
 
-    #@commands.command(name="giveaway")
     @commands.guild_only()
     @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
-
-    #TODO: Possibly make prompting/arg parsing code less repetitive
-
     @commands.group()
     async def giveaway(self, ctx):
         """
@@ -61,7 +57,6 @@ class Giveaway(commands.Cog):
             raise commands.BadArgument("Invalid giveaway subcommand passed. Options: `start`, `reroll`, `end`")
 
     @giveaway.command()
-    # async def start(self, ctx, *args):
     async def start(self, ctx, sponsor: discord.Member = None, time: str = None, winners: int = -1, channel: discord.TextChannel = None):
         """Start a giveaway. Use `!giveaway start` and follow the prompts, or see the example.
 
@@ -186,10 +181,7 @@ class Giveaway(commands.Cog):
         await ctx.message.delete()
         channel = ctx.guild.get_channel(g.channel)
 
-        # if g.winners == 1:
         await channel.send(f"**Reroll**\nThe new winner of the giveaway of **{g.name}** is {the_winner.mention}! Congratulations!")
-        # else:
-        #     await channel.send(f"**Reroll**\nThe new winners of the giveaway of **{g.name}** are {', '.join(mentions)}! Congratulations!")
 
     @giveaway.command()
     async def end(self, ctx, message: discord.Message):
@@ -208,6 +200,8 @@ class Giveaway(commands.Cog):
         giveaway = self.bot.settings.get_giveaway(_id=message.id)
         if giveaway is None:
             raise commands.BadArgument("A giveaway with that ID was not found.")
+        elif giveaway.is_ended:
+            raise commands.BadArgument("That giveaway has already ended.")
 
         await ctx.message.delete()
         self.bot.settings.tasks.tasks.remove_job(str(message.id + 2), 'default')
