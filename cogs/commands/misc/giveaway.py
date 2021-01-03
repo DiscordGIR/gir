@@ -165,7 +165,6 @@ class Giveaway(commands.Cog):
         while the_winner is None:
             random_id = random.choice(g.entries)
             the_winner = ctx.guild.get_member(random_id)
-            print(the_winner.id not in g.previous_winners)
             if the_winner is not None and the_winner.id not in g.previous_winners:
                 break
             the_winner = None
