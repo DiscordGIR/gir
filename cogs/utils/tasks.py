@@ -245,7 +245,13 @@ async def end_giveaway(channel_id: int, message_id: int, winners: int) -> None:
 
     guild = bot_global.get_guild(bot_global.settings.guild_id)
     channel = guild.get_channel(channel_id)
-    message = await channel.fetch_message(message_id)
+    
+    if channel is None:
+        return
+    try:
+        message = await channel.fetch_message(message_id)
+    except Exception:
+        return
 
     embed = message.embeds[0]
     embed.set_footer(text="Ended")

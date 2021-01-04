@@ -270,6 +270,8 @@ class Music(commands.Cog):
             return
 
         player = self.bot.lavalink.player_manager.get(reaction.message.guild.id)
+        if player is None:
+            return
         ctx = self.channel
         if player.channel_id is None:
             return

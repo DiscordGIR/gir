@@ -24,6 +24,7 @@ class Giveaway(commands.Cog):
         try:
             response = await self.bot.wait_for('message', check=wait_check, timeout=120)
         except asyncio.TimeoutError:
+            await prompt.delete()
             return
         else:
             await response.delete()
@@ -138,7 +139,7 @@ class Giveaway(commands.Cog):
         self.bot.settings.tasks.schedule_end_giveaway(channel_id=responses['channel'].id, message_id=message.id, date=end_time, winners=responses['winners'])
 
     @giveaway.command()
-    async def reroll(self, ctx, message: discord.Message):
+    async def reroll(self, ctx, message_id: int):
         """Pick a new winner of an already ended giveaway.
 
         Example usage
@@ -147,11 +148,11 @@ class Giveaway(commands.Cog):
 
         Parameters
         ----------
-        message : discord.Message
+        message : int
             ID of the giveaway message
         """
 
-        g = await self.bot.settings.get_giveaway(id=message.id)
+        g = await self.bot.settings.get_giveaway(id=message_id)
 
         if g is None:
             raise commands.BadArgument("Couldn't find an ended giveaway by the provided ID.")
@@ -177,9 +178,10 @@ class Giveaway(commands.Cog):
         channel = ctx.guild.get_channel(g.channel)
 
         await channel.send(f"**Reroll**\nThe new winner of the giveaway of **{g.name}** is {the_winner.mention}! Congratulations!")
+        await ctx.send(embed=discord.Embed(description="Rerolled!", color=discord.Color.blurple()), delete_after=5)
 
     @giveaway.command()
-    async def end(self, ctx, message: discord.Message):
+    async def end(self, ctx, message_id: int):
         """End a giveaway early
 
         Example usage
@@ -188,19 +190,21 @@ class Giveaway(commands.Cog):
 
         Parameters
         ----------
-        message : discord.Message
+        message : int
             ID of the giveaway message
         """
 
-        giveaway = self.bot.settings.get_giveaway(_id=message.id)
+        giveaway = self.bot.settings.get_giveaway(_id=message_id)
         if giveaway is None:
             raise commands.BadArgument("A giveaway with that ID was not found.")
         elif giveaway.is_ended:
             raise commands.BadArgument("That giveaway has already ended.")
 
         await ctx.message.delete()
-        self.bot.settings.tasks.tasks.remove_job(str(message.id + 2), 'default')
-        await end_giveaway(message.channel.id, message.id, giveaway.winners)
+        self.bot.settings.tasks.tasks.remove_job(str(message_id + 2), 'default')
+        await end_giveaway(giveaway.channel.id, message_id, giveaway.winners)
+        
+        await ctx.send(embed=discord.Embed(description="Giveaway ended!", color=discord.Color.blurple()), delete_after=5)
 
     @giveaway.error
     @start.error
