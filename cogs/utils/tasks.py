@@ -283,16 +283,21 @@ async def end_giveaway(channel_id: int, message_id: int, winners: int) -> None:
             mentions.append(member.mention)
             winner_ids.append(member.id)
 
-    await bot_global.settings.add_giveaway(id=message.id, channel=channel_id, name=embed.title, entries=reacted_ids, winners=winners, ended=True, prev_winners=winner_ids)
-    
+    g = await bot_global.settings.get_giveaway(id=message.id)
+    print(g.id)
+    g.entries = reacted_ids
+    g.is_ended = True
+    g.previous_winners = winner_ids
+    g.save()
+
     await message.edit(embed=embed)
     await message.clear_reactions()
 
     if not mentions:
-        await channel.send(f"No winner was selected for the giveaway of **{embed.title}** because nobody entered.")
+        await channel.send(f"No winner was selected for the giveaway of **{g.name}** because nobody entered.")
         return
 
     if winners == 1:
-        await channel.send(f"Congratulations {mentions[0]}! You won the giveaway of **{embed.title}**!")
+        await channel.send(f"Congratulations {mentions[0]}! You won the giveaway of **{g.name}**!")
     else:
-        await channel.send(f"Congratulations {', '.join(mentions)}! You won the giveaway of **{embed.title}**!")
+        await channel.send(f"Congratulations {', '.join(mentions)}! You won the giveaway of **{g.name}**!")
