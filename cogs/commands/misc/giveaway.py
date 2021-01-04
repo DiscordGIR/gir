@@ -1,17 +1,24 @@
-import discord
 import asyncio
 import datetime
-import pytimeparse
 import random
 import traceback
+
+import discord
+import humanize
+import pytimeparse
 from cogs.utils.tasks import end_giveaway
 from data.giveaway import Giveaway as GiveawayDB
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 
 class Giveaway(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.giveaway_messages = {}
+        self.time_updater_loop.start()
+
+    def cog_unload(self):
+        self.time_updater_loop.cancel()
 
     async def prompt(self, ctx, data, _type):
         question = data['prompt']
@@ -120,8 +127,9 @@ class Giveaway(commands.Cog):
         delta = responses['time']
         end_time = now + datetime.timedelta(seconds=delta)
 
-        embed = discord.Embed(title=responses['name'])
-        embed.description = f"Hosted by {responses['sponsor'].mention}\n{responses['winners']} {'winner' if responses['winners'] == 1 else 'winners'}"
+        embed = discord.Embed(title="New giveaway!")
+        embed.description = f"{responses['sponsor'].mention} is giving away **{responses['name']}** to **{responses['winners']}** lucky {'winner' if responses['winners'] == 1 else 'winners'}!"
+        embed.add_field(name="Time remaining", value=f"Less than {humanize.naturaldelta(end_time - now)}")
         embed.timestamp = end_time
         embed.color = discord.Color.random()
         embed.set_footer(text="Ends")
@@ -131,12 +139,64 @@ class Giveaway(commands.Cog):
 
         await ctx.message.delete()
 
-        giveaway = GiveawayDB(_id=message.id, channel=responses['channel'].id, name=responses['name'], winners=responses['winners'])
+        giveaway = GiveawayDB(_id=message.id, channel=responses['channel'].id, name=responses['name'], winners=responses['winners'], end_time=end_time)
         giveaway.save()
 
-        await ctx.send(f"Giveaway started!", embed=embed, delete_after=10)
+        if ctx.channel.id != responses['channel'].id:
+            await ctx.send(f"Giveaway started!", embed=embed, delete_after=10)
 
         self.bot.settings.tasks.schedule_end_giveaway(channel_id=responses['channel'].id, message_id=message.id, date=end_time, winners=responses['winners'])
+
+    @tasks.loop(seconds=360)
+    async def time_updater_loop(self):
+        guild = self.bot.get_guild(self.bot.settings.guild_id)
+        if guild is None:
+            return
+
+        giveaways = GiveawayDB.objects(is_ended=False)
+        for giveaway in giveaways:
+            await self.do_giveaway_update(giveaway, guild)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+        if payload.member.bot:
+            return
+        if not payload.guild_id:
+            return
+        if not payload.guild_id == self.bot.settings.guild_id:
+            return
+
+        g = await self.bot.settings.get_giveaway(id=payload.message_id)
+        await self.do_giveaway_update(g, payload.member.guild)
+
+    async def do_giveaway_update(self, giveaway: GiveawayDB, guild: discord.Guild):
+        if giveaway is None:
+            return
+        if giveaway.is_ended:
+            return
+
+        now = datetime.datetime.now()
+        end_time = giveaway.end_time
+        if end_time is None or end_time < now:
+            return
+
+        channel = guild.get_channel(giveaway.channel)
+
+        if giveaway._id in self.giveaway_messages:
+            message = self.giveaway_messages[giveaway._id]
+        else:
+            try:
+                message = await channel.fetch_message(giveaway._id)
+                self.giveaway_messages[giveaway._id] = message
+            except Exception:
+                return
+
+        if len(message.embeds) == 0:
+            return
+
+        embed = message.embeds[0]
+        embed.set_field_at(0, name="Time remaining", value=f"Less than {humanize.naturaldelta(end_time - now)}")
+        await message.edit(embed=embed)
 
     @giveaway.command()
     async def reroll(self, ctx, message_id: int):
@@ -203,9 +263,10 @@ class Giveaway(commands.Cog):
         await ctx.message.delete()
         self.bot.settings.tasks.tasks.remove_job(str(message_id + 2), 'default')
         await end_giveaway(giveaway.channel.id, message_id, giveaway.winners)
-        
+
         await ctx.send(embed=discord.Embed(description="Giveaway ended!", color=discord.Color.blurple()), delete_after=5)
 
+    @time_updater_loop.error
     @giveaway.error
     @start.error
     @end.error
