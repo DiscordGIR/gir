@@ -284,7 +284,6 @@ async def end_giveaway(channel_id: int, message_id: int, winners: int) -> None:
             winner_ids.append(member.id)
 
     g = await bot_global.settings.get_giveaway(id=message.id)
-    print(g.id)
     g.entries = reacted_ids
     g.is_ended = True
     g.previous_winners = winner_ids
@@ -298,6 +297,6 @@ async def end_giveaway(channel_id: int, message_id: int, winners: int) -> None:
         return
 
     if winners == 1:
-        await channel.send(f"Congratulations {mentions[0]}! You won the giveaway of **{g.name}**!")
+        await channel.send(f"Congratulations {mentions[0]}! You won the giveaway of **{g.name}**! Please DM or contact <@{g.sponsor}> to collect.")
     else:
-        await channel.send(f"Congratulations {', '.join(mentions)}! You won the giveaway of **{g.name}**!")
+        await channel.send(f"Congratulations {', '.join(mentions)}! You won the giveaway of **{g.name}**! Please DM or contact <@{g.sponsor}> to collect.")
