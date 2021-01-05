@@ -11,6 +11,6 @@ class Giveaway(mongoengine.Document):
     winners          = mongoengine.IntField()
 
     meta = {
-        'db_alias': 'core',
+        'db_alias': 'default',
         'collection': 'giveaways'
     }

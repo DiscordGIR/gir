@@ -34,7 +34,7 @@ class Settings(commands.Cog):
             Instance of discord.Client, passed in when the Cog is initialized.
         """
 
-        mongoengine.register_connection(alias="core", name="botty")
+        mongoengine.register_connection(alias="default", name="botty")
         self.tasks = None
         self.bot = bot
         self.guild_id = int(os.environ.get("BOTTY_MAINGUILD"))

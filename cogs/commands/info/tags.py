@@ -1,4 +1,6 @@
+import aiohttp
 import traceback
+from io import BytesIO
 
 import discord
 from data.tag import Tag
@@ -11,7 +13,10 @@ class TagsSource(menus.GroupByPageSource):
         embed = discord.Embed(
             title=f'All tags', color=discord.Color.blurple())
         for tag in entry.items:
-            embed.add_field(name=tag.name, value=f"Added by: {tag.added_by_tag}\nUsed {tag.use_count} times")
+            desc = f"Added by: {tag.added_by_tag}\nUsed {tag.use_count} times"
+            if tag.image.read() is not None:
+                desc += "\nHas image attachment"
+            embed.add_field(name=tag.name, value=desc)
         embed.set_footer(
             text=f"Page {menu.current_page +1} of {self.get_max_pages()}")
         return embed
@@ -34,7 +39,7 @@ class Tags(commands.Cog):
     @commands.guild_only()
     @commands.command(name="addtag", aliases=['addt'])
     async def addtag(self, ctx, name: str, *, content: str) -> None:
-        """Add a tag (Genius only)
+        """Add a tag. Optionally attach an iamge. (Genius only)
 
         Example usage:
         -------------
@@ -66,17 +71,39 @@ class Tags(commands.Cog):
         tag.content = content
         tag.added_by_id = ctx.author.id
         tag.added_by_tag = str(ctx.author)
+        
+        if len(ctx.message.attachments) > 0:
+            image, _type = await self.do_content_parsing(ctx.message.attachments[0].url)
+            if _type is None:
+                raise commands.BadArgument("Attached file was not an image.")
+            tag.image.put(image, content_type=_type)
 
         await self.bot.settings.add_tag(tag)
 
         await ctx.message.reply(f"Added new tag!", embed=await self.tag_embed(tag), delete_after=10)
         await ctx.message.delete(delay=10)
-
+    
+    async def do_content_parsing(self, url):
+        async with aiohttp.ClientSession() as session:
+            async with session.head(url) as resp:
+                if resp.status != 200:
+                    return None, None
+                elif resp.headers["CONTENT-TYPE"] not in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
+                    return None, None
+                else:
+                    async with session.get(url) as resp2:
+                        if resp2.status != 200:
+                            return None
+                        return await resp2.read(), resp2.headers['CONTENT-TYPE']
+                        
     async def tag_embed(self, tag):
         embed = discord.Embed(title=tag.name)
         embed.description = tag.content
         embed.timestamp = tag.added_date
         embed.color = discord.Color.blue()
+
+        if tag.image.read() is not None:
+            embed.set_image(url="attachment://image.gif" if tag.image.content_type == "image/gif" else "attachment://image.png")
         embed.set_footer(text=f"Added by {tag.added_by_tag} | Used {tag.use_count} times")
         return embed
 
@@ -155,7 +182,11 @@ class Tags(commands.Cog):
             await ctx.message.delete()
             raise commands.BadArgument("That tag does not exist.")
         
-        await ctx.message.reply(embed=await self.tag_embed(tag), mention_author=False)
+        file = tag.image.read()
+        if file is not None:
+            file = discord.File(BytesIO(file), filename="image.gif" if tag.image.content_type == "image/gif" else "image.png")
+        
+        await ctx.message.reply(embed=await self.tag_embed(tag), file=file, mention_author=False)
 
     @tag.error
     @taglist.error

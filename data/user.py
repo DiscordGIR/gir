@@ -18,6 +18,6 @@ class User(mongoengine.Document):
     birthday            = mongoengine.ListField(default=[])
 
     meta = {
-        'db_alias': 'core',
+        'db_alias': 'default',
         'collection': 'users'
     }

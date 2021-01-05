@@ -39,7 +39,7 @@ class Guild(mongoengine.Document):
     tags                      = mongoengine.EmbeddedDocumentListField(Tag, default=[])
 
     meta = {
-        'db_alias': 'core',
+        'db_alias': 'default',
         'collection': 'guilds'
     }
 
