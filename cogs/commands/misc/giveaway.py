@@ -157,17 +157,17 @@ class Giveaway(commands.Cog):
         for giveaway in giveaways:
             await self.do_giveaway_update(giveaway, guild)
 
-    @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        if payload.member.bot:
-            return
-        if not payload.guild_id:
-            return
-        if not payload.guild_id == self.bot.settings.guild_id:
-            return
+    # @commands.Cog.listener()
+    # async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+    #     if payload.member.bot:
+    #         return
+    #     if not payload.guild_id:
+    #         return
+    #     if not payload.guild_id == self.bot.settings.guild_id:
+    #         return
 
-        g = await self.bot.settings.get_giveaway(id=payload.message_id)
-        await self.do_giveaway_update(g, payload.member.guild)
+    #     g = await self.bot.settings.get_giveaway(id=payload.message_id)
+    #     await self.do_giveaway_update(g, payload.member.guild)
 
     async def do_giveaway_update(self, giveaway: GiveawayDB, guild: discord.Guild):
         if giveaway is None:

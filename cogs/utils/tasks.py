@@ -21,7 +21,7 @@ job_defaults = {
     # 'coalesce': True
 }
 
-bot_global = None
+BOT_GLOBAL = None
 
 
 class Tasks():
@@ -37,8 +37,8 @@ class Tasks():
             instance of Discord client
         """
 
-        global bot_global
-        bot_global = bot
+        global BOT_GLOBAL
+        BOT_GLOBAL = bot
 
         logging.basicConfig()
         logging.getLogger('apscheduler').setLevel(logging.DEBUG)
@@ -121,7 +121,7 @@ def unmute_callback(id: int) -> None:
         User who we want to unmute
     """
 
-    bot_global.loop.create_task(remove_mute(id))
+    BOT_GLOBAL.loop.create_task(remove_mute(id))
 
 
 async def remove_mute(id: int) -> None:
@@ -133,35 +133,35 @@ async def remove_mute(id: int) -> None:
         User to unmute
     """
 
-    guild = bot_global.get_guild(bot_global.settings.guild_id)
+    guild = BOT_GLOBAL.get_guild(BOT_GLOBAL.settings.guild_id)
     if guild is not None:
-        mute_role = bot_global.settings.guild().role_mute
+        mute_role = BOT_GLOBAL.settings.guild().role_mute
         mute_role = guild.get_role(mute_role)
         if mute_role is not None:
             user = guild.get_member(id)
             if user is not None:
                 await user.remove_roles(mute_role)
                 case = Case(
-                    _id=bot_global.settings.guild().case_id,
+                    _id=BOT_GLOBAL.settings.guild().case_id,
                     _type="UNMUTE",
-                    mod_id=bot_global.user.id,
-                    mod_tag=str(bot_global.user),
+                    mod_id=BOT_GLOBAL.user.id,
+                    mod_tag=str(BOT_GLOBAL.user),
                     reason="Temporary mute expired.",
                 )
-                await bot_global.settings.inc_caseid()
-                await bot_global.settings.add_case(user.id, case)
+                await BOT_GLOBAL.settings.inc_caseid()
+                await BOT_GLOBAL.settings.add_case(user.id, case)
 
-                u = await bot_global.settings.user(id=user.id)
+                u = await BOT_GLOBAL.settings.user(id=user.id)
                 u.is_muted = False
                 u.save()
 
-                log = await prepare_unmute_log(bot_global.user, user, case)
+                log = await prepare_unmute_log(BOT_GLOBAL.user, user, case)
 
                 log.remove_author()
                 log.set_thumbnail(url=user.avatar_url)
 
                 public_chan = guild.get_channel(
-                    bot_global.settings.guild().channel_public)
+                    BOT_GLOBAL.settings.guild().channel_public)
                 try:
                     await public_chan.send(embed=log)
                     await user.send(embed=log)
@@ -169,16 +169,16 @@ async def remove_mute(id: int) -> None:
                     pass
             else:
                 case = Case(
-                    _id=bot_global.settings.guild().case_id,
+                    _id=BOT_GLOBAL.settings.guild().case_id,
                     _type="UNMUTE",
-                    mod_id=bot_global.user.id,
-                    mod_tag=str(bot_global.user),
+                    mod_id=BOT_GLOBAL.user.id,
+                    mod_tag=str(BOT_GLOBAL.user),
                     reason="Temporary mute expired.",
                 )
-                await bot_global.settings.inc_caseid()
-                await bot_global.settings.add_case(id, case)
+                await BOT_GLOBAL.settings.inc_caseid()
+                await BOT_GLOBAL.settings.add_case(id, case)
 
-                u = await bot_global.settings.user(id=id)
+                u = await BOT_GLOBAL.settings.user(id=id)
                 u.is_muted = False
                 u.save()
 
@@ -193,7 +193,7 @@ def remove_bday_callback(id: int) -> None:
         User who we want to unmute
     """
 
-    bot_global.loop.create_task(remove_bday(id))
+    BOT_GLOBAL.loop.create_task(remove_bday(id))
 
 
 async def remove_bday(id: int) -> None:
@@ -205,11 +205,11 @@ async def remove_bday(id: int) -> None:
         User to remove role of
     """
 
-    guild = bot_global.get_guild(bot_global.settings.guild_id)
+    guild = BOT_GLOBAL.get_guild(BOT_GLOBAL.settings.guild_id)
     if guild is None:
         return
 
-    bday_role = bot_global.settings.guild().role_birthday
+    bday_role = BOT_GLOBAL.settings.guild().role_birthday
     bday_role = guild.get_role(bday_role)
     if bday_role is None:
         return
@@ -229,7 +229,7 @@ def end_giveaway_callback(channel_id: int, message_id: int, winners: int) -> Non
         Message ID of the giveaway
     """
 
-    bot_global.loop.create_task(end_giveaway(channel_id, message_id, winners))
+    BOT_GLOBAL.loop.create_task(end_giveaway(channel_id, message_id, winners))
 
 async def end_giveaway(channel_id: int, message_id: int, winners: int) -> None:
     """
@@ -243,7 +243,7 @@ async def end_giveaway(channel_id: int, message_id: int, winners: int) -> None:
         Message ID of the giveaway
     """
 
-    guild = bot_global.get_guild(bot_global.settings.guild_id)
+    guild = BOT_GLOBAL.get_guild(BOT_GLOBAL.settings.guild_id)
     channel = guild.get_channel(channel_id)
     
     if channel is None:
@@ -261,7 +261,7 @@ async def end_giveaway(channel_id: int, message_id: int, winners: int) -> None:
     reaction = message.reactions[0]
     reacted_users = await reaction.users().flatten()
     reacted_ids = [user.id for user in reacted_users]
-    reacted_ids.remove(bot_global.user.id)
+    reacted_ids.remove(BOT_GLOBAL.user.id)
 
     if len(reacted_ids) < winners:
         winners = len(reacted_ids)
@@ -283,7 +283,7 @@ async def end_giveaway(channel_id: int, message_id: int, winners: int) -> None:
             mentions.append(member.mention)
             winner_ids.append(member.id)
 
-    g = await bot_global.settings.get_giveaway(id=message.id)
+    g = await BOT_GLOBAL.settings.get_giveaway(id=message.id)
     g.entries = reacted_ids
     g.is_ended = True
     g.previous_winners = winner_ids
