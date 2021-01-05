@@ -1,9 +1,12 @@
+import aiohttp
+import datetime
 import traceback
+import typing
+from io import BytesIO
 
 import discord
-import datetime
-import typing
 from discord.ext import commands
+from twemoji_parser import emoji_to_url
 
 
 class Misc(commands.Cog):
@@ -13,7 +16,7 @@ class Misc(commands.Cog):
 
     @commands.command(name="jumbo")
     @commands.guild_only()
-    async def jumbo(self, ctx, emoji: typing.Union[discord.Emoji, discord.PartialEmoji]):
+    async def jumbo(self, ctx, emoji: typing.Union[discord.Emoji, discord.PartialEmoji, str]):
         """Post large version of a given emoji
 
         Example usage
@@ -25,19 +28,47 @@ class Misc(commands.Cog):
         emoji : typing.Union[discord.Emoji, discord.PartialEmoji]
             Emoji to post
         """
-
-
+        
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
             if await self.ratelimit(ctx.message):
                 raise commands.BadArgument("This command is on cooldown.")
 
+        if isinstance(emoji, str):
+            parsed_emoji_link = await emoji_to_url(emoji)
+            if parsed_emoji_link == emoji :
+                raise commands.BadArgument("Couldn't find a suitable emoji.")
+            
+            emoji_bytes = await self.do_content_parsing(parsed_emoji_link)
+            if emoji_bytes is None:
+                raise commands.BadArgument("Couldn't find a suitable emoji.")
+            
+            _file = discord.File(BytesIO(emoji_bytes), filename="image.png")
+            emoji_url = "attachment://image.png"
+        else:
+            emoji_url = emoji.url
+            _file = None
+
         await ctx.message.delete()
         embed = discord.Embed()
-        embed.set_image(url=emoji.url)
+        embed.set_image(url=emoji_url)
         embed.color = discord.Color.random()
         embed.set_footer(text=f"Requested by {ctx.author}")
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, file=_file)
+
+    async def do_content_parsing(self, url):
+        async with aiohttp.ClientSession() as session:
+            async with session.head(url) as resp:
+                if resp.status != 200:
+                    return None
+                elif resp.headers["CONTENT-TYPE"] not in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
+                    return None
+                else:
+                    async with session.get(url) as resp2:
+                        if resp2.status != 200:
+                            return None
+
+                        return await resp2.read()
 
     async def ratelimit(self, message):
         bucket = self.spam_cooldown.get_bucket(message)
