@@ -35,28 +35,21 @@ class Misc(commands.Cog):
                 raise commands.BadArgument("This command is on cooldown.")
 
         if isinstance(emoji, str):
-            parsed_emoji_link = await emoji_to_url(emoji)
-            if parsed_emoji_link == emoji :
+            emoji_url = await emoji_to_url(emoji)
+            if emoji_url == emoji :
                 raise commands.BadArgument("Couldn't find a suitable emoji.")
-            
-            emoji_bytes = await self.do_content_parsing(parsed_emoji_link)
+            emoji_bytes = await self.get_emoji_bytes(emoji_url)
             if emoji_bytes is None:
                 raise commands.BadArgument("Couldn't find a suitable emoji.")
-            
-            _file = discord.File(BytesIO(emoji_bytes), filename="image.png")
-            emoji_url = "attachment://image.png"
+
         else:
             emoji_url = emoji.url
-            _file = None
+            emoji_bytes = await emoji.url.read()
 
-        await ctx.message.delete()
-        embed = discord.Embed()
-        embed.set_image(url=emoji_url)
-        embed.color = discord.Color.random()
-        embed.set_footer(text=f"Requested by {ctx.author}")
-        await ctx.send(embed=embed, file=_file)
+        _file = discord.File(BytesIO(emoji_bytes), filename="image.png")
+        await ctx.message.reply(file=_file)
 
-    async def do_content_parsing(self, url):
+    async def get_emoji_bytes(self, url):
         async with aiohttp.ClientSession() as session:
             async with session.head(url) as resp:
                 if resp.status != 200:
