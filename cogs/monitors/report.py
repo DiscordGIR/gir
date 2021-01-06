@@ -5,7 +5,7 @@ import discord
 import humanize
 
 
-async def report(bot, msg, user, invite=None):
+async def report(bot, msg, user, word, invite=None):
     role = msg.guild.get_role(bot.settings.guild().role_moderator)
     channel = msg.guild.get_channel(bot.settings.guild().channel_reports)
 
@@ -15,7 +15,7 @@ async def report(bot, msg, user, invite=None):
         if member.status == discord.Status.online or offline_ping:
             ping_string += f"{member.mention} "
 
-    embed = await prepare_embed(bot, user, msg)
+    embed = await prepare_embed(bot, user, msg, word)
 
     if invite:
         report_msg = await channel.send(f"{ping_string}\nMessage contained invite: {invite}", embed=embed)
@@ -56,7 +56,7 @@ async def report(bot, msg, user, invite=None):
             
 
 
-async def prepare_embed(bot, user, msg):
+async def prepare_embed(bot, user, msg, word):
     user_info = await bot.settings.user(user.id)
     joined = user.joined_at.strftime("%B %d, %Y, %I:%M %p")
     created = user.created_at.strftime("%B %d, %Y, %I:%M %p")
@@ -78,7 +78,7 @@ async def prepare_embed(bot, user, msg):
         msg.content = msg.content[0:400] + "..."
 
     embed.add_field(name="Message", value=discord.utils.escape_markdown(
-        msg.content) + f"\n\n[Link to message]({msg.jump_url})", inline=False)
+        msg.content) + f"\n\n[Link to message]({msg.jump_url}) | Filtered word: **{word}**", inline=False)
     embed.add_field(name="Join date", value=f"{joined} UTC", inline=True)
     embed.add_field(name="Account creation date",
                     value=f"{created} UTC", inline=True)

@@ -62,7 +62,7 @@ class FilterMonitor(commands.Cog):
                             await self.ratelimit(msg)
                             reported = True
                         if word.notify:
-                            await report(self.bot, msg, msg.author)
+                            await report(self.bot, msg, msg.author, word.word)
                             return
         """
         INVITE FILTER
@@ -85,13 +85,13 @@ class FilterMonitor(commands.Cog):
                             if id not in whitelist:
                                 await self.delete(msg)
                                 await self.ratelimit(msg)
-                                await report(self.bot, msg, msg.author, invite)
+                                await report(self.bot, msg, msg.author, invite, invite=invite)
                                 return
 
                         except discord.errors.NotFound:
                             await self.delete(msg)
                             await self.ratelimit(msg)
-                            await report(self.bot, msg, msg.author, invite)
+                            await report(self.bot, msg, msg.author, invite, invite=invite)
                             return
         """
         SPOILER FILTER
@@ -130,10 +130,6 @@ class FilterMonitor(commands.Cog):
             await msg.delete()
         except Exception:
             pass
-
-    @commands.Cog.listener()
-    async def on_message_edit(self, before, after):
-        await self.filter(after)
 
     async def mute(self, ctx: commands.Context, user: discord.Member) -> None:
         dur = "15m"
