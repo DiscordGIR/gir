@@ -8,6 +8,7 @@ class Giveaway(mongoengine.Document):
     name             = mongoengine.StringField()
     entries          = mongoengine.ListField(mongoengine.IntField(), default=[])
     previous_winners = mongoengine.ListField(mongoengine.IntField(), default=[])
+    sponsor          = mongoengine.IntField()
     winners          = mongoengine.IntField()
 
     meta = {
