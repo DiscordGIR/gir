@@ -139,7 +139,7 @@ class Giveaway(commands.Cog):
 
         await ctx.message.delete()
 
-        giveaway = GiveawayDB(_id=message.id, channel=responses['channel'].id, name=responses['name'], winners=responses['winners'], end_time=end_time, sponsor=responses['sponsor'])
+        giveaway = GiveawayDB(_id=message.id, channel=responses['channel'].id, name=responses['name'], winners=responses['winners'], end_time=end_time, sponsor=responses['sponsor'].id)
         giveaway.save()
 
         if ctx.channel.id != responses['channel'].id:
