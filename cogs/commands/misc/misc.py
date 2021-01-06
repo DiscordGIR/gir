@@ -42,12 +42,11 @@ class Misc(commands.Cog):
             if emoji_bytes is None:
                 raise commands.BadArgument("Couldn't find a suitable emoji.")
 
-        else:
-            emoji_url = emoji.url
-            emoji_bytes = await emoji.url.read()
+            _file = discord.File(BytesIO(emoji_bytes), filename="image.png")
+            await ctx.message.reply(file=_file)
 
-        _file = discord.File(BytesIO(emoji_bytes), filename="image.png")
-        await ctx.message.reply(file=_file)
+        else:
+            await ctx.message.reply(emoji.url)
 
     async def get_emoji_bytes(self, url):
         async with aiohttp.ClientSession() as session:
