@@ -6,8 +6,8 @@ authors = ["SlimShadyIAm <me@slim.rocks>"]
 
 [tool.poetry.dependencies]
 python = "^3.9.0"
-"discord.py" = {git = "https://github.com/Rapptz/discord.py"}
 python-dotenv = "^0.15.0"
+"discord.py" = "^1.6.0"
 discord-ext-menus = {git = "https://github.com/Rapptz/discord-ext-menus"}
 mongoengine = "^0.21.0"
 apscheduler = "^3.6.3"
@@ -22,7 +22,6 @@ spotipy = "^2.16.1"
 twemoji-parser = "^0.4.2"
 
 [tool.poetry.dev-dependencies]
-pylama = "^7.7.1"
 pylint = "^2.6.0"
 rope = "^0.18.0"
 
