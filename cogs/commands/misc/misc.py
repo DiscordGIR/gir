@@ -46,7 +46,7 @@ class Misc(commands.Cog):
             await ctx.message.reply(file=_file, mention_author=False)
 
         else:
-            await ctx.message.reply(emoji.url)
+            await ctx.message.reply(emoji.url, mention_author=False)
 
     async def get_emoji_bytes(self, url):
         async with aiohttp.ClientSession() as session:
