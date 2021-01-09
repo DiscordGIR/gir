@@ -297,18 +297,16 @@ class Music(commands.Cog):
         chan = self.bot.get_channel(int(player.channel_id))
         if len(chan.members) == 1 and chan.members[0].id == self.bot.user.id:
             await player.set_pause(True)
+            self.update_progress.stop()
             await self.bot.change_presence(status=discord.Status.online, activity=None)
-            embed = discord.Embed()
-            embed.description = "There's no one in the music channel. Paused the song!"
-            embed.color = discord.Color.blurple()
-            await self.channel.send(embed=embed)
         elif len(chan.members) > 1:
             if player.paused:
                 await player.set_pause(False)
+                self.update_progress.start()
                 embed = discord.Embed()
-                embed.description = "Resuming previous!"
+                embed.description = "The player was paused because no one was in the voice channel. Resuming previous!"
                 embed.color = discord.Color.blurple()
-                await self.channel.send(embed=embed, delete_after=5)
+                await self.channel.send(member.mention, embed=embed, delete_after=10)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):

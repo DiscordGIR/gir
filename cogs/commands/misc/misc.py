@@ -43,7 +43,7 @@ class Misc(commands.Cog):
                 raise commands.BadArgument("Couldn't find a suitable emoji.")
 
             _file = discord.File(BytesIO(emoji_bytes), filename="image.png")
-            await ctx.message.reply(file=_file)
+            await ctx.message.reply(file=_file, mention_author=False)
 
         else:
             await ctx.message.reply(emoji.url)
