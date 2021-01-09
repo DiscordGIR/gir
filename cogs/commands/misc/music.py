@@ -1,12 +1,13 @@
 import re
 import os
 
+import asyncio
 import discord
 import lavalink
 import humanize
 import datetime
 import traceback
-from discord.ext import commands
+from discord.ext import commands, tasks
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
@@ -127,6 +128,8 @@ class Music(commands.Cog):
             if title is not None:
                 activity = discord.Activity(type=discord.ActivityType.listening, name=title)
                 await self.bot.change_presence(status=discord.Status.online, activity=activity)
+            await asyncio.sleep(5)
+            self.update_progress.start()
         elif isinstance(event, lavalink.events.TrackEndEvent):
             self.skip_votes = set()
             self.skip_vote_msg = None
@@ -137,6 +140,7 @@ class Music(commands.Cog):
                     await self.np.delete()
                 except Exception:
                     pass
+            self.update_progress.cancel()
 
     async def connect_to(self, guild_id: int, channel_id: str):
         """ Connects to the given voicechannel ID. A channel_id of `None` means disconnect. """
@@ -148,6 +152,8 @@ class Music(commands.Cog):
     async def do_np(self, guild, post_reactions=True):
         player = self.bot.lavalink.player_manager.get(guild)
         track = player.current
+        if track is None or not player.is_playing:
+            raise commands.BadArgument('I am not currently playing anything!')
         track = player.fetch(track.identifier)
         data = track["info"]
 
@@ -156,6 +162,9 @@ class Music(commands.Cog):
         embed.add_field(name="By", value=data.get('author'))
         embed.add_field(name="Duration", value=humanize.naturaldelta(datetime.timedelta(milliseconds=data.get('length'))))
         embed.add_field(name="Requested by", value=f"<@{player.current.requester}>")
+        
+        progress = self.get_progress(player, data)  
+        embed.add_field(name="Progress", value=progress)
         embed.color = discord.Color.random()
         
         if not post_reactions:
@@ -168,6 +177,52 @@ class Music(commands.Cog):
                     await self.np.add_reaction(r)
                 except Exception:
                     return
+                
+    def get_progress(self, player, data):
+        length = int(data.get('length'))
+        position = int(player.position)
+        p = int(position / length * 100) if position != length else 0
+        
+        def fix_emojis(desc):
+            custom_emojis = re.findall(r':\w*:', desc)
+            new = ""
+            for e in custom_emojis:
+                e = e.replace(':', '')
+                replacement = discord.utils.get(self.bot.emojis, name=e)
+                if replacement is not None:
+                    new = new + str(replacement)
+            return new
+        
+        percentage = int(((position / length) * 100 / 10) ) if position != length else 0
+        if percentage == 0:
+            progress = f":progress1:{':progressempty:' * 8}:progressempty2:"
+        elif percentage == 10:
+            progress = f":progress1:{'progress2:' * 8}:progress3:"
+        else:
+            progress = f":progress1:{':progress2:' * percentage}{':progressempty:' * (8 - percentage)}:progressempty2:"
+
+        return str(p) + "% " + fix_emojis(progress)
+
+    @tasks.loop(seconds=20)
+    async def update_progress(self):
+        player = self.bot.lavalink.player_manager.get(self.channel.guild.id)
+        if self.np is None:
+            return
+        if player is None:
+            return
+        track = player.current
+        if track is None or not player.is_playing:
+            return
+        track = player.fetch(track.identifier)
+        data = track["info"]
+        
+        embed = self.np.embeds[0]
+        embed.set_field_at(4, name="Progress", value=self.get_progress(player, data))
+        
+        try:
+            await self.np.edit(embed=embed)
+        except Exception:
+            pass
 
     async def do_skip(self, channel, skipper, player):
         if not player.is_playing:
