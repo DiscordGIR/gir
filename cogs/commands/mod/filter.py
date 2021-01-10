@@ -142,8 +142,16 @@ class Filters(commands.Cog):
                 "You need to be an administator or higher to use that command.")
 
         word = word.lower()
-        await self.bot.settings.remove_filtered_word(word)
-        await ctx.message.reply("Deleted, if it exists :p", delete_after=10)
+
+        words = self.bot.settings.guild().filter_words
+        words = list(filter(lambda w: w.word.lower() == word.lower(), words))
+        
+        if len(words) > 0:
+            await self.bot.settings.remove_filtered_word(words[0].word)
+            await ctx.message.reply("Deleted!", delete_after=5)
+        else:
+            await ctx.message.reply("That word is not filtered.", delete_after=5)            
+        await ctx.message.delete(delay=5)
 
     @commands.guild_only()
     @commands.command(name="whitelist")
