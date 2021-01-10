@@ -57,13 +57,17 @@ class FilterMonitor(commands.Cog):
                     if (word.word.lower() in folded_message) or \
                         (not word.false_positive and word.word.lower() in folded_without_spaces_and_punctuation):
                         # remove all whitespace, punctuation in message and run filter again
-                        await self.delete(msg)
-                        if not reported:
-                            await self.ratelimit(msg)
-                            reported = True
-                        if word.notify:
-                            await report(self.bot, msg, msg.author, word.word)
-                            return
+
+                        dev_role = msg.guild.get_role(self.bot.settings.guild().role_dev)
+                        if not (word.piracy and msg.channel.id == self.bot.settings.guild().channel_development and dev_role in msg.author.roles):
+                            # ignore if this is a piracy word and the channel is #development and the user has dev role
+                            await self.delete(msg)
+                            if not reported:
+                                await self.ratelimit(msg)
+                                reported = True
+                            if word.notify:
+                                await report(self.bot, msg, msg.author, word.word)
+                                return
         """
         INVITE FILTER
         """

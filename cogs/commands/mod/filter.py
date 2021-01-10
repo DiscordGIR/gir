@@ -12,7 +12,10 @@ class FilterSource(menus.GroupByPageSource):
         embed = discord.Embed(
             title=f'Filtered words', color=discord.Color.blurple())
         for _, word in entry.items:
-            embed.add_field(name=word.word, value=f"Bypassed by: {permissions.level_info(word.bypass)}\nWill report: {word.notify}")
+            extra = ""
+            if word.piracy:
+                extra = "\nThis is a piracy word"
+            embed.add_field(name=word.word, value=f"Bypassed by: {permissions.level_info(word.bypass)}\nWill report: {word.notify}{extra}")
         embed.set_footer(
             text=f"Page {menu.current_page +1} of {self.get_max_pages()}")
         return embed
@@ -119,6 +122,41 @@ class Filters(commands.Cog):
 
         await menus.start(ctx)
 
+    @commands.guild_only()
+    @commands.command(name="piracy")
+    async def piracy(self, ctx, *, word: str):
+        """Mark a word as piracy, will be ignored in #dev (admin only)
+
+        Example usage:
+        --------------
+        `!piracy xd xd xd`
+
+        Parameters
+        ----------
+        word : str
+            Word to mark as piracy
+
+        """
+        # must be at least admin
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            await ctx.message.delete()
+            raise commands.BadArgument(
+                "You need to be an administator or higher to use that command.")
+
+        word = word.lower()
+
+        words = self.bot.settings.guild().filter_words
+        words = list(filter(lambda w: w.word.lower() == word.lower(), words))
+        
+        if len(words) > 0:
+            await self.bot.settings.remove_filtered_word(words[0].word)
+            words[0].piracy = True
+            await self.bot.settings.add_filtered_word(words[0])
+
+            await ctx.message.reply("Marked as a piracy word!", delete_after=5)
+        else:
+            await ctx.message.reply("That word is not filtered.", delete_after=5)            
+        await ctx.message.delete(delay=5)
 
     @commands.guild_only()
     @commands.command(name="filterremove")
@@ -265,6 +303,7 @@ class Filters(commands.Cog):
             await ctx.message.reply("That server is already blacklisted.", delete_after=10)
         await ctx.message.delete(delay=10)
 
+    @piracy.error
     @whitelist.error
     @blacklist.error
     @filterremove.error

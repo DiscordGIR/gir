@@ -6,3 +6,4 @@ class FilterWord(mongoengine.EmbeddedDocument):
     bypass               = mongoengine.IntField(required=True)
     word                 = mongoengine.StringField(required=True)
     false_positive       = mongoengine.BooleanField(default=False)
+    piracy               = mongoengine.BooleanField(default=False)
