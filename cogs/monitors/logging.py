@@ -77,8 +77,6 @@ class Logging(commands.Cog):
         if member.guild.id != self.bot.settings.guild_id:
             return
 
-        await self.nick_filter(member)
-
         channel = member.guild.get_channel(self.bot.settings.guild().channel_private)
 
         embed = discord.Embed(title="Member joined")
@@ -279,8 +277,6 @@ class Logging(commands.Cog):
             return
 
     async def member_nick_update(self, before, after):
-        await self.nick_filter(after)
-
         embed = discord.Embed(title="Member Renamed")
         embed.color = discord.Color.orange()
         embed.set_thumbnail(url=after.avatar_url)
@@ -296,23 +292,6 @@ class Logging(commands.Cog):
         private = after.guild.get_channel(self.bot.settings.guild().channel_private)
         if private:
             await private.send(embed=embed)
-
-    async def nick_filter(self, member):
-        guild = self.bot.settings.guild()
-        nick = member.display_name
-
-        symbols = (u"абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ",
-                   u"abBrdeex3nnKnmHonpcTyoxu4wwbbbeoRABBrDEEX3NNKNMHONPCTyOXU4WWbbbEOR")
-
-        tr = {ord(a): ord(b) for a, b in zip(*symbols)}
-
-        folded_message = fold(nick.translate(tr).lower())
-
-        if folded_message:
-            for word in guild.filter_words:
-                if not self.bot.settings.permissions.hasAtLeast(member.guild, member, word.bypass):
-                    if word.word.lower() in folded_message.lower():
-                        await member.edit(nick="change name pls", reason=f"filter triggered ({nick})")
 
     async def member_roles_update(self, before, after, roles, added):
         embed = discord.Embed()
