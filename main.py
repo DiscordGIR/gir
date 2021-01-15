@@ -66,21 +66,23 @@ class Bot(commands.Bot):
         self.spam_cooldown = commands.CooldownMapping.from_cooldown(2, 10.0, commands.BucketType.user)
     
     async def on_message(self, message):
-        if await self.filter(message):
+        if message.guild.id == self.settings.guild_id:
             if not self.settings.permissions.hasAtLeast(message.guild, message.author, 6):
-                return
+                if await self.filter(message):
+                    return
+                                
         await self.process_commands(message)
 
     async def filter(self, message):
         if not message.guild:
-            return
+            return False
         if message.author.bot:
-            return
+            return False
         guild = self.settings.guild()
         if message.guild.id != self.settings.guild_id:
-            return
+            return False
         if message.channel.id in guild.filter_excluded_channels:
-            return
+            return False
 
         return await self.do_word_filter(message, guild) or await self.do_invite_filter(message) or await self.do_spoiler_filter(message, guild)
     
