@@ -109,13 +109,14 @@ class ModActions(commands.Cog):
         log.add_field(name="Current points", value=cur_points, inline=True)
 
         log_kickban = None
-
+        dmed = True
+        
         if cur_points >= 600:
             # automatically ban user if more than 600 points
             try:
                 await user.send(f"You were banned from {ctx.guild.name} for reaching 600 or more points.", embed=log)
             except Exception:
-                pass
+                dmed = False
 
             log_kickban = await self.add_ban_case(ctx, user, "600 or more warn points reached.")
             await user.ban(reason="600 or more warn points reached.")
@@ -127,7 +128,7 @@ class ModActions(commands.Cog):
             try:
                 await user.send(f"You were kicked from {ctx.guild.name} for reaching 400 or more points. Please note that you will be banned at 600 points.", embed=log)
             except Exception:
-                pass
+                dmed = False
 
             log_kickban = await self.add_kick_case(ctx, user, "400 or more warn points reached.")
             await user.kick(reason="400 or more warn points reached.")
@@ -137,7 +138,7 @@ class ModActions(commands.Cog):
                 try:
                     await user.send(f"You were warned in {ctx.guild.name}. Please note that you will be kicked at 400 points and banned at 600 points.", embed=log)
                 except Exception:
-                    pass
+                    dmed = False
 
         # also send response in channel where command was called
         await ctx.message.reply(embed=log, delete_after=10)
@@ -148,7 +149,7 @@ class ModActions(commands.Cog):
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
-            await public_chan.send(embed=log)
+            await public_chan.send(user.mention if not dmed else "", embed=log)
 
             if log_kickban:
                 log_kickban.remove_author()
@@ -210,13 +211,13 @@ class ModActions(commands.Cog):
 
         # remove the warn points from the user in DB
         await self.bot.settings.inc_points(user.id, -1 * int(case.punishment))
-
+        dmed = True
         # prepare log embed, send to #public-mod-logs, user, channel where invoked
         log = await logging.prepare_liftwarn_log(ctx.author, user, case)
         try:
             await user.send(f"Your warn was lifted in {ctx.guild.name}.", embed=log)
         except Exception:
-            pass
+            dmed = False
 
         await ctx.message.reply(embed=log, delete_after=10)
         await ctx.message.delete(delay=10)
@@ -226,7 +227,7 @@ class ModActions(commands.Cog):
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
-            await public_chan.send(embed=log)
+            await public_chan.send(user.mention if not dmed else "", embed=log)
 
     @commands.guild_only()
     @commands.command(name="removepoints")
@@ -281,10 +282,11 @@ class ModActions(commands.Cog):
 
         # prepare log embed, send to #public-mod-logs, user, channel where invoked
         log = await logging.prepare_removepoints_log(ctx.author, user, case)
+        dmed = True
         try:
             await user.send(f"Your points were removed in {ctx.guild.name}.", embed=log)
         except Exception:
-            pass
+            dmed = False
 
         await ctx.message.reply(embed=log, delete_after=10)
         await ctx.message.delete(delay=10)
@@ -294,7 +296,7 @@ class ModActions(commands.Cog):
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
-            await public_chan.send(embed=log)
+            await public_chan.send(user.mention if not dmed else "", embed=log)
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(kick_members=True)
@@ -625,17 +627,19 @@ class ModActions(commands.Cog):
         await ctx.message.reply(embed=log, delete_after=10)
         await ctx.message.delete(delay=10)
 
-        public_chan = ctx.guild.get_channel(
-            self.bot.settings.guild().channel_public)
-        if public_chan:
-            log.remove_author()
-            log.set_thumbnail(url=user.avatar_url)
-            await public_chan.send(embed=log)
-
+        log.remove_author()
+        log.set_thumbnail(url=user.avatar_url)
+        dmed = True
         try:
             await user.send(f"You have been muted in {ctx.guild.name}", embed=log)
         except Exception:
-            pass
+            dmed = False
+
+        public_chan = ctx.guild.get_channel(
+            self.bot.settings.guild().channel_public)
+        if public_chan:
+            await public_chan.send(user.mention if not dmed else "", embed=log)
+
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_roles=True)
@@ -686,17 +690,18 @@ class ModActions(commands.Cog):
         await ctx.message.reply(embed=log, delete_after=10)
         await ctx.message.delete(delay=10)
 
+        dmed = True
         try:
             await user.send(f"You have been unmuted in {ctx.guild.name}", embed=log)
         except Exception:
-            pass
+            dmed = False
 
         public_chan = ctx.guild.get_channel(
             self.bot.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
-            await public_chan.send(embed=log)
+            await public_chan.send(user.mention if not dmed else "", embed=log)
 
     @unmute.error
     @mute.error

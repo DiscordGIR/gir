@@ -162,11 +162,15 @@ async def remove_mute(id: int) -> None:
 
                 public_chan = guild.get_channel(
                     BOT_GLOBAL.settings.guild().channel_public)
+                
+                dmed = True
                 try:
-                    await public_chan.send(embed=log)
                     await user.send(embed=log)
                 except Exception:
-                    pass
+                    dmed = False
+                    
+                await public_chan.send(user.mention if not dmed else "", embed=log)
+
             else:
                 case = Case(
                     _id=BOT_GLOBAL.settings.guild().case_id,
