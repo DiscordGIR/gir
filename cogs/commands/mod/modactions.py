@@ -113,7 +113,7 @@ class ModActions(commands.Cog):
         if cur_points >= 600:
             # automatically ban user if more than 600 points
             try:
-                await user.send("You were banned from r/Jailbreak for reaching 600 or more points.", embed=log)
+                await user.send(f"You were banned from {ctx.guild.name} for reaching 600 or more points.", embed=log)
             except Exception:
                 pass
 
@@ -125,7 +125,7 @@ class ModActions(commands.Cog):
             await self.bot.settings.set_warn_kicked(user.id)
 
             try:
-                await user.send("You were kicked from r/Jailbreak for reaching 400 or more points. Please note that you will be banned at 600 points.", embed=log)
+                await user.send(f"You were kicked from {ctx.guild.name} for reaching 400 or more points. Please note that you will be banned at 600 points.", embed=log)
             except Exception:
                 pass
 
@@ -135,7 +135,7 @@ class ModActions(commands.Cog):
         else:
             if isinstance(user, discord.Member):
                 try:
-                    await user.send("You were warned in r/Jailbreak. Please note that you will be kicked at 400 points and banned at 600 points.", embed=log)
+                    await user.send(f"You were warned in {ctx.guild.name}. Please note that you will be kicked at 400 points and banned at 600 points.", embed=log)
                 except Exception:
                     pass
 
@@ -214,7 +214,7 @@ class ModActions(commands.Cog):
         # prepare log embed, send to #public-mod-logs, user, channel where invoked
         log = await logging.prepare_liftwarn_log(ctx.author, user, case)
         try:
-            await user.send("Your warn was lifted in r/Jailbreak.", embed=log)
+            await user.send(f"Your warn was lifted in {ctx.guild.name}.", embed=log)
         except Exception:
             pass
 
@@ -282,7 +282,7 @@ class ModActions(commands.Cog):
         # prepare log embed, send to #public-mod-logs, user, channel where invoked
         log = await logging.prepare_removepoints_log(ctx.author, user, case)
         try:
-            await user.send("Your points were removed in r/Jailbreak.", embed=log)
+            await user.send(f"Your points were removed in {ctx.guild.name}.", embed=log)
         except Exception:
             pass
 
@@ -317,7 +317,7 @@ class ModActions(commands.Cog):
         log = await self.add_kick_case(ctx, user, reason)
 
         try:
-            await user.send("You were kicked from r/Jailbreak", embed=log)
+            await user.send(f"You were kicked from {ctx.guild.name}", embed=log)
         except Exception:
             pass
 
@@ -360,7 +360,7 @@ class ModActions(commands.Cog):
         log = await self.add_kick_case(ctx, user, reason)
 
         try:
-            await user.send("You were kicked from r/Jailbreak", embed=log)
+            await user.send(f"You were kicked from {ctx.guild.name}", embed=log)
         except Exception:
             pass
 
@@ -428,7 +428,7 @@ class ModActions(commands.Cog):
         log = await self.add_ban_case(ctx, user, reason)
 
         try:
-            await user.send("You were banned from r/Jailbreak", embed=log)
+            await user.send(f"You were banned from {ctx.guild.name}", embed=log)
         except Exception:
             pass
 
@@ -633,7 +633,7 @@ class ModActions(commands.Cog):
             await public_chan.send(embed=log)
 
         try:
-            await user.send("You have been muted in r/Jailbreak", embed=log)
+            await user.send(f"You have been muted in {ctx.guild.name}", embed=log)
         except Exception:
             pass
 
@@ -687,7 +687,7 @@ class ModActions(commands.Cog):
         await ctx.message.delete(delay=10)
 
         try:
-            await user.send("You have been unmuted in r/Jailbreak", embed=log)
+            await user.send(f"You have been unmuted in {ctx.guild.name}", embed=log)
         except Exception:
             pass
 
