@@ -101,7 +101,6 @@ class Bot(commands.Bot):
         folded_message = fold(message.content.translate(tr).lower()).lower()
         folded_without_spaces = "".join(folded_message.split())
         folded_without_spaces_and_punctuation = folded_without_spaces.translate(str.maketrans('', '', string.punctuation))
-
         word_found = False
         
         if folded_message:
@@ -109,9 +108,9 @@ class Bot(commands.Bot):
             for word in guild.filter_words:
                 if not self.settings.permissions.hasAtLeast(message.guild, message.author, word.bypass):
                     if (word.word.lower() in folded_message) or \
+                        (not word.false_positive and word.word.lower() in folded_without_spaces) or \
                         (not word.false_positive and word.word.lower() in folded_without_spaces_and_punctuation):
                         # remove all whitespace, punctuation in message and run filter again
-
                         dev_role = message.guild.get_role(self.settings.guild().role_dev)
                         if not (word.piracy and message.channel.id == self.settings.guild().channel_development and dev_role in message.author.roles):
                             # ignore if this is a piracy word and the channel is #development and the user has dev role

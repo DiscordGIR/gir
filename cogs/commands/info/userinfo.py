@@ -318,8 +318,9 @@ class UserInfo(commands.Cog):
                     f"You don't have permissions to check others' cases.")
 
         if isinstance(user, int):
-            user = await self.bot.fetch_user(user)
-            if user is None:
+            try:
+                user = await self.bot.fetch_user(user)
+            except Exception:
                 raise commands.BadArgument(
                     f"Couldn't find user with ID {user}")
             ctx.args[2] = user
