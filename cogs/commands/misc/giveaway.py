@@ -128,7 +128,7 @@ class Giveaway(commands.Cog):
         end_time = now + datetime.timedelta(seconds=delta)
 
         embed = discord.Embed(title="New giveaway!")
-        embed.description = f"{responses['sponsor'].mention} is giving away **{responses['name']}** to **{responses['winners']}** lucky {'winner' if responses['winners'] == 1 else 'winners'}!"
+        embed.description = f"**{responses['name']}** is being given away by {responses['sponsor'].mention} to **{responses['winners']}** lucky {'winner' if responses['winners'] == 1 else 'winners'}!"
         embed.add_field(name="Time remaining", value=f"Less than {humanize.naturaldelta(end_time - now)}")
         embed.timestamp = end_time
         embed.color = discord.Color.random()

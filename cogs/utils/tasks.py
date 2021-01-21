@@ -259,7 +259,7 @@ async def end_giveaway(channel_id: int, message_id: int, winners: int) -> None:
 
     embed = message.embeds[0]
     embed.set_footer(text="Ended")
-    embed.set_field_at(0, name="Time remianing", value="This giveaway has ended.")
+    embed.set_field_at(0, name="Time remaining", value="This giveaway has ended.")
     embed.timestamp = datetime.now()
 
     reaction = message.reactions[0]
