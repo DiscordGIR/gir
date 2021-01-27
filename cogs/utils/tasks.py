@@ -261,6 +261,7 @@ async def end_giveaway(channel_id: int, message_id: int, winners: int) -> None:
     embed.set_footer(text="Ended")
     embed.set_field_at(0, name="Time remaining", value="This giveaway has ended.")
     embed.timestamp = datetime.now()
+    embed.color = discord.Color.default()
 
     reaction = message.reactions[0]
     reacted_users = await reaction.users().flatten()
