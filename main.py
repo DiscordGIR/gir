@@ -117,6 +117,7 @@ class Bot(commands.Bot):
                             word_found = True
                             await self.delete(message)
                             if not reported:
+                                await self.do_filter_notify(message.author, message.channel, word.word)
                                 await self.ratelimit(message)
                                 reported = True
                             if word.notify:
@@ -139,7 +140,10 @@ class Bot(commands.Bot):
 
                             id = None
                             if isinstance(invite, discord.Invite):
-                                id = invite.guild.id
+                                if invite.guild is not None:
+                                    id = invite.guild.id
+                                else:
+                                    id = 123
                             elif isinstance(invite, discord.PartialInviteGuild) or isinstance(invite, discord.PartialInviteChannel):
                                 id = invite.id
 
@@ -188,6 +192,18 @@ class Bot(commands.Bot):
             await message.delete()
         except Exception:
             pass
+
+    async def do_filter_notify(self, member, channel, word):
+        message = "Your message contained a word you aren't allowed to say in r/Jailbreak. This could be either hate speech or the name of a piracy tool/source. Please refrain from saying it!"
+        footer = "Repeatedly triggering the filter will automatically result in a mute."
+        try:
+            embed = discord.Embed(description=f"{message}\n\nFiltered word found: **{word}**", color=discord.Color.orange())
+            embed.set_footer(text=footer)
+            await member.send(embed=embed)
+        except Exception:
+            embed = discord.Embed(description=message, color=discord.Color.orange())
+            embed.set_footer(text=footer)
+            await channel.send(member.mention, embed=embed, delete_after=10)
 
     async def mute(self, ctx: commands.Context, user: discord.Member) -> None:
         dur = "15m"
