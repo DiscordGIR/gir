@@ -50,5 +50,5 @@ async def setup():
     print("DONE")
 
 if __name__ == "__main__":
-        mongoengine.register_connection(alias="core", name="botty")
+        mongoengine.register_connection(alias="default", name="botty")
         res = asyncio.get_event_loop().run_until_complete( setup() )
