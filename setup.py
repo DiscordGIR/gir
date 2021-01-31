@@ -1,9 +1,10 @@
 import asyncio
 import os
-from dotenv import find_dotenv, load_dotenv
-from data.guild import Guild
-import traceback
+
 import mongoengine
+from dotenv import find_dotenv, load_dotenv
+
+from data.guild import Guild
 
 load_dotenv(find_dotenv())
 
@@ -15,8 +16,9 @@ async def setup():
     guild._id          = int(os.environ.get("BOTTY_MAINGUILD"))
     guild.nsa_guild_id = int(os.environ.get("BOTTY_NSAGUILD"))
     
-    guild.case_id      = 11154
+    guild.case_id      = 1
     
+    guild.role_birthday      = 123  # put in the role IDs for your server here
     guild.role_dev           = 123  # put in the role IDs for your server here
     guild.role_genius        = 123  # put in the role IDs for your server here
     guild.role_member        = 123  # put in the role IDs for your server here
@@ -31,6 +33,7 @@ async def setup():
     guild.channel_booster_emoji  = 123  # put in the channel IDs for your server here
     guild.channel_botspam        = 123  # put in the channel IDs for your server here
     guild.channel_common_issues  = 123  # put in the channel IDs for your server here
+    guild.channel_development    = 123  # put in the channel IDs for your server here
     guild.channel_emoji_log      = 123  # put in the channel IDs for your server here
     guild.channel_private        = 123  # put in the channel IDs for your server here
     guild.channel_public         = 123  # put in the channel IDs for your server here
