@@ -398,6 +398,14 @@ optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
+name = "python-coinmarketcap"
+version = "0.2"
+description = "CoinMarketCap Python API Wrapper"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "python-dateutil"
 version = "2.8.1"
 description = "Extensions to the standard Python datetime module"
@@ -594,7 +602,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9.0"
-content-hash = "faffbe8c734abe59dc1606f870b09a0c45d23521bd7e479e4718b1f21da0831e"
+content-hash = "269364e2b2023e9e9b0ccd8ed9c90081f064d3b6f4d4b801659b3d4f6481c4b5"
 
 [metadata.files]
 aiohttp = [
@@ -1009,6 +1017,11 @@ pyotp = [
 pyparsing = [
     {file = "pyparsing-2.4.7-py2.py3-none-any.whl", hash = "sha256:ef9d7589ef3c200abe66653d3f1ab1033c3c419ae9b9bdb1240a85b024efc88b"},
     {file = "pyparsing-2.4.7.tar.gz", hash = "sha256:c203ec8783bf771a155b207279b9bccb8dea02d8f0c9e5f8ead507bc3246ecc1"},
+]
+python-coinmarketcap = [
+    {file = "python-coinmarketcap-0.2.tar.gz", hash = "sha256:b1e0e8b098fc910a5ec943a06774d5ee3b190e915123366e2f16238ef0a8a433"},
+    {file = "python_coinmarketcap-0.2-py2-none-any.whl", hash = "sha256:54c278154ee11ca78837fb73eae8c322a60af93dc0ce75b515fecf895d181cf5"},
+    {file = "python_coinmarketcap-0.2-py3-none-any.whl", hash = "sha256:3b69a7a92cd4f2b4726a2982d166c0b587fa4911cf366286f798e1e6f9d94933"},
 ]
 python-dateutil = [
     {file = "python-dateutil-2.8.1.tar.gz", hash = "sha256:73ebfe9dbf22e832286dafa60473e4cd239f8592f699aa5adaf10050e6e1823c"},

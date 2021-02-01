@@ -11,6 +11,7 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import robin_stocks as r
+from coinmarketcapapi import CoinMarketCapAPI
 from discord.ext import commands
 
 
@@ -22,6 +23,8 @@ class Stonks(commands.Cog):
         mpl_logger = logging.getLogger('matplotlib')
         mpl_logger.setLevel(logging.WARNING)
         r.login(username,password)
+        
+        self.cmc = CoinMarketCapAPI(os.environ.get("CMC_KEY"))
 
     @commands.command(name="sc")
     @commands.cooldown(2, 10, commands.BucketType.member)
@@ -48,12 +51,23 @@ class Stonks(commands.Cog):
                 historical_data = r.stocks.get_stock_historicals(symbol, interval='5minute', span='day', bounds='extended', info=None)
                 if historical_data is None or len(historical_data)  == 0:
                     raise commands.BadArgument("An error occured fetching historical data for this symbol.")
+                
             else:
                 symbol_name = symbol.upper()
                 try:
                     historical_data = r.crypto.get_crypto_historicals(symbol, interval='5minute', span='day', bounds='extended', info=None)
                 except:
-                    raise commands.BadArgument("Invalid ticker symbol provided.")
+                    try:
+                        data = self.cmc.cryptocurrency_quotes_latest(symbol=symbol).data[symbol_name]
+                    except Exception:
+                        raise commands.BadArgument("Invalid ticker symbol provided.")
+
+                    embed = discord.Embed(title=f"{data['name']} ({data['symbol']})")
+                    embed.description = "Sorry, we weren't able to generate a graph for this coin. Here's the current price."
+                    embed.add_field(name="Price", value='$' + str(round(data['quote']['USD']['price'], 4)))
+                    embed.color = discord.Color.blurple()
+                    await ctx.message.reply(embed=embed)
+                    return
 
             sns.set(font="Franklin Gothic Book",
                     rc={
@@ -77,12 +91,11 @@ class Stonks(commands.Cog):
             "ytick.direction": "out",
             "ytick.left": False,
             "ytick.right": False}, font_scale=1.75)
-
+            
             
             y = [round(float(data_point['open_price']),2 if stocks else 4) for data_point in historical_data]
             x = []
             z = [data_point['session'] for data_point in historical_data]
-            
             lower_limit =  min(y) - (0.05 * min(y))
             
             fig, ax = plt.subplots()
@@ -94,6 +107,7 @@ class Stonks(commands.Cog):
                 d = dt.datetime.strptime(data_point['begins_at'],'%Y-%m-%dT%H:%M:%SZ').astimezone(eastern)
                 d = "{:d}:{:02d}".format(d.hour, d.minute)
                 x.append(d)
+                
             for x1, x2, y1,y2, z1,_ in zip(x, x[1:], y, y[1:], z, z[1:]):
                 if z1 == 'reg':
                     ax.plot([x1, x2], [y1,y2] , 'g', linewidth=4)
