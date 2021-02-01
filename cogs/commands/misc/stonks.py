@@ -27,18 +27,33 @@ class Stonks(commands.Cog):
     @commands.cooldown(2, 10, commands.BucketType.member)
     @commands.guild_only()
     async def stonks(self, ctx, symbol:str):
+        await self.do_graph(ctx, symbol)
+    
+    @commands.command(name="crypto")
+    @commands.cooldown(2, 10, commands.BucketType.member)
+    @commands.guild_only()
+    async def crypto(self, ctx, symbol:str):
+        await self.do_graph(ctx, symbol, False)
+    
+    async def do_graph(self, ctx, symbol:str, stocks=True):
         stonks_chan = self.bot.settings.guild().channel_stonks
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != stonks_chan:
             raise commands.BadArgument(f"Command only allowed in <#{stonks_chan}>")
 
         async with ctx.typing():
-            symbol_name = r.get_name_by_symbol(symbol)
-            if symbol_name is None or symbol_name == "":
-                raise commands.BadArgument("Invalid ticker symbol provided.")
-            
-            historical_data = r.stocks.get_stock_historicals(symbol, interval='5minute', span='day', bounds='extended', info=None)
-            if historical_data is None or len(historical_data)  == 0:
-                raise commands.BadArgument("An error occured fetching historical data for this symbol.")
+            if stocks:
+                symbol_name = r.get_name_by_symbol(symbol)
+                if symbol_name is None or symbol_name == "":
+                    raise commands.BadArgument("Invalid ticker symbol provided.")
+                historical_data = r.stocks.get_stock_historicals(symbol, interval='5minute', span='day', bounds='extended', info=None)
+                if historical_data is None or len(historical_data)  == 0:
+                    raise commands.BadArgument("An error occured fetching historical data for this symbol.")
+            else:
+                symbol_name = symbol.upper()
+                try:
+                    historical_data = r.crypto.get_crypto_historicals(symbol, interval='5minute', span='day', bounds='extended', info=None)
+                except:
+                    raise commands.BadArgument("Invalid ticker symbol provided.")
 
             sns.set(font="Franklin Gothic Book",
                     rc={
@@ -63,7 +78,8 @@ class Stonks(commands.Cog):
             "ytick.left": False,
             "ytick.right": False}, font_scale=1.75)
 
-            y = [round(float(data_point['open_price']),2) for data_point in historical_data]
+            
+            y = [round(float(data_point['open_price']),2 if stocks else 4) for data_point in historical_data]
             x = []
             z = [data_point['session'] for data_point in historical_data]
             
@@ -112,6 +128,7 @@ class Stonks(commands.Cog):
             _file = discord.File(b, filename="image.png")
             await ctx.message.reply(file=_file, mention_author=False)
 
+    @crypto.error
     @stonks.error
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
@@ -120,6 +137,7 @@ class Stonks(commands.Cog):
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
             or isinstance(error, commands.BotMissingPermissions)
+            or isinstance(error, commands.CommandOnCooldown)
             or isinstance(error, commands.MaxConcurrencyReached)
                 or isinstance(error, commands.NoPrivateMessage)):
             await self.bot.send_error(ctx, error)
