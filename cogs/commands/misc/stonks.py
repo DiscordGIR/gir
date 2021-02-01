@@ -23,13 +23,13 @@ class Stonks(commands.Cog):
         mpl_logger.setLevel(logging.WARNING)
         r.login(username,password)
 
-    @commands.command(name="stonks")
+    @commands.command(name="sc")
     @commands.cooldown(2, 10, commands.BucketType.member)
     @commands.guild_only()
     async def stonks(self, ctx, symbol:str):
         await self.do_graph(ctx, symbol)
     
-    @commands.command(name="crypto")
+    @commands.command(name="cc")
     @commands.cooldown(2, 10, commands.BucketType.member)
     @commands.guild_only()
     async def crypto(self, ctx, symbol:str):
