@@ -29,13 +29,35 @@ class Stonks(commands.Cog):
     @commands.command(name="sc")
     @commands.cooldown(2, 10, commands.BucketType.member)
     @commands.guild_only()
-    async def stonks(self, ctx, symbol:str):
-        await self.do_graph(ctx, symbol)
+    async def stonks(self, ctx, ticker:str):
+        """Graph price of a stock against time
+
+        Example usage
+        -------------
+        !sc gme
+
+        Parameters
+        ----------
+        ticker : str
+            ticker of the stock, i.e btc
+        """
+        await self.do_graph(ctx, ticker)
     
     @commands.command(name="cc")
     @commands.cooldown(2, 10, commands.BucketType.member)
     @commands.guild_only()
     async def crypto(self, ctx, symbol:str):
+        """Graph the price of a cryptocurrency against time
+
+        Example usage
+        -------------
+        !cc btc
+
+        Parameters
+        ----------
+        symbol : str
+            Symbol of the coin, i.e btc
+        """
         await self.do_graph(ctx, symbol, False)
     
     async def do_graph(self, ctx, symbol:str, stocks=True):
