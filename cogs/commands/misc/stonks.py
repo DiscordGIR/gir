@@ -7,7 +7,6 @@ import seaborn as sns
 from io import BytesIO
 
 import discord
-import matplotlib
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
@@ -28,6 +27,10 @@ class Stonks(commands.Cog):
     @commands.cooldown(2, 10, commands.BucketType.member)
     @commands.guild_only()
     async def stonks(self, ctx, symbol:str):
+        stonks_chan = self.bot.settings.guild().channel_stonks
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != stonks_chan:
+            raise commands.BadArgument(f"Command only allowed in <#{stonks_chan}>")
+
         async with ctx.typing():
             symbol_name = r.get_name_by_symbol(symbol)
             if symbol_name is None or symbol_name == "":
@@ -59,11 +62,6 @@ class Stonks(commands.Cog):
             "ytick.direction": "out",
             "ytick.left": False,
             "ytick.right": False}, font_scale=1.75)
-            # sns.set_context("notebook", rc={"font.size":20,
-            #                                 "axes.titlesize":24,
-            #                                 "axes.labelsize":18})
-            # plt.figure(figsize=(20, 10))
-            # sns.set(font_scale = 2)
 
             y = [round(float(data_point['open_price']),2) for data_point in historical_data]
             x = []
@@ -92,7 +90,7 @@ class Stonks(commands.Cog):
             x = np.array(x)
             frequency = int(len(x)/6)
             # plot the data.
-            fig.suptitle("Stock price for {} over time".format(symbol_name))
+            fig.suptitle(f"{symbol_name} - ${y[-1]}")
             ax.set_xlabel("Time (EST)", labelpad=20)
             ax.set_ylabel("Price (USD)", labelpad=20)
             plt.xticks(x[::frequency], x[::frequency])
