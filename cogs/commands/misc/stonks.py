@@ -110,24 +110,27 @@ class Stonks(commands.Cog):
                 
             for x1, x2, y1,y2, z1,_ in zip(x, x[1:], y, y[1:], z, z[1:]):
                 if z1 == 'reg':
-                    ax.plot([x1, x2], [y1,y2] , 'g', linewidth=4)
+                    ax.plot([x1, x2], [y1,y2] , color='#7289da', linewidth=2)
                 else:
-                    ax.plot([x1, x2], [y1,y2] , color='gray', linewidth=4)
+                    ax.plot([x1, x2], [y1,y2] , color='#99aab5', linewidth=2)
                 if y1 < y2:
-                    plt.bar(x2, lower_limit + (y2-y1), 1, color="green")
+                    plt.bar(x2, lower_limit + (y2-y1), 1, color="#2ECC40")
                 else:
-                    plt.bar(x2, lower_limit + (y1-y2), 1, color="red")
+                    plt.bar(x2, lower_limit + (y1-y2), 1, color="#FF4136")
             x = np.array(x)
             frequency = int(len(x)/6)
             # plot the data.
-            fig.suptitle(f"{symbol_name} - ${y[-1]}")
+            if not stocks:
+                data = self.cmc.cryptocurrency_quotes_latest(symbol=symbol).data[symbol_name]
+                fig.suptitle(f"{data['name']} ({data['symbol']}) - ${round(data['quote']['USD']['price'], 4)}")
+            else:
+                fig.suptitle(f"{symbol_name} - ${y[-1]}")
             ax.set_xlabel("Time (EST)", labelpad=20)
             ax.set_ylabel("Price (USD)", labelpad=20)
             plt.xticks(x[::frequency], x[::frequency])
 
-            # plt.grid()  # bluish dark grey, but slightly lighter than background
-            mp = mpatches.Patch(color='green', label='Market open')
-            pmp = mpatches.Patch(color='gray', label='After hours')
+            mp = mpatches.Patch(color='#7289DA', label='Market open')
+            pmp = mpatches.Patch(color='#99aab5', label='After hours')
             fig.legend(handles=[mp, pmp])
             
             ax.fill_between(x=x, y1=y, color="#7289da", alpha=0.3)
