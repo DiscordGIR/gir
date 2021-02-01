@@ -3,6 +3,7 @@ import logging
 import os
 import traceback
 import pytz
+import seaborn as sns
 from io import BytesIO
 
 import discord
@@ -36,21 +37,38 @@ class Stonks(commands.Cog):
             if historical_data is None or len(historical_data)  == 0:
                 raise commands.BadArgument("An error occured fetching historical data for this symbol.")
 
-            font = {'size'   : 20}
-                    
-            matplotlib.rc('font', **font)
-            plt.style.use("seaborn-dark")
-            for param in ['figure.facecolor', 'axes.facecolor', 'savefig.facecolor']:
-                plt.rcParams[param] = '#212946'  # bluish dark grey
-
-            for param in ['text.color', 'axes.labelcolor', 'xtick.color', 'ytick.color']:
-                plt.rcParams[param] = '0.9'  # very light grey
-            
-            plt.figure(figsize=(20, 10))
+            sns.set(font="Franklin Gothic Book",
+                    rc={
+            "axes.axisbelow": False,
+            "axes.edgecolor": "#7289da",
+            "axes.facecolor": "None",
+            "axes.grid": False,
+            "axes.labelcolor": "#7289da",
+            "axes.spines.right": False,
+            "axes.spines.top": False,
+            "figure.facecolor": "#23272a",
+            "lines.solid_capstyle": "round",
+            "patch.edgecolor": "w",
+            "patch.force_edgecolor": True,
+            "text.color": "#fff",
+            "xtick.bottom": False,
+            "xtick.color": "#fff",
+            "xtick.direction": "out",
+            "xtick.top": False,
+            "ytick.color": "#fff",
+            "ytick.direction": "out",
+            "ytick.left": False,
+            "ytick.right": False})
+            sns.set_context("notebook", rc={"font.size":20,
+                                            "axes.titlesize":24,
+                                            "axes.labelsize":18})
+            # plt.figure(figsize=(20, 10))
             y = [round(float(data_point['open_price']),2) for data_point in historical_data]
             x = []
             z = [data_point['session'] for data_point in historical_data]
-
+            fig, ax = plt.subplots()
+            fig.set_figheight(10)
+            fig.set_figwidth(20)            
             eastern = pytz.timezone('US/Eastern')
 
             for data_point in historical_data:
@@ -59,26 +77,30 @@ class Stonks(commands.Cog):
                 x.append(d)
             for x1, x2, y1,y2, z1,_ in zip(x, x[1:], y, y[1:], z, z[1:]):
                 if z1 == 'reg':
-                    plt.plot([x1, x2], [y1,y2] , 'g', linewidth=4)
+                    ax.plot([x1, x2], [y1,y2] , 'g', linewidth=4)
                 else:
-                    plt.plot([x1, x2], [y1,y2] , color='gray', linewidth=4)
+                    ax.plot([x1, x2], [y1,y2] , color='gray', linewidth=4)
 
             x = np.array(x)
-            frequency = 15
+            frequency = int(len(x)/6)
             # plot the data.
-            plt.title("Stock price for {} over time".format(symbol_name))
-            plt.xlabel("Time (EST)")
-            plt.ylabel("Price")
+            fig.suptitle("Stock price for {} over time".format(symbol_name))
+            ax.set_xlabel("Time (EST)", labelpad=20)
+            ax.set_ylabel("Price", labelpad=20)
             plt.xticks(x[::frequency], x[::frequency])
 
-            plt.grid(color='#2A3459')  # bluish dark grey, but slightly lighter than background
+            # plt.grid()  # bluish dark grey, but slightly lighter than background
             mp = mpatches.Patch(color='green', label='Market open')
             pmp = mpatches.Patch(color='gray', label='After hours')
-            plt.legend(handles=[mp, pmp])
+            fig.legend(handles=[mp, pmp])
             
+            ax.fill_between(x=x, y1=y, color="#7289da", alpha=0.3)
+            
+            ax.set_xlim(min(x), max(x))
+            ax.set_ylim(min(y) - (0.1 * min(y)))
             
             b = BytesIO()
-            plt.savefig(b, format='png')
+            fig.savefig(b, format='png')
             plt.close()
             b.seek(0)
             
