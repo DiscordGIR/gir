@@ -101,6 +101,7 @@ class Misc(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name="cij")
+    @commands.cooldown(2, 10, commands.BucketType.member)
     @commands.guild_only()
     async def cij(self, ctx, version: str, *, device: str):
         """Check if your device is jailbreakable
