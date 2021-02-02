@@ -100,7 +100,7 @@ class Misc(commands.Cog):
         embed.set_footer(text=f"Requested by {ctx.author}")
         await ctx.send(embed=embed)
 
-    @commands.command(name="cij")
+    @commands.command(name="cij", aliases=['jelbrek'])
     @commands.cooldown(2, 10, commands.BucketType.member)
     @commands.guild_only()
     async def cij(self, ctx, version: str, *, device: str):
