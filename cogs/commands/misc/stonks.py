@@ -4,6 +4,7 @@ import os
 import traceback
 import pytz
 import seaborn as sns
+import humanize
 from io import BytesIO
 
 import discord
@@ -22,10 +23,23 @@ class Stonks(commands.Cog):
         password = os.environ.get("RH_PASS")
         mpl_logger = logging.getLogger('matplotlib')
         mpl_logger.setLevel(logging.WARNING)
+
         r.login(username,password)
-        
         self.cmc = CoinMarketCapAPI(os.environ.get("CMC_KEY"))
 
+        self.last_checked_cache = {}
+        """ 
+            {
+                123456: {
+                    "GME": {
+                        "last_price": 213.12,
+                        "last_checked": datetime
+                    },
+                    ...
+                },
+                ...
+            }
+        """
     @commands.command(name="sc")
     @commands.cooldown(2, 10, commands.BucketType.member)
     @commands.guild_only()
@@ -144,9 +158,11 @@ class Stonks(commands.Cog):
             # plot the data.
             if not stocks:
                 data = self.cmc.cryptocurrency_quotes_latest(symbol=symbol).data[symbol_name]
-                fig.suptitle(f"{data['name']} ({data['symbol']}) - ${round(data['quote']['USD']['price'], 4)}")
+                current_price = round(data['quote']['USD']['price'], 4)
+                fig.suptitle(f"{data['name']} ({data['symbol']}) - ${current_price}")
             else:
-                fig.suptitle(f"{symbol_name} - ${y[-1]}")
+                current_price = y[-1]
+                fig.suptitle(f"{symbol_name} - ${current_price}")
             ax.set_xlabel("Time (EST)", labelpad=20)
             ax.set_ylabel("Price (USD)", labelpad=20)
             plt.xticks(x[::frequency], x[::frequency])
@@ -165,7 +181,24 @@ class Stonks(commands.Cog):
             b.seek(0)
             
             _file = discord.File(b, filename="image.png")
-            await ctx.message.reply(file=_file, mention_author=False)
+            
+            text = ""            
+            if ctx.author.id in self.last_checked_cache:
+                if symbol_name in self.last_checked_cache[ctx.author.id]:
+                    obj = self.last_checked_cache[ctx.author.id][symbol_name]
+                    time_delta = humanize.naturaltime(dt.datetime.now() - obj["last_checked"])
+                    price_percentage = round(((obj["last_price"] / current_price) - 1) * 100, 3)
+                    
+                    if price_percentage >= 0:
+                        price_percentage = "+" + str(price_percentage)
+                        
+                    text = f"You last checked this price {time_delta}\nPrice difference since then: {price_percentage}%"
+                self.last_checked_cache[ctx.author.id][symbol_name] = { "last_price": current_price, "last_checked": dt.datetime.now()}
+
+            else:
+                self.last_checked_cache[ctx.author.id] = {symbol_name: { "last_price": current_price, "last_checked": dt.datetime.now()}}
+
+            await ctx.message.reply(text, file=_file, mention_author=False)
 
     @crypto.error
     @stonks.error
