@@ -132,10 +132,12 @@ class Misc(commands.Cog):
                         if len(response['jelbreks']) > 0:
                             embed = await self.prepare_jailbreak_embed(response['jelbreks'], device, version)
                         else:
-                            embed = discord.Embed(description="Unfortunately, your device is not currently jailbreakable. (or, you gave an unsupported iOS version!)", footer="Note: legacy jailbreaks below iOS 6 are currently unsupported!", color=discord.Color.red())
+                            embed = discord.Embed(description="Unfortunately, your device is not currently jailbreakable.", footer="Note: legacy jailbreaks below iOS 6 are currently unsupported!", color=discord.Color.red())
                         await ctx.message.reply(embed=embed)
                     elif response['status'] == 1:
                         raise commands.BadArgument("Seems like you gave a valid device but the API didn't recognize it!")
+                    elif response['status'] == 2:
+                        raise commands.BadArgument("This device doesn't support that version of iOS!")
                     else:
                         raise commands.BadArgument("API error: device not found!")
                 else:
