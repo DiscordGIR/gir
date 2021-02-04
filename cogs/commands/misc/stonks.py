@@ -153,10 +153,7 @@ class Stonks(commands.Cog):
                 else:
                     plt.bar(x2, lower_limit + (y1-y2), 1, color="#FF4136")
             x = np.array(x)
-            
-            print("x",x)
-            print("y",y)
-            
+                        
             frequency = int(len(x)/6) if len(x) > 6 else 1
             # plot the data.
             if not stocks:
@@ -190,7 +187,7 @@ class Stonks(commands.Cog):
                 if symbol_name in self.last_checked_cache[ctx.author.id]:
                     obj = self.last_checked_cache[ctx.author.id][symbol_name]
                     time_delta = humanize.naturaltime(dt.datetime.now() - obj["last_checked"])
-                    price_percentage = round(((obj["last_price"] / current_price) - 1) * 100, 3)
+                    price_percentage = round(((current_price - obj["last_price"]) / obj["last_price"]) * 100, 3)
                     
                     if price_percentage >= 0:
                         price_percentage = "+" + str(price_percentage)
