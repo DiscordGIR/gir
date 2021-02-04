@@ -133,7 +133,6 @@ class Stonks(commands.Cog):
             x = []
             z = [data_point['session'] for data_point in historical_data]
             lower_limit =  min(y) - (0.05 * min(y))
-            
             fig, ax = plt.subplots()
             fig.set_figheight(10)
             fig.set_figwidth(20)            
@@ -154,7 +153,11 @@ class Stonks(commands.Cog):
                 else:
                     plt.bar(x2, lower_limit + (y1-y2), 1, color="#FF4136")
             x = np.array(x)
-            frequency = int(len(x)/6)
+            
+            print("x",x)
+            print("y",y)
+            
+            frequency = int(len(x)/6) if len(x) > 6 else 1
             # plot the data.
             if not stocks:
                 data = self.cmc.cryptocurrency_quotes_latest(symbol=symbol).data[symbol_name]
