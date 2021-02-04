@@ -148,7 +148,7 @@ class Stonks(commands.Cog):
 
             for data_point in historical_data:
                 d = dt.datetime.strptime(data_point['begins_at'],'%Y-%m-%dT%H:%M:%SZ').astimezone(eastern)
-                d = "{:d}:{:02d}".format(d.hour, d.minute)
+                d = d.strftime("%I:%M %p")
                 x.append(d)
                 
             for x1, x2, y1,y2, z1,_ in zip(x, x[1:], y, y[1:], z, z[1:]):
@@ -162,7 +162,7 @@ class Stonks(commands.Cog):
                     plt.bar(x2, lower_limit + (y1-y2), 1, color="#FF4136")
             x = np.array(x)
                         
-            frequency = int(len(x)/6) if len(x) > 6 else 1
+            frequency = int(len(x)/5) if len(x) > 5 else 1
             # plot the data.
             if not stocks:
                 data = self.cmc.cryptocurrency_quotes_latest(symbol=symbol).data[symbol_name]
