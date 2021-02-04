@@ -132,7 +132,15 @@ class Stonks(commands.Cog):
             y = [round(float(data_point['open_price']),2 if stocks else 4) for data_point in historical_data]
             x = []
             z = [data_point['session'] for data_point in historical_data]
-            lower_limit =  min(y) - (0.05 * min(y))
+            
+            max_y = max(y)
+            max_y_index = y.index(max_y)
+            min_y = min(y)
+            min_y_index = y.index(min_y)
+            
+            lower_limit =  min_y - 0.35*(max_y - min_y)
+            upper_limit =  max_y + 0.3*(max_y - min_y)
+
             fig, ax = plt.subplots()
             fig.set_figheight(10)
             fig.set_figwidth(20)            
@@ -173,7 +181,14 @@ class Stonks(commands.Cog):
             
             ax.fill_between(x=x, y1=y, color="#7289da", alpha=0.3)
             
-            ax.set_ylim(lower_limit)
+            ax.set_ylim(lower_limit, upper_limit)
+            
+            ax.annotate(f'Max ${round(max_y,4)}', xy=(x[max_y_index], max_y), xytext=(x[max_y_index], max_y + 0.1*(upper_limit-lower_limit)),
+            arrowprops=dict(facecolor='white', shrink=0.01),
+            )
+            ax.annotate(f'Min ${round(min_y,4)}', xy=(x[min_y_index], min_y), xytext=(x[min_y_index], min_y - 0.1*(upper_limit-lower_limit)),
+            arrowprops=dict(facecolor='white', shrink=0.01),
+            )
             
             b = BytesIO()
             fig.savefig(b, format='png')
