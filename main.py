@@ -109,6 +109,9 @@ class Bot(commands.Bot):
         if folded_message:
             reported = False
             for word in guild.filter_words:
+                near_matches = find_near_matches(word.word.lower(), folded_message, max_l_dist=1)
+                near_matches_spaceless = find_near_matches(word.word.lower(), folded_without_spaces, max_l_dist=1)
+                near_matches_punctuation = find_near_matches(word.word.lower(), folded_without_spaces_and_punctuation, max_l_dist=1)
                 if not self.settings.permissions.hasAtLeast(message.guild, message.author, word.bypass):
                     if (word.word.lower() in folded_message) or \
                         (not word.false_positive and word.word.lower() in folded_without_spaces) or \
@@ -126,15 +129,21 @@ class Bot(commands.Bot):
                             if word.notify:
                                 await report(self, message, message.author, word.word)
                                 return True
-                    elif len(find_near_matches(word.word.lower(), folded_message, max_l_dist=1)) > 0 or \
-                        len(find_near_matches(word.word.lower(), folded_without_spaces, max_l_dist=1)) > 0 or \
-                        len(find_near_matches(word.word.lower(), folded_without_spaces_and_punctuation, max_l_dist=1)) > 0:
-                        embed = discord.Embed(title="Filter Notification")
+                    elif len(near_matches) > 0 or \
+                        len(near_matches_spaceless) > 0 or \
+                        len(near_matches_punctuation) > 0:
+                        matches = [o.matched for o in near_matches]
+                        matches_spaceless = [o.matched for o in near_matches_spaceless]
+                        matches_punctuation = [o.matched for o in near_matches_punctuation]
+                        all_matches = set(matches + matches_spaceless + matches_punctuation)
+
+                        embed = discord.Embed(title="Filter Notification", color=discord.Color.red())
                         embed.description = "Would have filtered a word using fuzzy search!"
-                        embed.add_field(name="Original Message", value=message.content)
-                        embed.add_field(name="User", value=message.author)
-                        embed.add_field(name="Filtered Word", value=word.word.lower(), inline=False)
-                        embed.add_field(name="Filter Triggered", value="Bad word/piracy filter")
+                        embed.add_field(name="Original message", value=message.content, inline=False)
+                        embed.add_field(name="Word in filter", value=word.word.lower(), inline=False)
+                        embed.add_field(name="Matched word(s) in message", value=", ".join(all_matches), inline=False)
+                        embed.add_field(name="User", value=message.author.mention, inline=False)
+
                         test_channel = message.guild.get_channel(int(os.environ.get("FILTER_TEST_CHANNEL")))
                         await test_channel.send(embed=embed)
         return word_found
