@@ -133,6 +133,8 @@ class Bot(commands.Bot):
                         embed.description = "Would have filtered a word using fuzzy search!"
                         embed.add_field(name="Original Message", value=message.content)
                         embed.add_field(name="User", value=message.author)
+                        embed.add_field(name="Filtered Word", value=word.word.lower(), inline=False)
+                        embed.add_field(name="Filter Triggered", value="Bad word/piracy filter")
                         test_channel = message.guild.get_channel(int(os.environ.get("FILTER_TEST_CHANNEL")))
                         await test_channel.send(embed=embed)
         return word_found
