@@ -12,6 +12,7 @@ import cogs.utils.logs as logger
 from discord.ext import commands
 from dotenv import find_dotenv, load_dotenv
 from fold_to_ascii import fold
+from fuzzysearch import find_near_matches
 
 from cogs.monitors.report import report
 
@@ -125,6 +126,15 @@ class Bot(commands.Bot):
                             if word.notify:
                                 await report(self, message, message.author, word.word)
                                 return True
+                    elif len(find_near_matches(word.word.lower(), folded_message, max_l_dist=1)) > 0 or \
+                        len(find_near_matches(word.word.lower(), folded_without_spaces, max_l_dist=1)) > 0 or \
+                        len(find_near_matches(word.word.lower(), folded_without_spaces_and_punctuation, max_l_dist=1)) > 0:
+                        embed = discord.Embed(title="Filter Notification")
+                        embed.description = "Would have filtered a word using fuzzy search!"
+                        embed.add_field(name="Original Message", value=message.content)
+                        embed.add_field(name="User", value=message.author)
+                        test_channel = message.guild.get_channel(int(os.environ.get("FILTER_TEST_CHANNEL")))
+                        await test_channel.send(embed=embed)
         return word_found
     
     async def do_invite_filter(self, message):
