@@ -100,6 +100,7 @@ class Stonks(commands.Cog):
 
                     embed = discord.Embed(title=f"{data['name']} ({data['symbol']})")
                     embed.description = "Sorry, we weren't able to generate a graph for this coin. Here's the current price."
+                    embed.set_thumbnail(url=f'https://cryptoicons.org/api/icon/{symbol}/36.png')
                     embed.add_field(name="Price", value='$' + str(round(data['quote']['USD']['price'], 4)))
                     embed.color = discord.Color.blurple()
                     await ctx.message.reply(embed=embed)
