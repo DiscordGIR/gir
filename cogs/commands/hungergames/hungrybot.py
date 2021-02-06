@@ -135,14 +135,14 @@ class HungerGamesCog(commands.Cog):
 
     @commands.command(name="join")
     @commands.guild_only()
-    async def join(self, ctx, gender=None):
+    async def join(self, ctx):
         """
         Adds a tribute with your name to a new simulation.
 
         gender (Optional) - Use `-m` or `-f` to set male or female gender. Defaults to a random gender.
         """
-        name = ctx.author.nick if ctx.author.nick is not None else ctx.author.name
-        ret = self.hg.add_player(ctx.channel.id, name, gender=gender, volunteer=True)
+        name = ctx.author.display_name
+        ret = self.hg.add_player(ctx.channel.id, name, ctx.author.id, volunteer=True)
         if not await self.__check_errors(ctx, ret):
             return
         await ctx.reply(ret)
@@ -150,7 +150,7 @@ class HungerGamesCog(commands.Cog):
 
     @commands.command(name="add")
     @commands.guild_only()
-    async def add(self, ctx, *, name: str):
+    async def add(self, ctx, *, member: discord.Member):
         """
         Add a user to a new game.
 
@@ -158,7 +158,7 @@ class HungerGamesCog(commands.Cog):
         Special chars @*_`~ count for two characters each.
         \tPrepend the name with a `-m ` or `-f ` flag to set male or female gender. Defaults to a random gender.
         """
-        ret = self.hg.add_player(ctx.channel.id, name)
+        ret = self.hg.add_player(ctx.channel.id, member.display_name, member.id)
         if not await self.__check_errors(ctx, ret):
             return
         await ctx.send(ret)
@@ -166,7 +166,7 @@ class HungerGamesCog(commands.Cog):
 
     @commands.command(name="remove")
     @commands.guild_only()
-    async def remove(self, ctx, *, name: str):
+    async def remove(self, ctx, member: discord.Member):
         """
         Remove a user from a new game.
         Only the game's host may use this command.
@@ -174,7 +174,7 @@ class HungerGamesCog(commands.Cog):
         name - The name of the tribute to remove.
         """
 
-        ret = self.hg.remove_player(ctx.channel.id, name)
+        ret = self.hg.remove_player(ctx.channel.id, member.id)
         if not await self.__check_errors(ctx, ret):
             return
         await ctx.send(ret)

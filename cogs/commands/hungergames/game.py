@@ -35,14 +35,14 @@ class Game:
         return l
 
     def add_player(self, new_player):
-        if new_player.name in self.players:
+        if new_player.id in self.players:
             return False
-        self.players[new_player.name] = new_player
+        self.players[new_player.id] = new_player
         return True
 
-    def remove_player(self, name):
-        if name in self.players:
-            del self.players[name]
+    def remove_player(self, _id):
+        if _id in self.players:
+            del self.players[_id]
             return True
         return False
 

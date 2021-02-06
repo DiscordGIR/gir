@@ -15,7 +15,7 @@ class HungerGames:
         self.active_games[channel_id] = Game(owner_name, owner_id, title)
         return True
 
-    def add_player(self, channel_id, name, gender=None, volunteer=False):
+    def add_player(self, channel_id, name, _id, volunteer=False):
         if channel_id not in self.active_games:
             return ErrorCode.NO_GAME
         this_game = self.active_games[channel_id]
@@ -25,37 +25,16 @@ class HungerGames:
         if len(this_game.players) >= 24:
             return ErrorCode.GAME_FULL
 
-        if gender is not None:
-            if type(gender) is bool:
-                is_male = gender
-            elif gender.lower() == "-m":
-                is_male = True
-            elif gender.lower() == "-f":
-                is_male = False
-            else:
-                is_male = random.choice([True, False])
-        elif name.lower().startswith("-m "):
-            is_male = True
-            name = name[3:]
-        elif name.lower().startswith("-f "):
-            is_male = False
-            name = name[3:]
-        else:
-            is_male = random.choice([True, False])
-
-        if len(name) > 32:
-            return ErrorCode.CHAR_LIMIT
-
         district = math.ceil((len(this_game.players) + 1) / 2)
-        p = Player(name, district, is_male)
+        p = Player(name, _id, district)
         if not this_game.add_player(p):
             return ErrorCode.PLAYER_EXISTS
-        gender_symbol = "♂" if is_male else "♀"
-        if volunteer:
-            return "**District {0} {1} | {2}** volunteers as tribute!".format(p.district, gender_symbol, p.name)
-        return "**District {0} {1} | {2}** is selected to be a tribute!".format(p.district, gender_symbol, p.name)
 
-    def remove_player(self, channel_id, name):
+        if volunteer:
+            return "**District {0} | {1}** volunteers as tribute!".format(p.district,  p.name)
+        return "**District {0} | {1}** is selected to be a tribute!".format(p.district,  p.name)
+
+    def remove_player(self, channel_id, _id):
         if channel_id not in self.active_games:
             return ErrorCode.NO_GAME
         this_game = self.active_games[channel_id]
@@ -63,9 +42,9 @@ class HungerGames:
         if this_game.has_started:
             return ErrorCode.GAME_STARTED
 
-        if not this_game.remove_player(name):
+        if not this_game.remove_player(_id):
             return ErrorCode.PLAYER_DOES_NOT_EXIST
-        return "Player {0} was removed from the game.".format(name)
+        return "Player <@{0}> was removed from the game.".format(_id)
 
     def pad_players(self, channel_id, group):
         if channel_id not in self.active_games:
