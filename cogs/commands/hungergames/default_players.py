@@ -1,0 +1,42 @@
+default_players = {
+    'hungergames': [
+        ("Marvel", True),
+        ("Glimmer", False),
+        ("Cato", True),
+        ("Clove", False),
+        ("Foxface", False),
+        ("Jason", True),
+        ("Rue", False),
+        ("Thresh", True),
+        ("Peeta", True),
+        ("Katniss", False)
+    ],
+    'melee': [
+        ("Dr. Mario", True),
+        ("Mario", True),
+        ("Luigi", True),
+        ("Bowser", True),
+        ("Peach", False),
+        ("Yoshi", True),
+        ("Donkey Kong", True),
+        ("Captain Falcon", True),
+        ("Ganondorf", True),
+        ("Falco", True),
+        ("Fox", True),
+        ("Ness", True),
+        ("Nana", False),
+        ("Popo", True),
+        ("Kirby", True),
+        ("Samus", False),
+        ("Zelda", False),
+        ("Link", True),
+        ("Young Link", True),
+        ("Pichu", None),
+        ("Pikachu", None),
+        ("Jigglypuff", None),
+        ("Mewtwo", True),
+        ("Mr. Game & Watch", True),
+        ("Marth", True),
+        ("Roy", True)
+    ]
+}
