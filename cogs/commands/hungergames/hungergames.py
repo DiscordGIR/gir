@@ -167,21 +167,28 @@ class HungerGames:
 
         if summary.get('winner') is not None:
             self.active_games.pop(channel_id)
-            return {
-                'title': "{0} | Winner".format(this_game.title),
-                'color': 0xd0d645,
-                'description': "The winner is {0} from District {1}!".format(summary['winner'], summary['district']),
-                'footer': None
-            }
+            # return {
+            #     'title': "{0} | Winner".format(this_game.title),
+            #     'color': 0xd0d645,
+            #     'description': "The winner is {0} from District {1}!".format(summary['winner'], summary['district']),
+            #     'footer': None
+            # }
+            return "{0} | Winner".format(this_game.title), [
+                {
+                    "message": "The winner is {0} from District {1}!".format(summary['winner'], summary['district']),
+                    "members": []
+                }
+            ]
         
         if summary.get('allDead') is not None:
             self.active_games.pop(channel_id)
-            return {
-                'title': "{0} | Winner".format(this_game.title),
-                'color': 0xd0d645,
-                'description': "All the contestants have died!",
-                'footer': None
-            }
+            # return {
+            #     'title': "{0} | Winner".format(this_game.title),
+            #     'color': 0xd0d645,
+            #     'description': "All the contestants have died!",
+            #     'footer': None
+            # }
+            return "All the contestants have died!", []
 
         if summary['description'] is not None and len(summary['messages']) > 0:
             formatted_msg = "{0}\n\n> {1}".format(summary['description'], "\n> ".join(summary['messages']))
@@ -190,9 +197,9 @@ class HungerGames:
         else:
             formatted_msg = "> {0}".format("\n> ".join(summary['messages']))
 
-        return {
-            'title': summary['title'],
-            'color': summary['color'],
-            'description': formatted_msg,
-            'footer': summary['footer']
-        }
+        # return summary['title'], [{
+        #     'title': summary['title'],
+        #     'color': summary['color'],
+        #     'description': formatted_msg,
+        #     'footer': summary['footer']
+        # }

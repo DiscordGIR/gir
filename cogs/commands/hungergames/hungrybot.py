@@ -16,7 +16,12 @@ class HungerGamesCog(commands.Cog):
     @commands.command(name="test")
     @commands.guild_only()
     async def test(self, ctx):
+        title = "Night 1"
         lines = [
+            {
+                "members": [777282444931104769, 109705860275539968, 109705860275539968, 145702927099494400, 193493980611215360],
+                "message": "xd killed xd xd "
+            },
             {
                 "members": [777282444931104769, 109705860275539968, 145702927099494400, 193493980611215360],
                 "message": "xd killed xd xd "
@@ -32,21 +37,35 @@ class HungerGamesCog(commands.Cog):
             {
                 "members": [275370518008299532],
                 "message": "xd killed xd xd "
-            }
+            },
+            {
+                "members": [516962733497778176, 747897273777782914],
+                "message": "xd killed xd xd "
+            },
+            {
+                "members": [275370518008299532],
+                "message": "xd killed xd xd "
+            },
         ]
         
+        await ctx.send(file=await self.produce_image(ctx, title, lines))
+
+    async def produce_image(self, ctx, title, lines):
         max_width = 0
         for line in lines:
             if len(line["members"]) > max_width:
                 max_width = len(line["members"])
         
-        IMAGE_WIDTH = 300 + (max_width * 150)
-        IMAGE_HEIGHT = 100 + 200*len(lines) + 50
+        
+        UPPER_PADDING = 50
+        LOWER_PADDING = 100
+        
+        ROW_HEIGHT = 160
+        ROW_PADDING = 30
+        IMAGE_WIDTH = 100 + (max_width * 150) + 100
+        IMAGE_HEIGHT = UPPER_PADDING + (ROW_HEIGHT+ROW_PADDING)*len(lines) + LOWER_PADDING
 
         image = Image.new('RGB', (IMAGE_WIDTH, IMAGE_HEIGHT)) # RGB, RGBA (with alpha), L (grayscale), 1 (black & white)
-
-        # or load existing image
-        #image = Image.open('/home/furas/images/lenna.png')
 
         # create object for drawing
         draw = ImageDraw.Draw(image)
@@ -54,21 +73,24 @@ class HungerGamesCog(commands.Cog):
         # draw.rectangle([50, 50, IMAGE_WIDTH-50, IMAGE_HEIGHT-50], fill=(255,0,0), outline=(0,255,0))
 
         # draw text in center
-        font = ImageFont.truetype('Arial.ttf', 36)
-        current_y = 25
+        current_y = 24
         text = line["message"]
-        text_width, text_height = draw.textsize(text, font=font)
-        x = (IMAGE_WIDTH - text_width)//2
-        draw.text( (x, current_y), "Night 1", fill=(255,255,255), font=font)
-        current_y += 75
+        title_font = ImageFont.truetype('Arial.ttf', 36)
+        text_width, text_height = draw.textsize(text, font=title_font)
+        x = (IMAGE_WIDTH - text_width)//2 + 50
+        draw.text( (x, current_y), title, fill=(255,255,255), font=title_font)
+        
+        
+        current_y += ROW_PADDING + 50
         
         font = ImageFont.truetype('Arial.ttf', 24)
         
         for line in lines:
             # num_col = IMAGE_WIDTH // len(line["members"])
+            offset = (max_width - (len(line["members"]))) * 75
             for i, member in enumerate(line["members"]):
-                col_width = ((IMAGE_WIDTH - 200) // len(line["members"])) 
-                current_x = (i * col_width ) + (col_width // 2) - 64 + 100
+                col_width = 150
+                current_x = offset + (i * col_width ) + 100
                 user = ctx.guild.get_member(member)
                 pfp = user.avatar_url_as(format="png", size=128)
                 pfp = Image.open(io.BytesIO(await pfp.read()))
@@ -80,8 +102,7 @@ class HungerGamesCog(commands.Cog):
                 x = (IMAGE_WIDTH - text_width)//2
                 y = current_y + 140
                 draw.text( (x, y), text, fill=(255,255,255), font=font)
-                
-            current_y += 200
+            current_y += ROW_HEIGHT + ROW_PADDING
 
         # create buffer
         buffer = io.BytesIO()
@@ -90,10 +111,9 @@ class HungerGamesCog(commands.Cog):
         image.save(buffer, format='PNG')    
 
         # move to beginning of buffer so `send()` it will read from beginning
-        buffer.seek(0) 
-
-        # send image
-        await ctx.send(file=discord.File(buffer, 'myimage.png'))
+        buffer.seek(0)
+        
+        return discord.File(buffer, 'myimage.png')
     
     @commands.command(name="new")
     @commands.guild_only()
