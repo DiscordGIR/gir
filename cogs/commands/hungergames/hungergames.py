@@ -106,22 +106,8 @@ class HungerGames:
         if len(this_game.players) < 2:
             return ErrorCode.NOT_ENOUGH_PLAYERS
 
-        this_game.start()
-        player_list = []
-        cur_dist = ""
-        cur_arr = []
-        for p in this_game.players_sorted:
-            if f"District {p.district}" != cur_dist:
-                if cur_dist != "":
-                    player_list.append({'message': cur_dist, 'members': cur_arr})
-                
-                cur_dist = f"District {p.district}"
-                cur_arr = [p]
-            else:
-                cur_arr.append(p)
-
-        player_list.append({'message': cur_dist, 'members': cur_arr})
-        return player_list
+        # this_game.start()
+        # return "{0} | The Reaping".format(this_game.title), this_game.players_sorted
             # if f"District {p.district}" in player_list:
             #     player_list[f"District {p.district}"].append(p)
             # else:
@@ -130,11 +116,8 @@ class HungerGames:
 
         return {'title': "{0} | The Reaping".format(this_game.title),
                 'footer': "Total Players: {0} | Owner {1}".format(len(this_game.players), this_game.owner_name),
-                'description': "The Reaping has concluded!",
-                'players': player_list}
-                # 'description': "The Reaping has concluded! Here are the tributes:\n\n{0}\n\n{1}, you may now "
-                #                "proceed the simulation with `{2}step`.".format("\n".join(player_list),
-                #                                                                this_game.owner_name, prefix)}
+                'description': "The Reaping has concluded! {0}, you may now "
+                               "proceed the simulation with `{1}step`.".format(this_game.owner_name, prefix)}, this_game.players_sorted
 
     def end_game(self, channel_id, owner_id):
         if channel_id not in self.active_games:

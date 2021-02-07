@@ -60,37 +60,28 @@ class HungerGamesCog(commands.Cog):
 
     async def produce_leaderboard_image(self, ctx, title, lines):
         max_width = 6
-
+        line_count = len(lines) // 6
         title_height = 0
         
-        title_lines = textwrap.wrap(title, width=15*max_width)
         title_font = ImageFont.truetype('Arial.ttf', 36)
         
-        for title_line in title_lines:
-            _, height = title_font.getsize(title_line)
-            title_height += height
+        _, title_height = title_font.getsize(title)
 
         font = ImageFont.truetype('Arial.ttf', 24)
         text_height = 0
         
         
-        line_count = 0
-        for line in lines:
-            if line is None: 
-                continue
-            line_count += 1
-            text_lines = textwrap.wrap(line["message"], width=15*max_width if max_width > 1 else 30)
-            for text_line in text_lines:
-                _, height = font.getsize(text_line)
-                text_height += height
+        member = lines[0]
+        _, height1 = font.getsize(member.name)
+        _, height2 = font.getsize("Alive")
+        _, height3 = font.getsize(str(member.kills))
+        text_height = (height1 + height2 + height3) * line_count
 
-        ROW_HEIGHT = 160
-        ROW_PADDING = 45
-        IMAGE_WIDTH = 100  + (max_width * 150) + (max_width // 3)*20 + 100
-        IMAGE_HEIGHT = title_height + text_height + (ROW_HEIGHT+ROW_PADDING+10)*line_count
-
-        if line_count == 1:
-            IMAGE_HEIGHT += 50
+        ROW_HEIGHT = 175
+        ROW_PADDING = 75
+        BETWEEN_IMAGE_PADDING = 50
+        IMAGE_WIDTH = 100  + (max_width * 150) + (BETWEEN_IMAGE_PADDING*(max_width)) + (max_width // 3)*20 + 100
+        IMAGE_HEIGHT = title_height + text_height + (ROW_HEIGHT+ROW_PADDING+10)*(line_count)
 
         fill = "#000"
 
@@ -102,38 +93,66 @@ class HungerGamesCog(commands.Cog):
         # draw text in center
         current_y = 24
         # text = line["message"]
-        for title_line in title_lines:
-            width, height = title_font.getsize(title_line)
-            draw.text(((IMAGE_WIDTH - width)//2, current_y), title_line, font=title_font)
-            current_y += height        
+        width, height = title_font.getsize(title)
+        draw.text(((IMAGE_WIDTH - width)//2, current_y), title, font=title_font)
+        current_y += height        
         
+        current_x = 120
         current_y += ROW_PADDING
+        col_width = (IMAGE_WIDTH - 200 ) // max_width - BETWEEN_IMAGE_PADDING
+        pfps_added = 0
+        for i, member in enumerate(lines):
+            pfps_added += 1
+            pfp = self.pfp_map.get(member.id)
+            if pfp is None:
+                user = ctx.guild.get_member(member.id)
+                pfp = user.avatar_url_as(format="png", size=128)
+            self.pfp_map[member.id] = pfp
+            pfp = Image.open(io.BytesIO(await pfp.read()))
+            if "Fallen" in title:
+                pfp = pfp.convert('L')
+            pfp = pfp.resize((128,128), Image.ANTIALIAS)
+            pfp = ImageOps.expand(pfp, border=(5,5), fill="#b56204")
+            image.paste(pfp, (current_x, current_y))
+            
+            width, height = font.getsize(member.name)
+            draw.text((current_x + ((col_width - width)//2) ,current_y + 128 + height1), member.name, font=font)
+            # draw.text(((current_x + (pfps_added % 6)+col_width)//2, current_y + 128 + height1), member.name, font=font)
+            width, height = font.getsize("Alive" if member.alive else "Dead")
+            draw.text((current_x + ((col_width - width)//2), current_y + 8 + 128 + height1 + height2), "Alive" if member.alive else "Dead", font=font, fill="#32a852" if member.alive else "#ff4040")
+            
+            width, height = font.getsize(f"{member.kills} kills")
+            draw.text((current_x + ((col_width - width)//2), current_y + 16 + 128 + height1 + height2 + height3), f"{member.kills} kills", font=font)
+            
+            current_x += col_width + BETWEEN_IMAGE_PADDING
+            
+            if pfps_added % 6 == 0:
+                current_x = 120
+                current_y += ROW_PADDING + 200
+            # if line is None: continue
+            # offset = (max_width - (len(line["members"]))) * 75
+            # for i, member in enumerate(line["members"]):
+            #     col_width = 150
+            #     current_x = offset + (i * col_width ) + 100
+            #     pfp = self.pfp_map.get(member)
+            #     if pfp is None:
+            #         user = ctx.guild.get_member(member)
+            #         pfp = user.avatar_url_as(format="png", size=128)
+            #     self.pfp_map[member] = pfp
+            #     pfp = Image.open(io.BytesIO(await pfp.read()))
+            #     if "Fallen" in title:
+            #         pfp = pfp.convert('L')
+            #     pfp = pfp.resize((128,128), Image.ANTIALIAS)
+            #     pfp = ImageOps.expand(pfp, border=(5,5), fill="#b56204")
+            #     image.paste(pfp, (current_x, current_y))
                 
-        for line in lines:
-            if line is None: continue
-            offset = (max_width - (len(line["members"]))) * 75
-            for i, member in enumerate(line["members"]):
-                col_width = 150
-                current_x = offset + (i * col_width ) + 100
-                pfp = self.pfp_map.get(member)
-                if pfp is None:
-                    user = ctx.guild.get_member(member)
-                    pfp = user.avatar_url_as(format="png", size=128)
-                self.pfp_map[member] = pfp
-                pfp = Image.open(io.BytesIO(await pfp.read()))
-                if "Fallen" in title:
-                    pfp = pfp.convert('L')
-                pfp = pfp.resize((128,128), Image.ANTIALIAS)
-                pfp = ImageOps.expand(pfp, border=(5,5), fill="#b56204")
-                image.paste(pfp, (current_x, current_y))
-                
-            current_y += 150
-            text_lines = textwrap.wrap(line["message"], width=15*max_width if max_width > 1 else 30)
-            for text_line in text_lines:
-                width, height = font.getsize(text_line)
-                draw.text(((image.width - width)//2, current_y), text_line, font=font)
-                current_y += height
-            current_y += ROW_PADDING
+            # current_y += 150
+            # text_lines = textwrap.wrap(line["message"], width=15*max_width if max_width > 1 else 30)
+            # for text_line in text_lines:
+            #     width, height = font.getsize(text_line)
+            #     draw.text(((image.width - width)//2, current_y), text_line, font=font)
+            #     current_y += height
+            # current_y += ROW_PADDING
                 # text_width, text_height = draw.textsize(text, font=font)
                 
                 # x = (IMAGE_WIDTH - text_width)//2
@@ -363,12 +382,13 @@ class HungerGamesCog(commands.Cog):
         Starts the pending game in the channel.
         """
         ret = self.hg.start_game(ctx.channel.id, ctx.author.id, "!")
-        print(ret)
         if not await self.__check_errors(ctx, ret):
             return
+        ret, players = ret
         embed = discord.Embed(title=ret['title'], description=ret['description'])
         embed.set_footer(text=ret['footer'])
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, file=await self.produce_leaderboard_image(ctx, ret['title'], players))
+        # await ctx.send(embed=embed)
         
         if autoplay:
             while self.step(ctx):
