@@ -43,11 +43,11 @@ class Player:
 
     @property
     def him_her(self):
-        return "their"
+        return "them"
 
     @property
     def him_her_cap(self):
-        return "Their"
+        return "Them"
 
     @property
     def himself_herself(self):

@@ -5,6 +5,7 @@ from cogs.commands.hungergames.game import Game
 from cogs.commands.hungergames.player import Player
 from cogs.commands.hungergames.enums import ErrorCode
 
+PLAYER_LIMIT = 18
 
 class HungerGames:
     active_games = {}
@@ -22,7 +23,7 @@ class HungerGames:
 
         if this_game.has_started:
             return ErrorCode.GAME_STARTED
-        if len(this_game.players) >= 24:
+        if len(this_game.players) >= 18:
             return ErrorCode.GAME_FULL
 
         district = math.ceil((len(this_game.players) + 1) / 2)
@@ -53,18 +54,15 @@ class HungerGames:
 
         if this_game.has_started:
             return ErrorCode.GAME_STARTED
-        if len(this_game.players) >= 24:
+        if len(this_game.players) >= PLAYER_LIMIT:
             return ErrorCode.GAME_FULL
         if group is None:
             return ErrorCode.INVALID_GROUP
 
-        new_players = random.sample(group, min(24 - len(this_game.players), len(group)))
+        new_players = random.sample(group, min(PLAYER_LIMIT - len(this_game.players), len(group)))
         messages = []
         for p in new_players:
-            if type(p) is tuple:
-                ret = self.add_player(channel_id, p[0], p[1])
-            else:
-                ret = self.add_player(channel_id, p, None)
+            ret = self.add_player(channel_id,  p.display_name, p.id)
             if ret is not ErrorCode.PLAYER_EXISTS:
                 messages.append(ret)
 
@@ -79,16 +77,15 @@ class HungerGames:
 
         player_list = []
         for p in this_game.players_sorted:
-            gender_symbol = "♂" if p.is_male else "♀"
             if p.alive:
-                player_list.append("District {0} {1} | {2}".format(p.district, gender_symbol, p.name))
+                player_list.append("District {0}| {1}".format(p.district, p.name))
             else:
-                player_list.append("~~District {0} {1} | {2}~~".format(p.district, gender_symbol, p.name))
+                player_list.append("~~District {0} | {1}~~".format(p.district, p.name))
 
         summary = {
             'title': this_game.title,
-            'footer': "Players: {0}/24 | Host: {1}"
-                      .format(len(this_game.players), this_game.owner_name)
+            'footer': "Players: {0}/{1} | Host: {2}"
+                      .format(len(this_game.players), PLAYER_LIMIT, this_game.owner_name)
         }
 
         if len(player_list) == 0:
@@ -112,8 +109,7 @@ class HungerGames:
         this_game.start()
         player_list = []
         for p in this_game.players_sorted:
-            gender_symbol = "♂" if p.is_male else "♀"
-            player_list.append("District {0} {1} | {2}".format(p.district, gender_symbol, p.name))
+            player_list.append("District {0} | {1}".format(p.district, p.name))
 
         return {'title': "{0} | The Reaping".format(this_game.title),
                 'footer': "Total Players: {0} | Owner {1}".format(len(this_game.players), this_game.owner_name),
@@ -146,39 +142,35 @@ class HungerGames:
 
         if summary.get('winner') is not None:
             self.active_games.pop(channel_id)
-            # return {
-            #     'title': "{0} | Winner".format(this_game.title),
-            #     'color': 0xd0d645,
-            #     'description': "The winner is {0} from District {1}!".format(summary['winner'], summary['district']),
-            #     'footer': None
-            # }
-            return "{0} | Winner".format(this_game.title), [
-                {
-                    "message": "The winner is {0} from District {1}!".format(summary['winner'], summary['district']),
-                    "members": []
-                }
-            ]
+            return {
+                'title': "{0} | Winner".format(this_game.title),
+                'color': 0xd0d645,
+                'messages': ["The winner is {0} from District {1}!".format(summary['winner'].name, summary['winner'].district)],
+                'footer': None,
+                'members': [summary['winner'].id]
+            }
         
         if summary.get('allDead') is not None:
             self.active_games.pop(channel_id)
-            # return {
-            #     'title': "{0} | Winner".format(this_game.title),
-            #     'color': 0xd0d645,
-            #     'description': "All the contestants have died!",
-            #     'footer': None
-            # }
-            return "All the contestants have died!", []
+            return {
+                'title': "{0} | Winner".format(this_game.title),
+                'color': 0xd0d645,
+                'description': "All the contestants have died!",
+                'footer': None
+            }
 
-        if summary['description'] is not None and len(summary['messages']) > 0:
-            formatted_msg = "{0}\n\n> {1}".format(summary['description'], "\n> ".join(summary['messages']))
-        elif summary['description'] is not None:
-            formatted_msg = summary['description']
-        else:
-            formatted_msg = "> {0}".format("\n> ".join(summary['messages']))
+        # if summary['description'] is not None and len(summary['messages']) > 0:
+        #     formatted_msg = "{0}\n\n> {1}".format(summary['description'], "\n> ".join(summary['messages']))
+        # elif summary['description'] is not None:
+        #     formatted_msg = summary['description']
+        # else:
+        #     formatted_msg = "> {0}".format("\n> ".join(summary['messages']))
 
-        # return summary['title'], [{
-        #     'title': summary['title'],
-        #     'color': summary['color'],
-        #     'description': formatted_msg,
-        #     'footer': summary['footer']
-        # }
+        return {
+            'title': summary['title'],
+            'color': summary['color'],
+            'description': summary['description'],
+            'messages': summary['messages'],
+            'footer': summary['footer'],
+            'members': summary['members']
+        }

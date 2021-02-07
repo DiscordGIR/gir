@@ -55,7 +55,7 @@ class Game:
             self.has_started = False
             for p in self.players.values():
                 if p.alive is True:
-                    return {'winner': p.name, 'district': p.district}
+                    return {'winner': p}
                 
         if self.total_players_alive is 0:
             self.has_started = False
@@ -94,19 +94,22 @@ class Game:
             self.night_passed = True
 
         self.players_available_to_act = {p for p in self.players.values() if p.alive is True}
-
+        
+        
+        members = []
         event = None
         if step_type is RoundType.FALLEN:
             messages = []
             for p in self.players_dead_today:
-                messages.append("☠️ {0} | District {1}".format(p, p.district))
+                messages.append("{0} | District {1}".format(p, p.district))
+                members.append(p.id)
         else:
             if step_type is RoundType.ARENA:
                 event = events['arena'][random.randint(0, len(events['arena']) - 1)]
             else:
                 event = events[step_type.value]
             dead_players_now = len(self.players) - self.total_players_alive
-            messages = self.__generate_messages(fatality_factor, event)
+            messages, members = self.__generate_messages(fatality_factor, event)
             if len(self.players) - self.total_players_alive == dead_players_now:
                 self.consecutive_rounds_without_deaths += 1
             else:
@@ -115,12 +118,14 @@ class Game:
         summary = {
             'day': self.day,
             'roundType': step_type.value,
+            'members': members,
             'messages': messages,
             'footer': "Tributes Remaining: {0}/{1} | Host: {2}"
                       .format(self.total_players_alive, len(self.players), self.owner_name)
         }
 
         if step_type is RoundType.FALLEN:
+            summary['members'] = [[member] for member in summary['members']]
             summary['title'] = "{0} | {1}".format(self.title, "Fallen Tributes {0}".format(self.day))
             if len(self.players_dead_today) > 1:
                 summary['description'] = "{0} cannon shots can be heard in the distance.".format(
@@ -141,7 +146,9 @@ class Game:
 
     def __generate_messages(self, fatality_factor, event):
         messages = []
+        members = []
         while len(self.players_available_to_act) > 0:
+            members_sublist = []
             f = random.randint(0, 10)
             if f < fatality_factor and self.total_players_alive > 1:
                 # time to die
@@ -160,11 +167,13 @@ class Game:
 
             p = random.choice(tuple(self.players_available_to_act))
             self.players_available_to_act.remove(p)
+            members_sublist.append(p.id)
             active_players = [p]
 
             extra_tributes = tributes - 1
             while extra_tributes > 0:
                 p = random.choice(tuple(self.players_available_to_act))
+                members_sublist.append(p.id)
                 self.players_available_to_act.remove(p)
                 active_players.append(p)
                 extra_tributes -= 1
@@ -182,4 +191,5 @@ class Game:
                     active_players[kd].cause_of_death = msg
 
             messages.append(msg)
-        return messages
+            members.append(members_sublist)
+        return messages, members

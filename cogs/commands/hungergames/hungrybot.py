@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands
 import traceback
 import io
+import itertools
+import textwrap
 from PIL import Image, ImageDraw, ImageFont
 
 from cogs.commands.hungergames.default_players import default_players
@@ -16,54 +18,75 @@ class HungerGamesCog(commands.Cog):
     @commands.command(name="test")
     @commands.guild_only()
     async def test(self, ctx):
-        title = "Night 1"
+        title = "This is a very very very very very very long title long title long title"
         lines = [
+            # {
+            #     "members": [777282444931104769, 109705860275539968, 109705860275539968, 145702927099494400, 193493980611215360],
+            #     "message": "xd killed xd xd "
+            # },
+            # {
+            #     "members": [777282444931104769, 109705860275539968, 145702927099494400, 193493980611215360],
+            #     "message": "xd killed xd xd "
+            # },
+            # {
+            #     "members": [777282444931104769, 109705860275539968, 145702927099494400],
+            #     "message": "xd killed xd xd "
+            # },
+            # {
+            #     "members": [516962733497778176, 747897273777782914],
+            #     "message": "xd killed xd xd "
+            # },
             {
-                "members": [777282444931104769, 109705860275539968, 109705860275539968, 145702927099494400, 193493980611215360],
-                "message": "xd killed xd xd "
-            },
-            {
-                "members": [777282444931104769, 109705860275539968, 145702927099494400, 193493980611215360],
-                "message": "xd killed xd xd "
-            },
-            {
-                "members": [777282444931104769, 109705860275539968, 145702927099494400],
-                "message": "xd killed xd xd "
+                "members": [275370518008299532],
+                "message":  "This is a very very very very very very long title long title long title"
             },
             {
                 "members": [516962733497778176, 747897273777782914],
                 "message": "xd killed xd xd "
             },
-            {
-                "members": [275370518008299532],
-                "message": "xd killed xd xd "
-            },
-            {
-                "members": [516962733497778176, 747897273777782914],
-                "message": "xd killed xd xd "
-            },
-            {
-                "members": [275370518008299532],
-                "message": "xd killed xd xd "
-            },
+            # {
+            #     "members": [275370518008299532],
+            #     "message": "xd killed xd xd "
+            # },
         ]
-        
-        await ctx.send(file=await self.produce_image(ctx, title, lines))
-
-    async def produce_image(self, ctx, title, lines):
         max_width = 0
         for line in lines:
-            if len(line["members"]) > max_width:
-                max_width = len(line["members"])
+            if line is not None:
+                if len(line["members"]) > max_width:
+                    max_width = len(line["members"])
+        await ctx.send(file=await self.produce_image(ctx, title, lines, max_width))
+
+    async def produce_image(self, ctx, title, lines, max_width):
+        title_height = 0
+        
+        title_lines = textwrap.wrap(title, width=15*max_width if max_width > 1 else 20)
+        title_font = ImageFont.truetype('Arial.ttf', 36)
+        
+        for title_line in title_lines:
+            _, height = title_font.getsize(title_line)
+            title_height += height
+
+        font = ImageFont.truetype('Arial.ttf', 24)
+        text_height = 0
         
         
+        line_count = 0
+        for line in lines:
+            if line is None: 
+                continue
+            line_count += 1
+            text_lines = textwrap.wrap(line["message"], width=10*max_width if max_width > 1 else 20)
+            for text_line in text_lines:
+                _, height = font.getsize(text_line)
+                text_height += height
+
         UPPER_PADDING = 50
-        LOWER_PADDING = 100
+        LOWER_PADDING = 0
         
         ROW_HEIGHT = 160
         ROW_PADDING = 30
-        IMAGE_WIDTH = 100 + (max_width * 150) + 100
-        IMAGE_HEIGHT = UPPER_PADDING + (ROW_HEIGHT+ROW_PADDING)*len(lines) + LOWER_PADDING
+        IMAGE_WIDTH = 100  + (max_width * 150) + 100
+        IMAGE_HEIGHT = title_height + text_height + (ROW_HEIGHT+ROW_PADDING)*line_count
 
         image = Image.new('RGB', (IMAGE_WIDTH, IMAGE_HEIGHT)) # RGB, RGBA (with alpha), L (grayscale), 1 (black & white)
 
@@ -74,18 +97,20 @@ class HungerGamesCog(commands.Cog):
 
         # draw text in center
         current_y = 24
-        text = line["message"]
-        title_font = ImageFont.truetype('Arial.ttf', 36)
-        text_width, text_height = draw.textsize(text, font=title_font)
-        x = (IMAGE_WIDTH - text_width)//2 + 50
-        draw.text( (x, current_y), title, fill=(255,255,255), font=title_font)
+        # text = line["message"]
+        for title_line in title_lines:
+            width, height = title_font.getsize(title_line)
+            draw.text(((IMAGE_WIDTH - width)//2, current_y), title_line, font=title_font)
+            current_y += height
+        # text_width, text_height = draw.textsize(text, font=title_font)
+        # x = (IMAGE_WIDTH - text_width)//2 + 50
+        # draw.text( (x, current_y), title, fill=(255,255,255), font=title_font)
         
         
-        current_y += ROW_PADDING + 50
-        
-        font = ImageFont.truetype('Arial.ttf', 24)
-        
+        current_y += ROW_PADDING
+                
         for line in lines:
+            if line is None: continue
             # num_col = IMAGE_WIDTH // len(line["members"])
             offset = (max_width - (len(line["members"]))) * 75
             for i, member in enumerate(line["members"]):
@@ -94,15 +119,22 @@ class HungerGamesCog(commands.Cog):
                 user = ctx.guild.get_member(member)
                 pfp = user.avatar_url_as(format="png", size=128)
                 pfp = Image.open(io.BytesIO(await pfp.read()))
+                pfp = pfp.resize((128,128), Image.ANTIALIAS)
                 image.paste(pfp, (current_x, current_y))
                 
-                text = line["message"]
-                text_width, text_height = draw.textsize(text, font=font)
+            current_y += 140
+            text_lines = textwrap.wrap(line["message"], width=15*max_width if max_width > 1 else 30)
+            for text_line in text_lines:
+                width, height = font.getsize(text_line)
+                draw.text(((image.width - width)//2, current_y), text_line, font=font)
+                current_y += height
+            current_y += ROW_PADDING
+                # text_width, text_height = draw.textsize(text, font=font)
                 
-                x = (IMAGE_WIDTH - text_width)//2
-                y = current_y + 140
-                draw.text( (x, y), text, fill=(255,255,255), font=font)
-            current_y += ROW_HEIGHT + ROW_PADDING
+                # x = (IMAGE_WIDTH - text_width)//2
+                # y = current_y + 140
+                # draw.text( (x, y), text, fill=(255,255,255), font=font)
+            # current_y += ROW_HEIGHT + ROW_PADDING
 
         # create buffer
         buffer = io.BytesIO()
@@ -138,8 +170,6 @@ class HungerGamesCog(commands.Cog):
     async def join(self, ctx):
         """
         Adds a tribute with your name to a new simulation.
-
-        gender (Optional) - Use `-m` or `-f` to set male or female gender. Defaults to a random gender.
         """
         name = ctx.author.display_name
         ret = self.hg.add_player(ctx.channel.id, name, ctx.author.id, volunteer=True)
@@ -156,7 +186,6 @@ class HungerGamesCog(commands.Cog):
 
         name - The name of the tribute to add. Limit 32 chars. Leading and trailing whitespace will be trimmed.
         Special chars @*_`~ count for two characters each.
-        \tPrepend the name with a `-m ` or `-f ` flag to set male or female gender. Defaults to a random gender.
         """
         ret = self.hg.add_player(ctx.channel.id, member.display_name, member.id)
         if not await self.__check_errors(ctx, ret):
@@ -182,22 +211,15 @@ class HungerGamesCog(commands.Cog):
 
     @commands.command(name="fill")
     @commands.guild_only()
-    async def fill(self, ctx, group_name=None):
+    async def fill(self, ctx):
         """
         Pad out empty slots in a new game with default characters.
 
         group_name (Optional) - The builtin group to draw tributes from. Defaults to members in this guild.
         """
-        if group_name is None:
-            group = []
-            for m in list(ctx.message.guild.members):
-                if m.nick is not None:
-                    group.append(m.nick)
-                else:
-                    group.append(m.name)
-        else:
-            group = default_players.get(group_name)
-
+        group = []
+        for m in list(ctx.message.guild.members):
+            group.append(m)
         ret = self.hg.pad_players(ctx.channel.id, group)
         if not await self.__check_errors(ctx, ret):
             return
@@ -253,11 +275,39 @@ class HungerGamesCog(commands.Cog):
         ret = self.hg.step(ctx.channel.id, ctx.author.id)
         if not await self.__check_errors(ctx, ret):
             return
-        embed = discord.Embed(title=ret['title'], color=ret['color'], description=ret['description'])
-        if ret['footer'] is not None:
-            embed.set_footer(text=ret['footer'])
-        await ctx.send(embed=embed)
+        # embed = discord.Embed(title=ret['title'], color=ret['color'], description=ret['description'])
+        # if ret['footer'] is not None:
+        #     embed.set_footer(text=ret['footer'])
+        # await ctx.send(embed=embed)
+        print(ret)
+        print("#####")
+        if ret.get('members') is not None:
+            title = ret.get('title')
+            lines = []
+            for message, member in zip(ret['messages'], ret['members']):
+                lines.append({'message': message, 'members': member})
 
+            lines_grouped = list(self.grouper(4, lines))
+            max_width = 0
+            for lines in lines_grouped:
+                for line in lines:
+                    if line is not None:
+                        if len(line["members"]) > max_width:
+                            max_width = len(line["members"])
+            for lines in lines_grouped:
+                await ctx.send(file=await self.produce_image(ctx, title, lines, max_width))
+        else:
+            embed = discord.Embed(title=ret['title'], color=ret['color'], description=ret['description'])
+            if ret['footer'] is not None:
+                embed.set_footer(text=ret['footer'])
+            await ctx.send(embed=embed)
+        # title = ret['title']
+        # lines = []
+        
+        # await self.produce_image()
+    def grouper(self, n, iterable, fillvalue=None):
+        args = [iter(iterable)] * n
+        return itertools.zip_longest(*args, fillvalue=fillvalue)
 
     async def __check_errors(self, ctx, error_code):
         if type(error_code) is not ErrorCode:
