@@ -58,7 +58,9 @@ class HungerGamesCog(commands.Cog):
                     max_width = len(line["members"])
         await ctx.send(file=await self.produce_image(ctx, title, lines, max_width))
 
-    async def produce_image(self, ctx, title, lines, max_width):
+    async def produce_leaderboard_image(self, ctx, title, lines):
+        max_width = 6
+
         title_height = 0
         
         title_lines = textwrap.wrap(title, width=15*max_width)
@@ -84,9 +86,101 @@ class HungerGamesCog(commands.Cog):
 
         ROW_HEIGHT = 160
         ROW_PADDING = 45
+        IMAGE_WIDTH = 100  + (max_width * 150) + (max_width // 3)*20 + 100
+        IMAGE_HEIGHT = title_height + text_height + (ROW_HEIGHT+ROW_PADDING+10)*line_count
+
+        if line_count == 1:
+            IMAGE_HEIGHT += 50
+
+        fill = "#000"
+
+        image = Image.new('RGB', (IMAGE_WIDTH, IMAGE_HEIGHT), fill) # RGB, RGBA (with alpha), L (grayscale), 1 (black & white)
+
+        # create object for drawing
+        draw = ImageDraw.Draw(image)
+
+        # draw text in center
+        current_y = 24
+        # text = line["message"]
+        for title_line in title_lines:
+            width, height = title_font.getsize(title_line)
+            draw.text(((IMAGE_WIDTH - width)//2, current_y), title_line, font=title_font)
+            current_y += height        
         
+        current_y += ROW_PADDING
+                
+        for line in lines:
+            if line is None: continue
+            offset = (max_width - (len(line["members"]))) * 75
+            for i, member in enumerate(line["members"]):
+                col_width = 150
+                current_x = offset + (i * col_width ) + 100
+                pfp = self.pfp_map.get(member)
+                if pfp is None:
+                    user = ctx.guild.get_member(member)
+                    pfp = user.avatar_url_as(format="png", size=128)
+                self.pfp_map[member] = pfp
+                pfp = Image.open(io.BytesIO(await pfp.read()))
+                if "Fallen" in title:
+                    pfp = pfp.convert('L')
+                pfp = pfp.resize((128,128), Image.ANTIALIAS)
+                pfp = ImageOps.expand(pfp, border=(5,5), fill="#b56204")
+                image.paste(pfp, (current_x, current_y))
+                
+            current_y += 150
+            text_lines = textwrap.wrap(line["message"], width=15*max_width if max_width > 1 else 30)
+            for text_line in text_lines:
+                width, height = font.getsize(text_line)
+                draw.text(((image.width - width)//2, current_y), text_line, font=font)
+                current_y += height
+            current_y += ROW_PADDING
+                # text_width, text_height = draw.textsize(text, font=font)
+                
+                # x = (IMAGE_WIDTH - text_width)//2
+                # y = current_y + 140
+                # draw.text( (x, y), text, fill=(255,255,255), font=font)
+            # current_y += ROW_HEIGHT + ROW_PADDING
+
+        # create buffer
+        buffer = io.BytesIO()
+
+        # save PNG in buffer
+        image.save(buffer, format='PNG')    
+
+        # move to beginning of buffer so `send()` it will read from beginning
+        buffer.seek(0)
+        
+        return discord.File(buffer, 'myimage.png')
+    
+    async def produce_image(self, ctx, title, lines, max_width):
         if max_width < 3:
             max_width = 3
+
+        title_height = 0
+        
+        title_lines = textwrap.wrap(title, width=15*max_width)
+        title_font = ImageFont.truetype('Arial.ttf', 36)
+        
+        for title_line in title_lines:
+            _, height = title_font.getsize(title_line)
+            title_height += height
+
+        font = ImageFont.truetype('Arial.ttf', 24)
+        text_height = 0
+        
+        
+        line_count = 0
+        for line in lines:
+            if line is None: 
+                continue
+            line_count += 1
+            text_lines = textwrap.wrap(line["message"], width=15*max_width if max_width > 1 else 30)
+            for text_line in text_lines:
+                _, height = font.getsize(text_line)
+                text_height += height
+
+        ROW_HEIGHT = 160
+        ROW_PADDING = 45
         IMAGE_WIDTH = 100  + (max_width * 150) + 100
         IMAGE_HEIGHT = title_height + text_height + (ROW_HEIGHT+ROW_PADDING+10)*line_count
 
@@ -269,6 +363,7 @@ class HungerGamesCog(commands.Cog):
         Starts the pending game in the channel.
         """
         ret = self.hg.start_game(ctx.channel.id, ctx.author.id, "!")
+        print(ret)
         if not await self.__check_errors(ctx, ret):
             return
         embed = discord.Embed(title=ret['title'], description=ret['description'])
