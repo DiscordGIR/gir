@@ -5,7 +5,7 @@ import io
 import itertools
 import asyncio
 import textwrap
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from cogs.commands.hungergames.default_players import default_players
 from cogs.commands.hungergames.hungergames import HungerGames
@@ -61,7 +61,7 @@ class HungerGamesCog(commands.Cog):
     async def produce_image(self, ctx, title, lines, max_width):
         title_height = 0
         
-        title_lines = textwrap.wrap(title, width=15*max_width if max_width > 1 else 20)
+        title_lines = textwrap.wrap(title, width=15*max_width)
         title_font = ImageFont.truetype('Arial.ttf', 36)
         
         for title_line in title_lines:
@@ -83,14 +83,28 @@ class HungerGamesCog(commands.Cog):
                 text_height += height
 
         ROW_HEIGHT = 160
-        ROW_PADDING = 30
+        ROW_PADDING = 45
+        
+        if max_width < 3:
+            max_width = 3
         IMAGE_WIDTH = 100  + (max_width * 150) + 100
-        IMAGE_HEIGHT = title_height + text_height + (ROW_HEIGHT+ROW_PADDING)*line_count
+        IMAGE_HEIGHT = title_height + text_height + (ROW_HEIGHT+ROW_PADDING+10)*line_count
 
         if line_count == 1:
             IMAGE_HEIGHT += 50
 
-        image = Image.new('RGB', (IMAGE_WIDTH, IMAGE_HEIGHT)) # RGB, RGBA (with alpha), L (grayscale), 1 (black & white)
+        if "Day" in title:
+            fill = "#3285a8"
+        elif "Bloodbath" in title:
+            fill = "#7a2415"
+        elif "Night" in title:
+            fill = "#0f3c4f"
+        elif "Arena Event" in title:
+            fill = "#eb3483"
+        else:
+            fill = "#000"
+
+        image = Image.new('RGB', (IMAGE_WIDTH, IMAGE_HEIGHT), fill) # RGB, RGBA (with alpha), L (grayscale), 1 (black & white)
 
         # create object for drawing
         draw = ImageDraw.Draw(image)
@@ -125,11 +139,12 @@ class HungerGamesCog(commands.Cog):
                 self.pfp_map[member] = pfp
                 pfp = Image.open(io.BytesIO(await pfp.read()))
                 if "Fallen" in title:
-                    pfp = pfp.convert('1')
+                    pfp = pfp.convert('L')
                 pfp = pfp.resize((128,128), Image.ANTIALIAS)
+                pfp = ImageOps.expand(pfp, border=(5,5), fill="#b56204")
                 image.paste(pfp, (current_x, current_y))
                 
-            current_y += 140
+            current_y += 150
             text_lines = textwrap.wrap(line["message"], width=15*max_width if max_width > 1 else 30)
             for text_line in text_lines:
                 width, height = font.getsize(text_line)
@@ -249,7 +264,7 @@ class HungerGamesCog(commands.Cog):
 
     @commands.command(name="start")
     @commands.guild_only()
-    async def start(self, ctx, autoplay=True):
+    async def start(self, ctx, autoplay=False):
         """
         Starts the pending game in the channel.
         """
@@ -261,9 +276,8 @@ class HungerGamesCog(commands.Cog):
         await ctx.send(embed=embed)
         
         if autoplay:
-            while True:
-                await self.step(ctx)
-                await asyncio.sleep(10)
+            while self.step(ctx):
+                await asyncio.sleep(20)
 
 
     @commands.command(name="end")
@@ -306,16 +320,25 @@ class HungerGamesCog(commands.Cog):
                     if line is not None:
                         if len(line["members"]) > max_width:
                             max_width = len(line["members"])
-            for lines in lines_grouped:
-                await asyncio.sleep(2)
-                await ctx.send(file=await self.produce_image(ctx, title, lines, max_width))
-            
-            if ret.get('description(') is not None:
-                await asyncio.sleep(2)
-                embed = discord.Embed(color=ret['color'], description=ret['description'])
-                if ret['footer'] is not None:
-                    embed.set_footer(text=ret['footer'])
-                await ctx.send(embed=embed)
+        
+            async with ctx.typing():            
+                first = True
+                for lines in lines_grouped:
+                    if not first:
+                        await asyncio.sleep(10)
+                    first = False
+                    await ctx.send(file=await self.produce_image(ctx, title, lines, max_width))
+                
+                if ret.get('description(') is not None:
+                    await asyncio.sleep(2)
+                    embed = discord.Embed(color=ret['color'], description=ret['description'])
+                    if ret['footer'] is not None:
+                        embed.set_footer(text=ret['footer'])
+                    await ctx.send(embed=embed)
+                else:
+                    await asyncio.sleep(2)
+                    embed = discord.Embed(color=ret['color'], description="Proceed.")
+                    await ctx.send(embed=embed)
         else:
             embed = discord.Embed(title=ret['title'], color=ret['color'], description=ret['description'])
             if ret['footer'] is not None:
