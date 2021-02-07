@@ -1437,7 +1437,7 @@ events = {
                 'killed': [1]
             },
             {
-                'msg': "{0} kills {1} while {1.he_she} is sleeping.",
+                'msg': "{0} kills {1} while {1.he_she} are sleeping.",
                 'tributes': 2,
                 'killer': [0],
                 'killed': [1]

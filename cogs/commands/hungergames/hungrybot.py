@@ -3,6 +3,7 @@ from discord.ext import commands
 import traceback
 import io
 import itertools
+import asyncio
 import textwrap
 from PIL import Image, ImageDraw, ImageFont
 
@@ -14,6 +15,7 @@ class HungerGamesCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.hg = HungerGames()
+        self.pfp_map = {}
     
     @commands.command(name="test")
     @commands.guild_only()
@@ -75,18 +77,18 @@ class HungerGamesCog(commands.Cog):
             if line is None: 
                 continue
             line_count += 1
-            text_lines = textwrap.wrap(line["message"], width=10*max_width if max_width > 1 else 20)
+            text_lines = textwrap.wrap(line["message"], width=15*max_width if max_width > 1 else 30)
             for text_line in text_lines:
                 _, height = font.getsize(text_line)
                 text_height += height
 
-        UPPER_PADDING = 50
-        LOWER_PADDING = 0
-        
         ROW_HEIGHT = 160
         ROW_PADDING = 30
         IMAGE_WIDTH = 100  + (max_width * 150) + 100
         IMAGE_HEIGHT = title_height + text_height + (ROW_HEIGHT+ROW_PADDING)*line_count
+
+        if line_count == 1:
+            IMAGE_HEIGHT += 50
 
         image = Image.new('RGB', (IMAGE_WIDTH, IMAGE_HEIGHT)) # RGB, RGBA (with alpha), L (grayscale), 1 (black & white)
 
@@ -116,9 +118,14 @@ class HungerGamesCog(commands.Cog):
             for i, member in enumerate(line["members"]):
                 col_width = 150
                 current_x = offset + (i * col_width ) + 100
-                user = ctx.guild.get_member(member)
-                pfp = user.avatar_url_as(format="png", size=128)
+                pfp = self.pfp_map.get(member)
+                if pfp is None:
+                    user = ctx.guild.get_member(member)
+                    pfp = user.avatar_url_as(format="png", size=128)
+                self.pfp_map[member] = pfp
                 pfp = Image.open(io.BytesIO(await pfp.read()))
+                if "Fallen" in title:
+                    pfp = pfp.convert('1')
                 pfp = pfp.resize((128,128), Image.ANTIALIAS)
                 image.paste(pfp, (current_x, current_y))
                 
@@ -242,7 +249,7 @@ class HungerGamesCog(commands.Cog):
 
     @commands.command(name="start")
     @commands.guild_only()
-    async def start(self, ctx):
+    async def start(self, ctx, autoplay=True):
         """
         Starts the pending game in the channel.
         """
@@ -252,6 +259,11 @@ class HungerGamesCog(commands.Cog):
         embed = discord.Embed(title=ret['title'], description=ret['description'])
         embed.set_footer(text=ret['footer'])
         await ctx.send(embed=embed)
+        
+        if autoplay:
+            while True:
+                await self.step(ctx)
+                await asyncio.sleep(10)
 
 
     @commands.command(name="end")
@@ -274,7 +286,7 @@ class HungerGamesCog(commands.Cog):
         """
         ret = self.hg.step(ctx.channel.id, ctx.author.id)
         if not await self.__check_errors(ctx, ret):
-            return
+            return True
         # embed = discord.Embed(title=ret['title'], color=ret['color'], description=ret['description'])
         # if ret['footer'] is not None:
         #     embed.set_footer(text=ret['footer'])
@@ -295,7 +307,15 @@ class HungerGamesCog(commands.Cog):
                         if len(line["members"]) > max_width:
                             max_width = len(line["members"])
             for lines in lines_grouped:
+                await asyncio.sleep(2)
                 await ctx.send(file=await self.produce_image(ctx, title, lines, max_width))
+            
+            if ret.get('description(') is not None:
+                await asyncio.sleep(2)
+                embed = discord.Embed(color=ret['color'], description=ret['description'])
+                if ret['footer'] is not None:
+                    embed.set_footer(text=ret['footer'])
+                await ctx.send(embed=embed)
         else:
             embed = discord.Embed(title=ret['title'], color=ret['color'], description=ret['description'])
             if ret['footer'] is not None:
@@ -303,7 +323,7 @@ class HungerGamesCog(commands.Cog):
             await ctx.send(embed=embed)
         # title = ret['title']
         # lines = []
-        
+        return False
         # await self.produce_image()
     def grouper(self, n, iterable, fillvalue=None):
         args = [iter(iterable)] * n

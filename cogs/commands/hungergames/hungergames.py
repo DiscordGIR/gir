@@ -147,7 +147,7 @@ class HungerGames:
                 'color': 0xd0d645,
                 'messages': ["The winner is {0} from District {1}!".format(summary['winner'].name, summary['winner'].district)],
                 'footer': None,
-                'members': [summary['winner'].id]
+                'members':[ [summary['winner'].id]]
             }
         
         if summary.get('allDead') is not None:
