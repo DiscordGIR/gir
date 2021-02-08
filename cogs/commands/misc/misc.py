@@ -26,18 +26,20 @@ class Misc(commands.Cog):
     @commands.command(name="remindme")
     @commands.guild_only()
     async def remindme(self, ctx, dur: str, *, reminder: str):
-        """Post large version of a given emoji
+        """Send yourself a reminder after a given time gap
 
         Example usage
         -------------
-        !jumbo :ntwerk:
+        !remindme 1h bake the cake
 
         Parameters
         ----------
-        emoji : typing.Union[discord.Emoji, discord.PartialEmoji]
-            Emoji to post
+        dur : str
+            After when to send the reminder
+        reminder : str
+            What to remind you of
         """
-        
+         
         bot_chan = self.bot.settings.guild().channel_botspam
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
             raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>.")
