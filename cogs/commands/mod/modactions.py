@@ -275,16 +275,40 @@ class ModActions(commands.Cog):
         except Exception:
             dmed = False
 
-        await ctx.message.reply(embed=log, delete_after=10)
-        await ctx.message.delete(delay=10)
-
         public_chan = ctx.guild.get_channel(
             self.bot.settings.guild().channel_public)
-        if public_chan:
+            
+        found = False
+        async with ctx.typing():
+            async for message in public_chan.history(limit=200):
+                if message.author.id != ctx.me.id:
+                    continue
+                if len(message.embeds) == 0:
+                    continue
+                embed = message.embeds[0]
+                # print(embed.footer.text)
+                if embed.footer.text == discord.Embed.Empty:
+                    continue
+                if len(embed.footer.text.split(" ")) < 2:
+                    continue
+                
+                if f"#{case_id}" == embed.footer.text.split(" ")[1]:
+                    for i, field in enumerate(embed.fields):
+                        if field.name == "Reason":
+                            embed.set_field_at(i, name="Reason", value=new_reason)
+                            await message.edit(embed=embed)
+                            found = True
+        if found:
+            await ctx.message.reply(f"We updated the case and edited the embed in {public_chan.mention}.", embed=log, delete_after=10)
+        else:
+            await ctx.message.reply(f"We updated the case but weren't able to find a corresponding message in {public_chan.mention}!", embed=log, delete_after=10)
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
             await public_chan.send(user.mention if not dmed else "", embed=log)
 
+        await ctx.message.delete(delay=10)
+          
+            
     @commands.guild_only()
     @commands.command(name="removepoints")
     async def removepoints(self, ctx: commands.Context, user: discord.Member, points: int, *, reason: str = "No reason.") -> None:
