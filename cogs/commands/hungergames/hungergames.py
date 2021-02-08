@@ -106,14 +106,7 @@ class HungerGames:
         if len(this_game.players) < 2:
             return ErrorCode.NOT_ENOUGH_PLAYERS
 
-        # this_game.start()
-        # return "{0} | The Reaping".format(this_game.title), this_game.players_sorted
-            # if f"District {p.district}" in player_list:
-            #     player_list[f"District {p.district}"].append(p)
-            # else:
-            #     player_list[f"District {p.district}"] = [p]
-            # player_list.append("District {0} | {1}".format(p.district, p.name))
-
+        this_game.start()
         return {'title': "{0} | The Reaping".format(this_game.title),
                 'footer': "Total Players: {0} | Owner {1}".format(len(this_game.players), this_game.owner_name),
                 'description': "The Reaping has concluded! {0}, you may now "
