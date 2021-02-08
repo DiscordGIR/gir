@@ -50,6 +50,8 @@ class Misc(commands.Cog):
             raise commands.BadArgument("Please give a valid time to remind you! (i.e 1h, 30m)")
         
         time = now + datetime.timedelta(seconds=delta)
+        if time < now:
+            raise commands.BadArgument("Time has to be in the future >:(")
         reminder = discord.utils.escape_markdown(reminder)
         
         self.bot.settings.tasks.schedule_reminder(ctx.author.id, reminder, time)        

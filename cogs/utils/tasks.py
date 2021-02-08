@@ -125,7 +125,7 @@ class Tasks():
         """
 
         self.tasks.add_job(reminder_callback, 'date', id=str(
-            id+2), next_run_time=date, args=[id, reminder], misfire_grace_time=3600)
+            id+random.randint(5, 100)), next_run_time=date, args=[id, reminder], misfire_grace_time=3600)
 
 
 def unmute_callback(id: int) -> None:
