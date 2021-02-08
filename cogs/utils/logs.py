@@ -26,6 +26,18 @@ async def prepare_liftwarn_log(author, user, case):
     embed.timestamp = case.lifted_date
     return embed
 
+async def prepare_editreason_log(author, user, case, old_reason):
+    embed = discord.Embed(title="Member Case Updated")
+    embed.set_author(name=user, icon_url=user.avatar_url)
+    embed.color = discord.Color.blurple()
+    embed.add_field(name="Member", value=f'{user} ({user.mention})', inline=True)
+    embed.add_field(name="Mod", value=f'{author} ({author.mention})', inline=True)
+    embed.add_field(name="Old reason", value=old_reason, inline=False)
+    embed.add_field(name="New Reason", value=case.reason, inline=False)
+    embed.set_footer(text=f"Case #{case._id} | {user.id}")
+    embed.timestamp = case.date
+    return embed
+
 
 async def prepare_removepoints_log(author, user, case):
     embed = discord.Embed(title="Member Points Removed")
