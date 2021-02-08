@@ -244,7 +244,7 @@ class ModActions(commands.Cog):
             User to edit case of
         case_id : int
             The ID of the case for which we want to edit reason
-        new_reason : str, optional
+        new_reason : str
             New reason
 
         """
