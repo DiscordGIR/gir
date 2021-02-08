@@ -8,6 +8,8 @@ from io import BytesIO
 
 import aiohttp
 import discord
+import humanize
+import pytimeparse
 from discord.ext import commands
 from twemoji_parser import emoji_to_url
 
@@ -20,6 +22,40 @@ class Misc(commands.Cog):
         self.CIJ_KEY = os.environ.get("CIJ_KEY")
         self.cij_baseurl = "https://canijailbreak2.com/v1/pls"
         self.devices_url = "https://api.ipsw.me/v4/devices"
+        
+    @commands.command(name="remindme")
+    @commands.guild_only()
+    async def remindme(self, ctx, dur: str, *, reminder: str):
+        """Post large version of a given emoji
+
+        Example usage
+        -------------
+        !jumbo :ntwerk:
+
+        Parameters
+        ----------
+        emoji : typing.Union[discord.Emoji, discord.PartialEmoji]
+            Emoji to post
+        """
+        
+        bot_chan = self.bot.settings.guild().channel_botspam
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
+            raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>.")
+        
+        now = datetime.datetime.now()
+        delta = pytimeparse.parse(dur)
+        if delta is None:
+            raise commands.BadArgument("Please give a valid time to remind you! (i.e 1h, 30m)")
+        
+        time = now + datetime.timedelta(seconds=delta)
+        reminder = discord.utils.escape_markdown(reminder)
+        
+        self.bot.settings.tasks.schedule_reminder(ctx.author.id, reminder, time)        
+        natural_time =  humanize.naturaldelta(
+                    delta, minimum_unit="seconds")
+        embed = discord.Embed(title="Reminder set", color=discord.Color.random(), description=f"We'll remind you in {natural_time} ")
+        await ctx.message.delete(delay=5)
+        await ctx.message.reply(embed=embed, delete_after=10)
         
     @commands.command(name="jumbo")
     @commands.guild_only()
@@ -176,6 +212,7 @@ class Misc(commands.Cog):
         
     @cij.error
     @jumbo.error
+    @remindme.error
     @avatar.error
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
