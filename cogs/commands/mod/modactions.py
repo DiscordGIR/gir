@@ -232,7 +232,7 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.command(name="editreason")
     async def editreason(self, ctx: commands.Context, user: discord.Member, case_id: int, *, new_reason: str) -> None:
-        """Mark a warn as lifted and remove points. (mod only)
+        """Edit case reason and the embed in #public-mod-logs. (mod only)
 
         Example usage:
         --------------
