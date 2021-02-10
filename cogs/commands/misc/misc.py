@@ -162,7 +162,7 @@ class Misc(commands.Cog):
         device = await self.device_name(device)
 
         if device is None:
-            raise commands.BadArgument("Invalid device provided.")
+            raise commands.BadArgument("Invalid device provided.\nReminder: the usage is `!cij <iOS> <device>`")
         
         async with aiohttp.ClientSession(headers={"Authorization": self.CIJ_KEY}) as session:
             async with session.get(f"{self.cij_baseurl}/{device}/{version}") as resp:
