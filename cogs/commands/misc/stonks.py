@@ -176,7 +176,7 @@ class Stonks(commands.Cog):
             ax.set_ylabel("Price (USD)", labelpad=20)
             plt.xticks(x[::frequency], x[::frequency])
 
-            if stonks:
+            if stocks:
                 mp = mpatches.Patch(color='#7289DA', label='Market open')
                 pmp = mpatches.Patch(color='#99aab5', label='After hours')
                 fig.legend(handles=[mp, pmp])
