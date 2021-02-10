@@ -174,6 +174,7 @@ class Misc(commands.Cog):
                         else:
                             embed = discord.Embed(description="Unfortunately, your device is not currently jailbreakable.", footer="Note: legacy jailbreaks below iOS 6 are currently unsupported!", color=discord.Color.red())
                         await ctx.message.reply(embed=embed, delete_after=30, mention_author=False)
+                        await ctx.message.delete(delay=30)
                     elif response['status'] == 1:
                         raise commands.BadArgument("Seems like you gave a valid device but the API didn't recognize it!")
                     elif response['status'] == 2:
