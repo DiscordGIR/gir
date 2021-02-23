@@ -14,7 +14,6 @@ async def setup():
     
     # you should have this setup in the .env file beforehand
     guild._id          = int(os.environ.get("BOTTY_MAINGUILD"))
-    guild.nsa_guild_id = int(os.environ.get("BOTTY_NSAGUILD"))
     
     guild.case_id      = 1
     
