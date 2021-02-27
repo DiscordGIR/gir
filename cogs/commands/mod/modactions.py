@@ -503,6 +503,10 @@ class ModActions(commands.Cog):
         if isinstance(user, int):
             try:
                 user = await self.bot.fetch_user(user)
+                
+                previous_bans = [user for _, user in await ctx.guild.bans()]
+                if user in previous_bans:
+                    raise commands.BadArgument("That user is already banned!")
             except discord.NotFound:
                 raise commands.BadArgument(
                     f"Couldn't find user with ID {user}")
@@ -574,6 +578,10 @@ class ModActions(commands.Cog):
 
         try:
             user = await self.bot.fetch_user(user)
+            previous_bans = [user for _, user in await ctx.guild.bans()]
+            if user not in previous_bans:
+                raise commands.BadArgument("That user isn't banned!")
+                
         except discord.NotFound:
             raise commands.BadArgument(f"Couldn't find user with ID {user}")
 
