@@ -21,7 +21,7 @@ class TweakMenu(menus.GroupByPageSource):
         pattern = re.compile(r"((http|https)\:\/\/)[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*")
         if (pattern.match(entry.get('Icon'))):
             embed.set_thumbnail(url=entry.get('Icon'))
-        embed.set_footer(icon_url=entry.get('repo').get('icon'), text=f"{entry.get('repo').get('label')} • Page {menu.current_page +1}/{self.get_max_pages()+1}")
+        embed.set_footer(icon_url=entry.get('repo').get('icon'), text=f"{entry.get('repo').get('label')} • Page {menu.current_page +1}/{self.get_max_pages()}")
         embed.timestamp = datetime.now()
         return embed
     
