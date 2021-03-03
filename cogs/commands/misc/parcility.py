@@ -52,7 +52,7 @@ class Parcility(commands.Cog):
         if not self.bot.settings.permissions.hasAtLeast(message.guild, author, 5) and message.channel.id == self.bot.settings.guild().channel_general:
             return
         
-        pattern = re.compile(r"(?<![\[{1, }])\[\[((?!\s+)([\w+\ ]){2,})\]\](?!\])")
+        pattern = re.compile(r".*?(?<!\[)+\[\[((?!\s+)([\w+\ \&\+\-]){2,})\]\](?!\])+.*")
         if not pattern.match(message.content):
             return
         
