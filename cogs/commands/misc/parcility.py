@@ -6,6 +6,7 @@ import json
 import aiohttp
 from datetime import datetime
 from discord.ext import commands, menus
+from yarl import URL
 
 class TweakMenu(menus.GroupByPageSource):
     async def format_page(self, menu, entry):
@@ -55,7 +56,6 @@ class Parcility(commands.Cog):
         if not matches:
             return
         search_term =  matches[0].replace('[[', '').replace(']]','')
-
         if not search_term or not check.match(search_term):
             return
 
@@ -82,7 +82,7 @@ class Parcility(commands.Cog):
 
     async def search_request(self, search):
         async with aiohttp.ClientSession() as client:
-            async with client.get(f'{self.search_url}{search}') as resp:
+            async with client.get(URL(f'{self.search_url}{search}', encoded=True)) as resp:
                 if resp.status == 200:
                     response = json.loads(await resp.text())
                     if response.get('code') == 404:
