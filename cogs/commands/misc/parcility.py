@@ -13,15 +13,15 @@ class TweakMenu(menus.GroupByPageSource):
         entry = entry.items[0]
         embed = discord.Embed(title=entry.get('Name'), color=discord.Color.blue())
         embed.description = discord.utils.escape_markdown(entry.get('Description'))
-        embed.add_field(name="Author", value= discord.utils.escape_markdown(entry.get('Author')), inline=True)
-        embed.add_field(name="Version", value= discord.utils.escape_markdown(entry.get('Version')), inline=True)
-        embed.add_field(name="Repo", value=f"[{entry.get('repo').get('label')}]({entry.get('repo').get('url')})", inline=True)
-        embed.add_field(name="Bundle ID", value= discord.utils.escape_markdown(entry.get('Package')), inline=True)
+        embed.add_field(name="Author", value= discord.utils.escape_markdown(entry.get('Author') or "No author"), inline=True)
+        embed.add_field(name="Version", value= discord.utils.escape_markdown(entry.get('Version') or "No version"), inline=True)
+        embed.add_field(name="Repo", value=f"[{entry.get('repo').get('label')}]({entry.get('repo').get('url')})" or "No repo", inline=True)
+        embed.add_field(name="Bundle ID", value= discord.utils.escape_markdown(entry.get('Package')) or "No package", inline=True)
         embed.add_field(name="More Info", value=f"[Click Here](https://parcility.co/package/{entry.get('Package')}/{entry.get('repo').get('slug')})", inline=False)
         pattern = re.compile(r"((http|https)\:\/\/)[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*")
         if (pattern.match(entry.get('Icon'))):
             embed.set_thumbnail(url=entry.get('Icon'))
-        embed.set_footer(icon_url=entry.get('repo').get('icon'), text=f"{entry.get('repo').get('label')} • Page {menu.current_page +1}/{self.get_max_pages()}")
+        embed.set_footer(icon_url=entry.get('repo').get('icon'), text=f"{entry.get('repo').get('label')} • Page {menu.current_page +1}/{self.get_max_pages()+1}")
         embed.timestamp = datetime.now()
         return embed
     
@@ -47,15 +47,21 @@ class Parcility(commands.Cog):
             return
         if not message.guild.id == self.bot.settings.guild_id:
             return
-        if message.channel.id == self.bot.settings.guild().channel_general:
+        
+        author = message.guild.get_member(message.author.id)
+        if not self.bot.settings.permissions.hasAtLeast(message.guild, author, 5) and message.channel.id == self.bot.settings.guild().channel_general:
             return
         
-        pattern = re.compile(r'(\[(?:\[??[^\[]*?\])\])')
+        pattern = re.compile(r"(?<![\[{1, }])\[\[((?!\s+)([\w+\ ]){2,})\]\](?!\])")
+        if not pattern.match(message.content):
+            return
+        
         check = re.compile(r'.*\S.*')
         matches = pattern.findall(message.content)
         if not matches:
             return
-        search_term =  matches[0].replace('[[', '').replace(']]','')
+
+        search_term =  matches[0][0].replace('[[', '').replace(']]','')
         if not search_term or not check.match(search_term):
             return
 
@@ -97,6 +103,9 @@ class Parcility(commands.Cog):
     @commands.command(name="repo")
     @commands.guild_only()
     async def repo(self, ctx, *, repo):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id == self.bot.settings.guild().channel_general:
+            raise commands.BadArgument("This command cannot be used here.")
+        
         data = await self.repo_request(repo)
 
         if data is None:
@@ -137,6 +146,8 @@ class Parcility(commands.Cog):
                 else:
                     return None
                 
+                
+    @repo.error
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
