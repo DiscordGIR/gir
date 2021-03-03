@@ -11,11 +11,11 @@ class TweakMenu(menus.GroupByPageSource):
     async def format_page(self, menu, entry):
         entry = entry.items[0]
         embed = discord.Embed(title=entry.get('Name'), color=discord.Color.blue())
-        embed.description = entry.get('Description')
-        embed.add_field(name="Author", value=entry.get('Author'), inline=True)
-        embed.add_field(name="Version", value=entry.get('Version'), inline=True)
+        embed.description = discord.utils.escape_markdown(entry.get('Description'))
+        embed.add_field(name="Author", value= discord.utils.escape_markdown(entry.get('Author')), inline=True)
+        embed.add_field(name="Version", value= discord.utils.escape_markdown(entry.get('Version')), inline=True)
         embed.add_field(name="Repo", value=f"[{entry.get('repo').get('label')}]({entry.get('repo').get('url')})", inline=True)
-        embed.add_field(name="Bundle ID", value=entry.get('Package'), inline=True)
+        embed.add_field(name="Bundle ID", value= discord.utils.escape_markdown(entry.get('Package')), inline=True)
         embed.add_field(name="More Info", value=f"[Click Here](https://parcility.co/package/{entry.get('Package')}/{entry.get('repo').get('slug')})", inline=False)
         pattern = re.compile(r"((http|https)\:\/\/)[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*")
         if (pattern.match(entry.get('Icon'))):
@@ -49,10 +49,11 @@ class Parcility(commands.Cog):
 
         pattern = re.compile(r'(\[(?:\[??[^\[]*?\])\])')
         check = re.compile(r'.*\S.*')
-        matches = pattern.match(message.content)
+        matches = pattern.findall(message.content)
         if not matches:
             return
-        search_term =  message.content.replace('[[', '').replace(']]','')
+        search_term =  matches[0].replace('[[', '').replace(']]','')
+        print(search_term)
         if not search_term or not check.match(search_term):
             return
 
