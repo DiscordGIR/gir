@@ -47,7 +47,6 @@ class Parcility(commands.Cog):
         if not message.guild.id == self.bot.settings.guild_id:
             return
 
-        # pattern = re.compile(r'(\[(?:\[??[^\[]*?\])\])')
         pattern = re.compile(r'(\[(?:\[??[^\[]*?\])\])')
         check = re.compile(r'.*\S.*')
         matches = pattern.match(message.content)
@@ -57,8 +56,10 @@ class Parcility(commands.Cog):
         if not search_term or not check.match(search_term):
             return
 
-        response = await self.search_request(search_term)
-        
+        ctx = await self.bot.get_context(message)
+        async with ctx.typing():
+            response = await self.search_request(search_term)
+            
         if response is None:
             embed = discord.Embed(title="Error", color=discord.Color.red())
             embed.description = "An error occurred while searching for that tweak."
@@ -67,15 +68,14 @@ class Parcility(commands.Cog):
             return
         elif len(response) == 0:
             embed = discord.Embed(title="Not Found", color=discord.Color.red())
-            embed.description = f'Sorry, I couldn\'t find any tweaks with the name "{search_term}"'
+            embed.description = 'Sorry, I couldn\'t find any tweaks with that name.'
             await message.delete(delay=5)
             await message.channel.send(embed=embed, delete_after=5)
             return
         
-        menus = MenuPages(source=TweakMenu(
+        menu = MenuPages(source=TweakMenu(
             response, key=lambda t: 1, per_page=1), clear_reactions_after=True)
-        ctx = await self.bot.get_context(message)
-        await menus.start(ctx)
+        await menu.start(ctx)
 
     async def search_request(self, search):
         async with aiohttp.ClientSession() as client:
@@ -97,14 +97,14 @@ class Parcility(commands.Cog):
         if data is None:
             print("error")
             embed = discord.Embed(title="Error", color=discord.Color.red())
-            embed.description = f'An error occurred while searching for the repo "{repo}"'
+            embed.description = f'An error occurred while searching for that repo'
             await ctx.message.delete(delay=5)
             await ctx.send(embed=embed, delete_after=5)
             return
         elif len(data) == 0:
             print("len")
             embed = discord.Embed(title="Not Found", color=discord.Color.red())
-            embed.description = f'Sorry, I couldn\'t find a repo by the name "{repo}"'
+            embed.description = f'Sorry, I couldn\'t find a repo by that name.'
             await ctx.message.delete(delay=5)
             await ctx.send(embed=embed, delete_after=5)
             return
