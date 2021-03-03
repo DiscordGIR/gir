@@ -46,14 +46,16 @@ class Parcility(commands.Cog):
             return
         if not message.guild.id == self.bot.settings.guild_id:
             return
-
+        if message.channel.id == self.bot.settings.guild().channel_general:
+            return
+        
         pattern = re.compile(r'(\[(?:\[??[^\[]*?\])\])')
         check = re.compile(r'.*\S.*')
         matches = pattern.findall(message.content)
         if not matches:
             return
         search_term =  matches[0].replace('[[', '').replace(']]','')
-        print(search_term)
+
         if not search_term or not check.match(search_term):
             return
 
@@ -81,12 +83,14 @@ class Parcility(commands.Cog):
     async def search_request(self, search):
         async with aiohttp.ClientSession() as client:
             async with client.get(f'{self.search_url}{search}') as resp:
-                response = json.loads(await resp.text())
-                #print(response)
-                if response.get('code') == 404:
-                    return []
-                elif response.get('code') == 200:
-                    return response.get('data')
+                if resp.status == 200:
+                    response = json.loads(await resp.text())
+                    if response.get('code') == 404:
+                        return []
+                    elif response.get('code') == 200:
+                        return response.get('data')
+                    else:
+                        return None
                 else:
                     return None
                 
@@ -96,14 +100,12 @@ class Parcility(commands.Cog):
         data = await self.repo_request(repo)
 
         if data is None:
-            print("error")
             embed = discord.Embed(title="Error", color=discord.Color.red())
             embed.description = f'An error occurred while searching for that repo'
             await ctx.message.delete(delay=5)
             await ctx.send(embed=embed, delete_after=5)
             return
         elif len(data) == 0:
-            print("len")
             embed = discord.Embed(title="Not Found", color=discord.Color.red())
             embed.description = f'Sorry, I couldn\'t find a repo by that name.'
             await ctx.message.delete(delay=5)
@@ -124,11 +126,14 @@ class Parcility(commands.Cog):
     async def repo_request(self, repo):
         async with aiohttp.ClientSession() as client:
             async with client.get(f'{self.repo_url}{repo}') as resp:
-                response = json.loads(await resp.text())
-                if response.get('code') == 404:
-                    return []
-                elif response.get('code') == 200:
-                    return response.get('data')
+                if resp.status == 200:
+                    response = json.loads(await resp.text())
+                    if response.get('code') == 404:
+                        return []
+                    elif response.get('code') == 200:
+                        return response.get('data')
+                    else:
+                        return None
                 else:
                     return None
                 
