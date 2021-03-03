@@ -230,6 +230,7 @@ class Devices(commands.Cog):
 
     @removedevice.error
     @adddevice.error
+    @listdevices.error
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)

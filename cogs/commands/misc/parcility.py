@@ -56,13 +56,12 @@ class Parcility(commands.Cog):
         if not pattern.match(message.content):
             return
         
-        check = re.compile(r'.*\S.*')
         matches = pattern.findall(message.content)
         if not matches:
             return
 
         search_term =  matches[0][0].replace('[[', '').replace(']]','')
-        if not search_term or not check.match(search_term):
+        if not search_term:
             return
 
         ctx = await self.bot.get_context(message)
@@ -70,16 +69,10 @@ class Parcility(commands.Cog):
             response = await self.search_request(search_term)
             
         if response is None:
-            embed = discord.Embed(title="Error", color=discord.Color.red())
-            embed.description = "An error occurred while searching for that tweak."
-            await message.delete(delay=5)
-            await message.channel.send(embed=embed, delete_after=5)
+            await self.bot.send_error(ctx, "An error occurred while searching for that tweak.")
             return
         elif len(response) == 0:
-            embed = discord.Embed(title="Not Found", color=discord.Color.red())
-            embed.description = 'Sorry, I couldn\'t find any tweaks with that name.'
-            await message.delete(delay=5)
-            await message.channel.send(embed=embed, delete_after=5)
+            await self.bot.send_error(ctx, "Sorry, I couldn't find any tweaks with that name.")
             return
         
         menu = MenuPages(source=TweakMenu(
