@@ -7,50 +7,31 @@ import aiohttp
 from datetime import datetime
 from discord.ext import commands, menus
 
-class TweakMenu(menus.Menu):
-    def __init__(self, data):
-        super().__init__(timeout=60.0, clear_reactions_after=True, check_embeds=True)
-        self.data = data
-        self.index = 0
-
-    async def post_embed(self, message=None, channel=None):
-        embed = discord.Embed(title=self.data[self.index].get('Name'), color=discord.Color.blue())
-        embed.description = self.data[self.index].get('Description')
-        embed.add_field(name="Author", value=self.data[self.index].get('Author'), inline=True)
-        embed.add_field(name="Version", value=self.data[self.index].get('Version'), inline=True)
-        embed.add_field(name="Bundle ID", value=self.data[self.index].get('Package'), inline=True)
-        embed.add_field(name="Repo", value=f"[{self.data[self.index].get('repo').get('label')}]({self.data[self.index].get('repo').get('url')})", inline=False)
-        embed.add_field(name="More Info", value=f"[Click Here](https://parcility.co/package/{self.data[self.index].get('Package')}/{self.data[self.index].get('repo').get('slug')})", inline=False)
-        embed.set_thumbnail(url=self.data[self.index].get('Icon'))
-        embed.set_footer(icon_url=self.data[self.index].get('repo').get('icon'), text=f"{self.data[self.index].get('repo').get('label')} • Page {self.index + 1}/{len(self.data)}")
+class TweakMenu(menus.GroupByPageSource):
+    async def format_page(self, menu, entry):
+        entry = entry.items[0]
+        embed = discord.Embed(title=entry.get('Name'), color=discord.Color.blue())
+        embed.description = entry.get('Description')
+        embed.add_field(name="Author", value=entry.get('Author'), inline=True)
+        embed.add_field(name="Version", value=entry.get('Version'), inline=True)
+        embed.add_field(name="Repo", value=f"[{entry.get('repo').get('label')}]({entry.get('repo').get('url')})", inline=True)
+        embed.add_field(name="Bundle ID", value=entry.get('Package'), inline=True)
+        embed.add_field(name="More Info", value=f"[Click Here](https://parcility.co/package/{entry.get('Package')}/{entry.get('repo').get('slug')})", inline=False)
+        pattern = re.compile(r"((http|https)\:\/\/)[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*")
+        if (pattern.match(entry.get('Icon'))):
+            embed.set_thumbnail(url=entry.get('Icon'))
+        embed.set_footer(icon_url=entry.get('repo').get('icon'), text=f"{entry.get('repo').get('label')} • Page {menu.current_page +1}/{self.get_max_pages()}")
         embed.timestamp = datetime.now()
-        if message is None and channel is not None:
-            return await channel.send(embed=embed)
-        elif message is not None:
-            return await message.edit(embed=embed)
-
-    async def send_initial_message(self, ctx, channel):
-        return await self.post_embed(channel=channel)
+        return embed
     
-    @menus.button('\N{BLACK LEFT-POINTING TRIANGLE}\ufe0f')
-    async def on_left_press(self, payload):
-        if payload.event_type == "REACTION_ADD":
-            if self.index == 0:
-                await self.message.remove_reaction(emoji=payload.emoji, member=payload.member)
+class MenuPages(menus.MenuPages):
+    async def update(self, payload):
+        if self._can_remove_reactions:
+            if payload.event_type == 'REACTION_ADD':
+                await self.message.remove_reaction(payload.emoji, payload.member)
+            elif payload.event_type == 'REACTION_REMOVE':
                 return
-            self.index -= 1
-            await self.message.remove_reaction(emoji=payload.emoji, member=payload.member)
-            await self.post_embed(message=self.message)
-
-    @menus.button('\N{BLACK RIGHT-POINTING TRIANGLE}\ufe0f')
-    async def on_right_press(self, payload):
-        if payload.event_type == "REACTION_ADD":
-            if (self.index + 1) >= len(self.data):
-                await self.message.remove_reaction(emoji=payload.emoji, member=payload.member)
-                return
-            self.index += 1
-            await self.message.remove_reaction(emoji=payload.emoji, member=payload.member)
-            await self.post_embed(message=self.message)
+        await super().update(payload)
 
 
 class Parcility(commands.Cog):
@@ -91,10 +72,11 @@ class Parcility(commands.Cog):
             await message.channel.send(embed=embed, delete_after=5)
             return
         
-        menu = TweakMenu(response)
+        menus = MenuPages(source=TweakMenu(
+            response, key=lambda t: 1, per_page=1), clear_reactions_after=True)
         ctx = await self.bot.get_context(message)
-        await menu.start(ctx)
-        
+        await menus.start(ctx)
+
     async def search_request(self, search):
         async with aiohttp.ClientSession() as client:
             async with client.get(f'{self.search_url}{search}') as resp:
