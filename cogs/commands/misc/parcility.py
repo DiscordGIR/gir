@@ -43,7 +43,7 @@ class Parcility(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if not message.guild:
+        if message.guild is None:
             return
         if not message.guild.id == self.bot.settings.guild_id:
             return

@@ -380,7 +380,7 @@ class Settings(commands.Cog):
         cases.reverse()
         return cases[0:3]
     
-    async def get_giveaway(self, id: int) -> Giveaway:
+    async def get_giveaway(self, _id: int) -> Giveaway:
         """
         Return the Document representing a giveaway, whose ID (message ID) is given by `id`
         If the giveaway doesn't exist in the database, then None is returned.
@@ -394,7 +394,7 @@ class Settings(commands.Cog):
         -------
         Giveaway
         """
-        giveaway = Giveaway.objects(_id=id).first()
+        giveaway = Giveaway.objects(_id=_id).first()
         return giveaway
     
     async def add_giveaway(self, id: int, channel: int, name: str, entries: list, winners: int, ended: bool = False, prev_winners=[]) -> None:
