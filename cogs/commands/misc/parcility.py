@@ -48,8 +48,7 @@ class Parcility(commands.Cog):
         if not message.guild.id == self.bot.settings.guild_id:
             return
         
-        author = message.guild.get_member(message.author.id)
-        if not self.bot.settings.permissions.hasAtLeast(message.guild, author, 5) and message.channel.id == self.bot.settings.guild().channel_general:
+        if not self.bot.settings.permissions.hasAtLeast(message.guild, message.author, 5) and message.channel.id == self.bot.settings.guild().channel_general:
             return
         
         pattern = re.compile(r".*?(?<!\[)+\[\[((?!\s+)([\w+\ \&\+\-]){2,})\]\](?!\])+.*")
