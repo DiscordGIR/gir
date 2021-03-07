@@ -17,7 +17,7 @@ If you want to use the `stonks` cog for stock/crypto graphs, you will need:
 
 If you want to use the `!canijailbreak` (`!cij`) command, you will need to request an API key from the developer of [canijailbreak2.com](https://canijailbreak2.com)
 ### Setup
-1. `pyenv install 3.9.0`
+1. `pyenv install 3.9.1`
 2. `pyenv shell 3.9.1`
 3. `poetry install` (use flag `--no-dev` for prod)
 4. `poetry shell`
