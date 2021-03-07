@@ -156,7 +156,7 @@ class UserInfo(commands.Cog):
             joined = user.joined_at.strftime("%B %d, %Y, %I:%M %p") + " UTC"
         else:
             roles = "No roles."
-            joined = "User not in r/Jailbreak."
+            joined = f"User not in {ctx.guild.name}."
 
         results = (await self.bot.settings.user(user.id))
 

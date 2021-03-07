@@ -197,7 +197,7 @@ class Bot(commands.Bot):
             pass
 
     async def do_filter_notify(self, member, channel, word):
-        message = "Your message contained a word you aren't allowed to say in r/Jailbreak. This could be either hate speech or the name of a piracy tool/source. Please refrain from saying it!"
+        message = f"Your message contained a word you aren't allowed to say in {member.guild.name}. This could be either hate speech or the name of a piracy tool/source. Please refrain from saying it!"
         footer = "Repeatedly triggering the filter will automatically result in a mute."
         try:
             embed = discord.Embed(description=f"{message}\n\nFiltered word found: **{word}**", color=discord.Color.orange())
@@ -259,7 +259,7 @@ class Bot(commands.Bot):
             await public_chan.send(embed=log)
 
         try:
-            await user.send("You have been muted in r/Jailbreak", embed=log)
+            await user.send(f"You have been muted in {ctx.guild.name}", embed=log)
         except Exception:
             pass           
 
