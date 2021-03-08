@@ -36,7 +36,6 @@ initial_extensions = [
                     'cogs.commands.misc.genius',
                     'cogs.commands.misc.misc',
                     'cogs.commands.misc.subnews',
-                    'cogs.commands.misc.stonks',
                     'cogs.commands.misc.giveaway',
                     'cogs.commands.misc.parcility',
                     'cogs.commands.info.devices',

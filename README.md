@@ -11,10 +11,6 @@ Moderation bot for r/Jailbreak
 - MongoDB server
 - [Spotify developer account](https://developer.spotify.com/dashboard/)
 
-If you want to use the `stonks` cog for stock/crypto graphs, you will need:
-- a [Robinhood](http://robinhood.com/) account
-- a [CoinMarketCap API key](https://coinmarketcap.com/api/)
-
 If you want to use the `!canijailbreak` (`!cij`) command, you will need to request an API key from the developer of [canijailbreak2.com](https://canijailbreak2.com)
 ### Setup
 1. `pyenv install 3.9.0`
@@ -31,13 +27,6 @@ BOTTY_MAINGUILD  = MAIN GUILD ID (int)
 LAVALINK_PASS          = "yourpasswwordhere"
 SPOTIFY_CLIENT_ID      = "YOUR SPOTIFY CLIENT ID"
 SPOTIFY_CLIENT_SECRET" = "YOUR SPOTIFY SECRET"
-
-# the below are for the stonks cog, leave these out
-# if you don't need it, but be sure to comment out the
-# cog in main.py as well
-RH_USER = "ROBINHOOD USERNAME"
-RH_PASS = "ROBINHOOD PASSWORD"
-CMC_KEY = "COINMARKETCAP TOKEN"
 
 # the below is for the canijailbreak command
 CIJ_KEY = "CIJ TOKEN"
