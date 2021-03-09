@@ -59,7 +59,7 @@ class Giveaway(commands.Cog):
 
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             raise commands.BadArgument(
-                "You need to be an administrator or higher to use that command.")
+                "You need to be an Administrator or higher to use that command.")
 
         if ctx.invoked_subcommand is None:
             raise commands.BadArgument("Invalid giveaway subcommand passed. Options: `start`, `reroll`, `end`")
