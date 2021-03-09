@@ -121,6 +121,8 @@ class Filters(commands.Cog):
                 "You need to be an Administrator or higher to use that command.")
 
         filters = self.bot.settings.guild().filter_words
+        if len(filters) == 0:
+            raise commands.BadArgument("The filterlist is currently empty. Please add a word using `!filter`.")
         filters = sorted(filters, key=lambda word: word.word)
 
         menus = MenuPages(source=FilterSource(
