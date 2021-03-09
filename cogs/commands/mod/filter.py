@@ -123,7 +123,8 @@ class Filters(commands.Cog):
         filters = self.bot.settings.guild().filter_words
         if len(filters) == 0:
             raise commands.BadArgument("The filterlist is currently empty. Please add a word using `!filter`.")
-        filters = sorted(filters, key=lambda word: word.word)
+        
+        filters = sorted(filters, key=lambda word: word.word.lower())
 
         menus = MenuPages(source=FilterSource(
             enumerate(filters), key=lambda t: 1, per_page=12), clear_reactions_after=True)
