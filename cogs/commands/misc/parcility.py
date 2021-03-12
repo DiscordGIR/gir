@@ -4,6 +4,7 @@ import discord
 import re
 import json
 import aiohttp
+import urllib
 from datetime import datetime
 from discord.ext import commands, menus
 from yarl import URL
@@ -25,7 +26,7 @@ async def package_request(package):
 
 async def search_request(search):
     async with aiohttp.ClientSession() as client:
-        async with client.get(URL(f'{search_url}{search}', encoded=True)) as resp:
+        async with client.get(URL(f'{search_url}{urllib.parse.quote(search)}', encoded=True)) as resp:
             if resp.status == 200:
                 response = json.loads(await resp.text())
                 if response.get('code') == 404:
