@@ -312,6 +312,40 @@ class Filters(commands.Cog):
             await ctx.message.reply("That server is already blacklisted.", delete_after=10)
         await ctx.message.delete(delay=10)
 
+    @commands.guild_only()
+    @commands.command(name="falsepositive")
+    async def falsepositive(self, ctx, *, word: str):
+        """Disabling enhanced filter checks on a word (admin only)
+
+        Example usage:
+        --------------
+        `!falsepositive xd`
+
+        Parameters
+        ----------
+        word : str
+            Word to mark as false positive
+
+        """
+        # must be at least admin
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise commands.BadArgument(
+                "You need to be an administator or higher to use that command.")
+
+        word = word.lower()
+
+        words = self.bot.settings.guild().filter_words
+        words = list(filter(lambda w: w.word.lower() == word.lower(), words))
+        
+        if len(words) > 0:
+            if await self.bot.settings.mark_false_positive(words[0].word):
+                await ctx.message.reply("Marked as potential false positive, we won't perform the enhanced checks on it!")
+            else:
+                raise commands.BadArgument("Unexpected error occured trying to mark as false positive!")
+        else:
+            await ctx.message.reply("That word is not filtered.")  
+            
+    @falsepositive.error
     @piracy.error
     @whitelist.error
     @blacklist.error

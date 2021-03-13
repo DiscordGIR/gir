@@ -182,6 +182,17 @@ class Settings(commands.Cog):
     async def remove_filtered_word(self, word: str):
         return Guild.objects(_id=self.guild_id).update_one(pull__filter_words__word=FilterWord(word=word).word)
 
+    async def mark_false_positive(self, word: str):
+        g = self.guild()
+        fw = g.filter_words
+        for w in fw:
+            if w.word == word:
+                w.false_positive = True
+                g.filter_words = fw
+                g.save()
+                return True
+            
+        return False
     async def add_tag(self, tag: Tag) -> None:
         Guild.objects(_id=self.guild_id).update_one(push__tags=tag)
 
