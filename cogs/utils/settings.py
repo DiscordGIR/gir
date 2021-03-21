@@ -195,7 +195,12 @@ class Settings(commands.Cog):
         return Guild.objects(_id=self.guild_id, tags__name=tag.name).update_one(set__tags__S=tag)
 
     async def get_tag(self, name: str):
-        return Guild.objects.get(_id=self.guild_id).tags.filter(name=name).first()
+        tag = Guild.objects.get(_id=self.guild_id).tags.filter(name=name).first()
+        if tag is None:
+            return
+        tag.use_count += 1
+        await self.edit_tag(tag)
+        return tag
 
     async def add_whitelisted_guild(self, id: int):
         g = Guild.objects(_id=self.guild_id)
