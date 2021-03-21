@@ -158,9 +158,8 @@ class Filters(commands.Cog):
         words = list(filter(lambda w: w.word.lower() == word.lower(), words))
         
         if len(words) > 0:
-            await self.bot.settings.remove_filtered_word(words[0].word)
             words[0].piracy = True
-            await self.bot.settings.add_filtered_word(words[0])
+            await self.bot.settings.update_filtered_word(words[0])
 
             await ctx.message.reply("Marked as a piracy word!", delete_after=5)
         else:
@@ -338,7 +337,8 @@ class Filters(commands.Cog):
         words = list(filter(lambda w: w.word.lower() == word.lower(), words))
         
         if len(words) > 0:
-            if await self.bot.settings.mark_false_positive(words[0].word):
+            words[0].false_positive=True
+            if await self.bot.settings.update_filtered_word(words[0]):
                 await ctx.message.reply("Marked as potential false positive, we won't perform the enhanced checks on it!")
             else:
                 raise commands.BadArgument("Unexpected error occured trying to mark as false positive!")

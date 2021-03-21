@@ -182,31 +182,20 @@ class Settings(commands.Cog):
     async def remove_filtered_word(self, word: str):
         return Guild.objects(_id=self.guild_id).update_one(pull__filter_words__word=FilterWord(word=word).word)
 
-    async def mark_false_positive(self, word: str):
-        g = self.guild()
-        fw = g.filter_words
-        for w in fw:
-            if w.word == word:
-                w.false_positive = True
-                g.filter_words = fw
-                g.save()
-                return True
-            
-        return False
+    async def update_filtered_word(self, word: FilterWord):
+        return Guild.objects(_id=self.guild_id, filter_words__word=word.word).update_one(set__filter_words__S=word)
+    
     async def add_tag(self, tag: Tag) -> None:
         Guild.objects(_id=self.guild_id).update_one(push__tags=tag)
 
     async def remove_tag(self, tag: str):
         return Guild.objects(_id=self.guild_id).update_one(pull__tags__name=Tag(name=tag).name)
 
+    async def edit_tag(self, tag):
+        return Guild.objects(_id=self.guild_id, tags__name=tag.name).update_one(set__tags__S=tag)
+
     async def get_tag(self, name: str):
-        g = Guild.objects(_id=self.guild_id).first()
-        for t in g.tags:
-            if t.name == name:
-                t.use_count += 1
-                g.save()
-                return t
-        return None
+        return Guild.objects.get(_id=self.guild_id).tags.filter(name=name).first()
 
     async def add_whitelisted_guild(self, id: int):
         g = Guild.objects(_id=self.guild_id)
