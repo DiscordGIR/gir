@@ -53,7 +53,7 @@ class Tags(commands.Cog):
             Content of the tag
         """
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
+        if not (self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4) or ctx.guild.get_role(self.bot.settings.guild().role_sub_mod) in ctx.author.roles):
             await ctx.message.delete()
             raise commands.BadArgument(
                 "You need to be a Genius or higher to use that command.")
@@ -148,7 +148,7 @@ class Tags(commands.Cog):
 
         """
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
+        if not (self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4) or ctx.guild.get_role(self.bot.settings.guild().role_sub_mod) in ctx.author.roles):
             await ctx.message.delete()
             raise commands.BadArgument(
                 "You need to be a Genius or higher to use that command.")
@@ -206,7 +206,7 @@ class Tags(commands.Cog):
         name : str
             Name of tag to use
         """
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
+        if not (self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4) or ctx.guild.get_role(self.bot.settings.guild().role_sub_mod) in ctx.author.roles):
             await ctx.message.delete()
             raise commands.BadArgument(
                 "You need to be a Genius or higher to use that command.")
