@@ -212,7 +212,7 @@ class Giveaway(commands.Cog):
             ID of the giveaway message
         """
 
-        g = await self.bot.settings.get_giveaway(id=message_id)
+        g = await self.bot.settings.get_giveaway(_id=message_id)
 
         if g is None:
             raise commands.BadArgument("Couldn't find an ended giveaway by the provided ID.")
