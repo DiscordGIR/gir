@@ -394,7 +394,7 @@ class ReactionRoles(commands.Cog):
         embed.color = discord.Color.purple()
         embed.set_author(name="Jailbreak Updates")
         embed.description = """
-                            If you want to be notified about Checkra1n updates click :checkra1n:\nIf you want to be notified about Odyssey updates click :odyssey:\nIf you want to be notified about Unc0ver updates click :unc0ver:\nIf you want to be notified about tvOS Jailbreaks updates click :tvOSJailbreak:
+                            If you want to be notified about Checkra1n updates click :checkra1n:\nIf you want to be notified about Taurine updates click :taurine:\nIf you want to be notified about Unc0ver updates click :unc0ver:\nIf you want to be notified about tvOS Jailbreaks updates click :tvOSJailbreak:
                             """
         embed.description = fix_emojis(embed.description)
         await channel.send(embed=embed)
