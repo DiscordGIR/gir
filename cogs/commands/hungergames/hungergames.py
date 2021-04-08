@@ -33,8 +33,8 @@ class HungerGames:
             return ErrorCode.PLAYER_EXISTS
 
         if volunteer:
-            return "**District {0} | {1}** volunteers as tribute!".format(p.district,  p.name)
-        return "**District {0} | {1}** is selected to be a tribute!".format(p.district,  p.name)
+            return f"**District {p.district} | {p.name}** volunteers as tribute!"
+        return f"**District {p.district} | {p.name}** is selected to be a tribute!"
 
     def remove_player(self, channel_id, _id):
         if channel_id not in self.active_games:
@@ -46,7 +46,7 @@ class HungerGames:
 
         if not this_game.remove_player(_id):
             return ErrorCode.PLAYER_DOES_NOT_EXIST
-        return "Player <@{0}> was removed from the game.".format(_id)
+        return f"Player <@{_id}> was removed from the game."
 
     def pad_players(self, channel_id, group):
         if channel_id not in self.active_games:
@@ -69,7 +69,7 @@ class HungerGames:
 
         if len(messages) == 0:
             return "No tributes were added."
-        return "{0}".format("\n".join(messages))
+        return "\n".join(messages)
 
     def status(self, channel_id):
         if channel_id not in self.active_games:
@@ -79,14 +79,13 @@ class HungerGames:
         player_list = []
         for p in this_game.players_sorted:
             if p.alive:
-                player_list.append("District {0}| {1}".format(p.district, p.name))
+                player_list.append(f"District {p.district}| {p.name}")
             else:
-                player_list.append("~~District {0} | {1}~~".format(p.district, p.name))
+                player_list.append(f"~~District {p.district} | {p.name}~~")
 
         summary = {
             'title': this_game.title,
-            'footer': "Players: {0}/{1} | Host: {2}"
-                      .format(len(this_game.players), PLAYER_LIMIT, this_game.owner_name)
+            'footer': f"Players: {len(this_game.players)}/{PLAYER_LIMIT} | Host: {this_game.owner_name}"
         }
 
         if len(player_list) == 0:
@@ -139,9 +138,9 @@ class HungerGames:
         if summary.get('winner') is not None:
             self.active_games.pop(channel_id)
             return {
-                'title': "{0} | Winner".format(this_game.title),
+                'title': f"{this_game.title} | Winner",
                 'color': 0xd0d645,
-                'messages': ["The winner is {0} from District {1}!".format(summary['winner'].name, summary['winner'].district)],
+                'messages': [f"The winner is {summary['winner'].name} from District {summary['winner'].district}!"],
                 'footer': None,
                 'members':[ [summary['winner'].id]]
             }
@@ -149,7 +148,7 @@ class HungerGames:
         if summary.get('allDead') is not None:
             self.active_games.pop(channel_id)
             return {
-                'title': "{0} | Winner".format(this_game.title),
+                'title': f"{this_game.title} | Winner",
                 'color': 0xd0d645,
                 'description': "All the contestants have died!",
                 'footer': None
