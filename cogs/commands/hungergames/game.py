@@ -51,13 +51,13 @@ class Game:
         self.has_started = True
 
     def step(self):
-        if self.total_players_alive is 1:
+        if self.total_players_alive == 1:
             self.has_started = False
             for p in self.players.values():
                 if p.alive is True:
                     return {'winner': p}
                 
-        if self.total_players_alive is 0:
+        if self.total_players_alive == 0:
             self.has_started = False
             return {'allDead': True}
 
@@ -71,7 +71,7 @@ class Game:
         feast_chance = 100 * (math.pow(self.days_since_last_event, 2) / 55.0) + (9.0 / 55.0)
         fatality_factor = random.randint(2, 4) + self.consecutive_rounds_without_deaths
 
-        if self.day is 1 and not self.bloodbath_passed:
+        if self.day == 1 and not self.bloodbath_passed:
             step_type = RoundType.BLOODBATH
             fatality_factor += 2
             self.bloodbath_passed = True
@@ -79,7 +79,7 @@ class Game:
             step_type = RoundType.FEAST
             self.days_since_last_event = 0
             fatality_factor += 2
-        elif self.days_since_last_event > 0 and random.randint(1, 20) is 1:
+        elif self.days_since_last_event > 0 and random.randint(1, 20) == 1:
             step_type = RoundType.ARENA
             self.days_since_last_event = 0
             fatality_factor += 1
@@ -131,7 +131,7 @@ class Game:
                 summary['description'] = "{0} cannon shots can be heard in the distance.".format(
                     len(self.players_dead_today))
                 self.players_dead_today.clear()
-            elif len(self.players_dead_today) is 1:
+            elif len(self.players_dead_today) == 1:
                 summary['description'] = "1 cannon shot can be heard in the distance."
                 self.players_dead_today.clear()
             else:

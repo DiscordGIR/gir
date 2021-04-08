@@ -14,49 +14,49 @@ from cogs.commands.hungergames.enums import ErrorCode
 class HungerGamesCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.hg = HungerGames()
+        self.game_instance = HungerGames()
         self.pfp_map = {}
     
-    @commands.command(name="test")
-    @commands.guild_only()
-    async def test(self, ctx):
-        title = "This is a very very very very very very long title long title long title"
-        lines = [
-            # {
-            #     "members": [777282444931104769, 109705860275539968, 109705860275539968, 145702927099494400, 193493980611215360],
-            #     "message": "xd killed xd xd "
-            # },
-            # {
-            #     "members": [777282444931104769, 109705860275539968, 145702927099494400, 193493980611215360],
-            #     "message": "xd killed xd xd "
-            # },
-            # {
-            #     "members": [777282444931104769, 109705860275539968, 145702927099494400],
-            #     "message": "xd killed xd xd "
-            # },
-            # {
-            #     "members": [516962733497778176, 747897273777782914],
-            #     "message": "xd killed xd xd "
-            # },
-            {
-                "members": [275370518008299532],
-                "message":  "This is a very very very very very very long title long title long title"
-            },
-            {
-                "members": [516962733497778176, 747897273777782914],
-                "message": "xd killed xd xd "
-            },
-            # {
-            #     "members": [275370518008299532],
-            #     "message": "xd killed xd xd "
-            # },
-        ]
-        max_width = 0
-        for line in lines:
-            if line is not None:
-                if len(line["members"]) > max_width:
-                    max_width = len(line["members"])
-        await ctx.send(file=await self.produce_image(ctx, title, lines, max_width))
+    # @hg.command(name="test")
+    # @commands.guild_only()
+    # async def test(self, ctx):
+    #     title = "This is a very very very very very very long title long title long title"
+    #     lines = [
+    #         # {
+    #         #     "members": [777282444931104769, 109705860275539968, 109705860275539968, 145702927099494400, 193493980611215360],
+    #         #     "message": "xd killed xd xd "
+    #         # },
+    #         # {
+    #         #     "members": [777282444931104769, 109705860275539968, 145702927099494400, 193493980611215360],
+    #         #     "message": "xd killed xd xd "
+    #         # },
+    #         # {
+    #         #     "members": [777282444931104769, 109705860275539968, 145702927099494400],
+    #         #     "message": "xd killed xd xd "
+    #         # },
+    #         # {
+    #         #     "members": [516962733497778176, 747897273777782914],
+    #         #     "message": "xd killed xd xd "
+    #         # },
+    #         {
+    #             "members": [275370518008299532],
+    #             "message":  "This is a very very very very very very long title long title long title"
+    #         },
+    #         {
+    #             "members": [516962733497778176, 747897273777782914],
+    #             "message": "xd killed xd xd "
+    #         },
+    #         # {
+    #         #     "members": [275370518008299532],
+    #         #     "message": "xd killed xd xd "
+    #         # },
+    #     ]
+    #     max_width = 0
+    #     for line in lines:
+    #         if line is not None:
+    #             if len(line["members"]) > max_width:
+    #                 max_width = len(line["members"])
+    #     await ctx.send(file=await self.produce_image(ctx, title, lines, max_width))
 
     async def produce_leaderboard_image(self, ctx, title, lines):
         max_width = 6
@@ -282,7 +282,21 @@ class HungerGamesCog(commands.Cog):
         
         return discord.File(buffer, 'myimage.png')
     
-    @commands.command(name="new")
+    @commands.group()
+    async def hg(self, ctx):
+        """
+        Hunger Games using !hg <action>, choosing from below...
+        """
+
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise commands.BadArgument(
+                "You need to be an Administrator or higher to use that command.")
+
+        if ctx.invoked_subcommand is None:
+            raise commands.BadArgument("Invalid giveaway subcommand passed. Options: `start`, `reroll`, `end`")
+
+    
+    @hg.command(name="new")
     @commands.guild_only()
     async def new(self, ctx, *, title: str = None):
         """
@@ -293,27 +307,27 @@ class HungerGamesCog(commands.Cog):
         """
         title = "The Hunger Games"
         owner = ctx.author
-        ret = self.hg.new_game(ctx.channel.id, owner.id, owner.name, title)
+        ret = self.game_instance.new_game(ctx.channel.id, owner.id, owner.name, title)
         if not await self.__check_errors(ctx, ret):
             return
         await ctx.send(f"{owner.mention} has started {title}! Use `!add [-m|-f] <name>` to add a player or `!join [-m|-f]` to enter the "
                     "game yourself!")
 
 
-    @commands.command(name="join")
+    @hg.command(name="join")
     @commands.guild_only()
     async def join(self, ctx):
         """
         Adds a tribute with your name to a new simulation.
         """
         name = ctx.author.display_name
-        ret = self.hg.add_player(ctx.channel.id, name, ctx.author.id, volunteer=True)
+        ret = self.game_instance.add_player(ctx.channel.id, name, ctx.author.id, volunteer=True)
         if not await self.__check_errors(ctx, ret):
             return
         await ctx.reply(ret)
 
 
-    @commands.command(name="add")
+    @hg.command(name="add")
     @commands.guild_only()
     async def add(self, ctx, *, member: discord.Member):
         """
@@ -322,13 +336,13 @@ class HungerGamesCog(commands.Cog):
         name - The name of the tribute to add. Limit 32 chars. Leading and trailing whitespace will be trimmed.
         Special chars @*_`~ count for two characters each.
         """
-        ret = self.hg.add_player(ctx.channel.id, member.display_name, member.id)
+        ret = self.game_instance.add_player(ctx.channel.id, member.display_name, member.id)
         if not await self.__check_errors(ctx, ret):
             return
         await ctx.send(ret)
 
 
-    @commands.command(name="remove")
+    @hg.command(name="remove")
     @commands.guild_only()
     async def remove(self, ctx, member: discord.Member):
         """
@@ -338,36 +352,34 @@ class HungerGamesCog(commands.Cog):
         name - The name of the tribute to remove.
         """
 
-        ret = self.hg.remove_player(ctx.channel.id, member.id)
+        ret = self.game_instance.remove_player(ctx.channel.id, member.id)
         if not await self.__check_errors(ctx, ret):
             return
         await ctx.send(ret)
 
 
-    @commands.command(name="fill")
+    @hg.command(name="fill")
     @commands.guild_only()
     async def fill(self, ctx):
+        """Fill empty slots with random people
         """
-        Pad out empty slots in a new game with default characters.
 
-        group_name (Optional) - The builtin group to draw tributes from. Defaults to members in this guild.
-        """
         group = []
         for m in list(ctx.message.guild.members):
             group.append(m)
-        ret = self.hg.pad_players(ctx.channel.id, group)
+        ret = self.game_instance.pad_players(ctx.channel.id, group)
         if not await self.__check_errors(ctx, ret):
             return
         await ctx.send(ret)
 
 
-    @commands.command(name="status")
+    @hg.command(name="status")
     @commands.guild_only()
     async def status(self, ctx):
         """
         Gets the status for the game in the channel.
         """
-        ret = self.hg.status(ctx.channel.id)
+        ret = self.game_instance.status(ctx.channel.id)
         if not await self.__check_errors(ctx, ret):
             return
         embed = discord.Embed(title=ret['title'], description=ret['description'])
@@ -375,13 +387,13 @@ class HungerGamesCog(commands.Cog):
         await ctx.send(embed=embed)
 
 
-    @commands.command(name="start")
+    @hg.command(name="start")
     @commands.guild_only()
     async def start(self, ctx, autoplay=False):
         """
         Starts the pending game in the channel.
         """
-        ret = self.hg.start_game(ctx.channel.id, ctx.author.id, "!")
+        ret = self.game_instance.start_game(ctx.channel.id, ctx.author.id)
         if not await self.__check_errors(ctx, ret):
             return
         ret, players = ret
@@ -391,29 +403,30 @@ class HungerGamesCog(commands.Cog):
         # await ctx.send(embed=embed)
         
         if autoplay:
-            while self.step(ctx):
+            self.game_instance.autoplay = True
+            while not await self.step(ctx):
                 await asyncio.sleep(20)
 
 
-    @commands.command(name="end")
+    @hg.command(name="end")
     @commands.guild_only()
     async def end(self, ctx):
         """
         Cancels the current game in the channel.
         """
-        ret = self.hg.end_game(ctx.channel.id, ctx.author.id)
+        ret = self.game_instance.end_game(ctx.channel.id, ctx.author.id)
         if not await self.__check_errors(ctx, ret):
             return
         await ctx.send("{0} has been cancelled. Anyone may now start a new game with `{1}new`.".format(ret.title, "!"))
 
 
-    @commands.command(name="step")
+    @hg.command(name="step")
     @commands.guild_only()
     async def step(self, ctx):
         """
         Steps forward the current game in the channel by one round.
         """
-        ret = self.hg.step(ctx.channel.id, ctx.author.id)
+        ret = self.game_instance.step(ctx.channel.id, ctx.author.id)
         if not await self.__check_errors(ctx, ret):
             return True
         # embed = discord.Embed(title=ret['title'], color=ret['color'], description=ret['description'])
@@ -453,6 +466,10 @@ class HungerGamesCog(commands.Cog):
                 else:
                     await asyncio.sleep(2)
                     embed = discord.Embed(color=ret['color'], description="Proceed.")
+                    if self.game_instance.autoplay:
+                        embed.set_footer(text="The next round commences in 20 seconds.")
+                    else:
+                        embed.set_footer(text="Use command `!step`.")
                     await ctx.send(embed=embed)
         else:
             embed = discord.Embed(title=ret['title'], color=ret['color'], description=ret['description'])
@@ -463,6 +480,7 @@ class HungerGamesCog(commands.Cog):
         # lines = []
         return False
         # await self.produce_image()
+
     def grouper(self, n, iterable, fillvalue=None):
         args = [iter(iterable)] * n
         return itertools.zip_longest(*args, fillvalue=fillvalue)
@@ -505,7 +523,7 @@ class HungerGamesCog(commands.Cog):
             await ctx.reply("There is no player with that name in this game.")
             return False
 
-    @test.error
+    # @test.error
     @start.error
     @step.error
     @end.error

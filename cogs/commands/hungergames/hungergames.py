@@ -9,6 +9,7 @@ PLAYER_LIMIT = 18
 
 class HungerGames:
     active_games = {}
+    autoplay = False
 
     def new_game(self, channel_id, owner_id, owner_name, title):
         if channel_id in self.active_games:
@@ -94,7 +95,7 @@ class HungerGames:
             summary['description'] = "The following tributes are currently in the game:\n\n" + "\n".join(player_list)
         return summary
 
-    def start_game(self, channel_id, member_id, prefix):
+    def start_game(self, channel_id, member_id):
         if channel_id not in self.active_games:
             return ErrorCode.NO_GAME
         this_game = self.active_games[channel_id]
@@ -107,10 +108,10 @@ class HungerGames:
             return ErrorCode.NOT_ENOUGH_PLAYERS
 
         this_game.start()
-        return {'title': "{0} | The Reaping".format(this_game.title),
-                'footer': "Total Players: {0} | Owner {1}".format(len(this_game.players), this_game.owner_name),
-                'description': "The Reaping has concluded! {0}, you may now "
-                               "proceed the simulation with `{1}step`.".format(this_game.owner_name, prefix)}, this_game.players_sorted
+        return {'title': f"{this_game.title} | The Reaping",
+                'footer': f"Total Players: {len(this_game.players)} | Owner {this_game.owner_name}",
+                'description': f"The Reaping has concluded! {this_game.owner_name}, you may now "
+                               "proceed the simulation with `!step`."}, this_game.players_sorted
 
     def end_game(self, channel_id, owner_id):
         if channel_id not in self.active_games:
