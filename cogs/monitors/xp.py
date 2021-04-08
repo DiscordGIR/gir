@@ -39,6 +39,8 @@ class Xp(commands.Cog):
             return
         if message.author.bot:
             return
+        if message.channel.id == self.bot.settings.guild().channel_botspam:
+            return
 
         user = await self.bot.settings.user(id=message.author.id)
         db = self.bot.settings.guild()

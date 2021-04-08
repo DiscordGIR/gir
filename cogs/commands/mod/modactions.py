@@ -230,6 +230,86 @@ class ModActions(commands.Cog):
             await public_chan.send(user.mention if not dmed else "", embed=log)
 
     @commands.guild_only()
+    @commands.command(name="editreason")
+    async def editreason(self, ctx: commands.Context, user: discord.Member, case_id: int, *, new_reason: str) -> None:
+        """Edit case reason and the embed in #public-mod-logs. (mod only)
+
+        Example usage:
+        --------------
+        `!editreason <@user/ID> <case ID> <reason>`
+
+        Parameters
+        ----------
+        user : discord.Member
+            User to edit case of
+        case_id : int
+            The ID of the case for which we want to edit reason
+        new_reason : str
+            New reason
+
+        """
+
+        await self.check_permissions(ctx, user)
+
+        # retrieve user's case with given ID
+        cases = await self.bot.settings.get_case(user.id, case_id)
+        case = cases.cases.filter(_id=case_id).first()
+
+        new_reason = discord.utils.escape_markdown(new_reason)
+        new_reason = discord.utils.escape_mentions(new_reason)
+
+        # sanity checks
+        if case is None:
+            raise commands.BadArgument(
+                message=f"{user} has no case with ID {case_id}")
+            
+        old_reason = case.reason
+        case.reason = new_reason
+        case.date = datetime.datetime.now()
+        cases.save()
+        
+        dmed = True
+        log = await logging.prepare_editreason_log(ctx.author, user, case, old_reason)
+        try:
+            await user.send(f"Your case was updated in {ctx.guild.name}.", embed=log)
+        except Exception:
+            dmed = False
+
+        public_chan = ctx.guild.get_channel(
+            self.bot.settings.guild().channel_public)
+            
+        found = False
+        async with ctx.typing():
+            async for message in public_chan.history(limit=200):
+                if message.author.id != ctx.me.id:
+                    continue
+                if len(message.embeds) == 0:
+                    continue
+                embed = message.embeds[0]
+                # print(embed.footer.text)
+                if embed.footer.text == discord.Embed.Empty:
+                    continue
+                if len(embed.footer.text.split(" ")) < 2:
+                    continue
+                
+                if f"#{case_id}" == embed.footer.text.split(" ")[1]:
+                    for i, field in enumerate(embed.fields):
+                        if field.name == "Reason":
+                            embed.set_field_at(i, name="Reason", value=new_reason)
+                            await message.edit(embed=embed)
+                            found = True
+        if found:
+            await ctx.message.reply(f"We updated the case and edited the embed in {public_chan.mention}.", embed=log, delete_after=10)
+        else:
+            await ctx.message.reply(f"We updated the case but weren't able to find a corresponding message in {public_chan.mention}!", embed=log, delete_after=10)
+            log.remove_author()
+            log.set_thumbnail(url=user.avatar_url)
+            await public_chan.send(user.mention if not dmed else "", embed=log)
+
+        await ctx.message.delete(delay=10)
+          
+            
+    @commands.guild_only()
     @commands.command(name="removepoints")
     async def removepoints(self, ctx: commands.Context, user: discord.Member, points: int, *, reason: str = "No reason.") -> None:
         """Remove warnpoints from a user. (mod only)
@@ -423,6 +503,10 @@ class ModActions(commands.Cog):
         if isinstance(user, int):
             try:
                 user = await self.bot.fetch_user(user)
+                
+                previous_bans = [user for _, user in await ctx.guild.bans()]
+                if user in previous_bans:
+                    raise commands.BadArgument("That user is already banned!")
             except discord.NotFound:
                 raise commands.BadArgument(
                     f"Couldn't find user with ID {user}")
@@ -494,6 +578,10 @@ class ModActions(commands.Cog):
 
         try:
             user = await self.bot.fetch_user(user)
+            previous_bans = [user for _, user in await ctx.guild.bans()]
+            if user not in previous_bans:
+                raise commands.BadArgument("That user isn't banned!")
+                
         except discord.NotFound:
             raise commands.BadArgument(f"Couldn't find user with ID {user}")
 
@@ -712,6 +800,7 @@ class ModActions(commands.Cog):
     @purge.error
     @kick.error
     @roblox.error
+    @editreason.error
     @removepoints.error
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)

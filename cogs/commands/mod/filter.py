@@ -12,10 +12,16 @@ class FilterSource(menus.GroupByPageSource):
         embed = discord.Embed(
             title=f'Filtered words', color=discord.Color.blurple())
         for _, word in entry.items:
-            extra = ""
+            notify_flag = ""
+            piracy_flag = ""
+            flags_check = ""
+            if word.notify is True:
+                notify_flag = "🔔"
             if word.piracy:
-                extra = "\nThis is a piracy word"
-            embed.add_field(name=word.word, value=f"Bypassed by: {permissions.level_info(word.bypass)}\nWill report: {word.notify}{extra}")
+                piracy_flag = " 🏴‍☠️"
+            if word.notify is False and not word.piracy:
+                flags_check = "None"
+            embed.add_field(name=word.word, value=f"Bypassed by: {permissions.level_info(word.bypass)}\nFlags: {flags_check}{notify_flag}{piracy_flag}")
         embed.set_footer(
             text=f"Page {menu.current_page +1} of {self.get_max_pages()}")
         return embed
@@ -72,7 +78,7 @@ class Filters(commands.Cog):
 
         Example usage:
         -------------
-        `!filteradd false 5 :kek:`
+        `!filter false 5 :kek:`
 
         Parameters
         ----------
@@ -88,7 +94,7 @@ class Filters(commands.Cog):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             await ctx.message.delete()
             raise commands.BadArgument(
-                "You need to be an administator or higher to use that command.")
+                "You need to be an Administrator or higher to use that command.")
 
         fw = FilterWord()
         fw.bypass = bypass
@@ -112,10 +118,13 @@ class Filters(commands.Cog):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             await ctx.message.delete()
             raise commands.BadArgument(
-                "You need to be an administator or higher to use that command.")
+                "You need to be an Administrator or higher to use that command.")
 
         filters = self.bot.settings.guild().filter_words
-        filters = sorted(filters, key=lambda word: word.word)
+        if len(filters) == 0:
+            raise commands.BadArgument("The filterlist is currently empty. Please add a word using `!filter`.")
+        
+        filters = sorted(filters, key=lambda word: word.word.lower())
 
         menus = MenuPages(source=FilterSource(
             enumerate(filters), key=lambda t: 1, per_page=12), clear_reactions_after=True)
@@ -141,7 +150,7 @@ class Filters(commands.Cog):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             await ctx.message.delete()
             raise commands.BadArgument(
-                "You need to be an administator or higher to use that command.")
+                "You need to be an Administrator or higher to use that command.")
 
         word = word.lower()
 
@@ -149,13 +158,12 @@ class Filters(commands.Cog):
         words = list(filter(lambda w: w.word.lower() == word.lower(), words))
         
         if len(words) > 0:
-            await self.bot.settings.remove_filtered_word(words[0].word)
             words[0].piracy = True
-            await self.bot.settings.add_filtered_word(words[0])
+            await self.bot.settings.update_filtered_word(words[0])
 
             await ctx.message.reply("Marked as a piracy word!", delete_after=5)
         else:
-            await ctx.message.reply("That word is not filtered.", delete_after=5)            
+            await ctx.message.reply("You must filter that word before it can be marked as piracy.", delete_after=5)            
         await ctx.message.delete(delay=5)
 
     @commands.guild_only()
@@ -177,7 +185,7 @@ class Filters(commands.Cog):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             await ctx.message.delete()
             raise commands.BadArgument(
-                "You need to be an administator or higher to use that command.")
+                "You need to be an Administrator or higher to use that command.")
 
         word = word.lower()
 
@@ -211,7 +219,7 @@ class Filters(commands.Cog):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             await ctx.message.delete()
             raise commands.BadArgument(
-                "You need to be an administator or higher to use that command.")
+                "You need to be an Administrator or higher to use that command.")
 
         if await self.bot.settings.add_whitelisted_guild(id):
             await ctx.message.reply("Whitelisted.", delete_after=10)
@@ -239,7 +247,7 @@ class Filters(commands.Cog):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             await ctx.message.delete()
             raise commands.BadArgument(
-                "You need to be an administator or higher to use that command.")
+                "You need to be an Administrator or higher to use that command.")
 
         if await self.bot.settings.add_ignored_channel(channel.id):
             await ctx.message.reply("Ignored.", delete_after=10)
@@ -266,7 +274,7 @@ class Filters(commands.Cog):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             await ctx.message.delete()
             raise commands.BadArgument(
-                "You need to be an administator or higher to use that command.")
+                "You need to be an Administrator or higher to use that command.")
 
         if await self.bot.settings.remove_ignored_channel(channel.id):
             await ctx.message.reply("Unignored.", delete_after=10)
@@ -295,7 +303,7 @@ class Filters(commands.Cog):
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             await ctx.message.delete()
             raise commands.BadArgument(
-                "You need to be an administator or higher to use that command.")
+                "You need to be an Administrator or higher to use that command.")
 
         if await self.bot.settings.remove_whitelisted_guild(id):
             await ctx.message.reply("Blacklisted.", delete_after=10)
@@ -303,6 +311,41 @@ class Filters(commands.Cog):
             await ctx.message.reply("That server is already blacklisted.", delete_after=10)
         await ctx.message.delete(delay=10)
 
+    @commands.guild_only()
+    @commands.command(name="falsepositive")
+    async def falsepositive(self, ctx, *, word: str):
+        """Disabling enhanced filter checks on a word (admin only)
+
+        Example usage:
+        --------------
+        `!falsepositive xd`
+
+        Parameters
+        ----------
+        word : str
+            Word to mark as false positive
+
+        """
+        # must be at least admin
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise commands.BadArgument(
+                "You need to be an administator or higher to use that command.")
+
+        word = word.lower()
+
+        words = self.bot.settings.guild().filter_words
+        words = list(filter(lambda w: w.word.lower() == word.lower(), words))
+        
+        if len(words) > 0:
+            words[0].false_positive=True
+            if await self.bot.settings.update_filtered_word(words[0]):
+                await ctx.message.reply("Marked as potential false positive, we won't perform the enhanced checks on it!")
+            else:
+                raise commands.BadArgument("Unexpected error occured trying to mark as false positive!")
+        else:
+            await ctx.message.reply("That word is not filtered.")  
+            
+    @falsepositive.error
     @piracy.error
     @whitelist.error
     @blacklist.error

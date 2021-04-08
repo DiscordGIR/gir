@@ -14,7 +14,6 @@ async def setup():
     
     # you should have this setup in the .env file beforehand
     guild._id          = int(os.environ.get("BOTTY_MAINGUILD"))
-    guild.nsa_guild_id = int(os.environ.get("BOTTY_NSAGUILD"))
     
     guild.case_id      = 1
     
@@ -36,6 +35,7 @@ async def setup():
     guild.channel_development    = 123  # put in the channel IDs for your server here
     guild.channel_emoji_log      = 123  # put in the channel IDs for your server here
     guild.channel_private        = 123  # put in the channel IDs for your server here
+    guild.channel_general        = 123  # put in the channel IDs for your server here
     guild.channel_public         = 123  # put in the channel IDs for your server here
     guild.channel_reaction_roles = 123  # put in the channel IDs for your server here
     guild.channel_reports        = 123  # put in the channel IDs for your server here

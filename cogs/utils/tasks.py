@@ -111,6 +111,23 @@ class Tasks():
 
         self.tasks.add_job(end_giveaway_callback, 'date', id=str(message_id+2), next_run_time=date, args=[channel_id, message_id, winners], misfire_grace_time=3600)
 
+    def schedule_reminder(self, id: int, reminder: str, date: datetime) -> None:
+        """Create a task to remind someone of id `id` of something `reminder` at time `date`
+
+        Parameters
+        ----------
+        id : int
+            User to remind
+        reminder : str
+            What to remind them of
+        date : datetime.datetime
+            When to remind
+        """
+
+        self.tasks.add_job(reminder_callback, 'date', id=str(
+            id+random.randint(5, 100)), next_run_time=date, args=[id, reminder], misfire_grace_time=3600)
+
+
 def unmute_callback(id: int) -> None:
     """Callback function for actually unmuting. Creates asyncio task
     to do the actual unmute.
@@ -186,6 +203,33 @@ async def remove_mute(id: int) -> None:
                 u.is_muted = False
                 u.save()
 
+def reminder_callback(id: int, reminder: str):
+    BOT_GLOBAL.loop.create_task(remind(id, reminder))
+
+async def remind(id, reminder):
+    """Remind the user callback
+
+    Parameters
+    ----------
+    id : int
+        ID of user to remind
+    reminder : str
+        body of reminder
+    """
+    
+    guild = BOT_GLOBAL.get_guild(BOT_GLOBAL.settings.guild_id)
+    if guild is None:
+        return
+    member = guild.get_member(id)
+    if member is None:
+        return
+
+    embed = discord.Embed(title="Reminder!", description=f"*You wanted me to remind you something... What was it... Oh right*:\n\n{reminder}", color=discord.Color.random())
+    try:
+        await member.send(embed=embed)
+    except Exception:
+        channel = guild.get_channel(BOT_GLOBAL.settings.guild().channel_botspam)
+        await channel.send(member.mention, embed=embed)
 
 def remove_bday_callback(id: int) -> None:
     """Callback function for actually unmuting. Creates asyncio task
@@ -288,7 +332,7 @@ async def end_giveaway(channel_id: int, message_id: int, winners: int) -> None:
             mentions.append(member.mention)
             winner_ids.append(member.id)
 
-    g = await BOT_GLOBAL.settings.get_giveaway(id=message.id)
+    g = await BOT_GLOBAL.settings.get_giveaway(_id=message.id)
     g.entries = reacted_ids
     g.is_ended = True
     g.previous_winners = winner_ids

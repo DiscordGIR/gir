@@ -36,8 +36,8 @@ initial_extensions = [
                     'cogs.commands.misc.genius',
                     'cogs.commands.misc.misc',
                     'cogs.commands.misc.subnews',
-                    'cogs.commands.misc.stonks',
                     'cogs.commands.misc.giveaway',
+                    'cogs.commands.misc.parcility',
                     'cogs.commands.info.devices',
                     'cogs.commands.info.help',
                     'cogs.commands.info.stats',
@@ -114,6 +114,9 @@ class Bot(commands.Bot):
                         (not word.false_positive and word.word.lower() in folded_without_spaces) or \
                         (not word.false_positive and word.word.lower() in folded_without_spaces_and_punctuation):
                         # remove all whitespace, punctuation in message and run filter again
+                        if word.false_positive and word.word.lower() not in folded_message.split():
+                            continue
+                        
                         dev_role = message.guild.get_role(self.settings.guild().role_dev)
                         if not (word.piracy and message.channel.id == self.settings.guild().channel_development and dev_role in message.author.roles):
                             # ignore if this is a piracy word and the channel is #development and the user has dev role
@@ -197,7 +200,7 @@ class Bot(commands.Bot):
             pass
 
     async def do_filter_notify(self, member, channel, word):
-        message = "Your message contained a word you aren't allowed to say in r/Jailbreak. This could be either hate speech or the name of a piracy tool/source. Please refrain from saying it!"
+        message = f"Your message contained a word you aren't allowed to say in {member.guild.name}. This could be either hate speech or the name of a piracy tool/source. Please refrain from saying it!"
         footer = "Repeatedly triggering the filter will automatically result in a mute."
         try:
             embed = discord.Embed(description=f"{message}\n\nFiltered word found: **{word}**", color=discord.Color.orange())
@@ -259,7 +262,7 @@ class Bot(commands.Bot):
             await public_chan.send(embed=log)
 
         try:
-            await user.send("You have been muted in r/Jailbreak", embed=log)
+            await user.send(f"You have been muted in {ctx.guild.name}", embed=log)
         except Exception:
             pass           
 

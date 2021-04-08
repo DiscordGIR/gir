@@ -59,7 +59,7 @@ class Giveaway(commands.Cog):
 
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             raise commands.BadArgument(
-                "You need to be an administrator or higher to use that command.")
+                "You need to be an Administrator or higher to use that command.")
 
         if ctx.invoked_subcommand is None:
             raise commands.BadArgument("Invalid giveaway subcommand passed. Options: `start`, `reroll`, `end`")
@@ -212,7 +212,7 @@ class Giveaway(commands.Cog):
             ID of the giveaway message
         """
 
-        g = await self.bot.settings.get_giveaway(id=message_id)
+        g = await self.bot.settings.get_giveaway(_id=message_id)
 
         if g is None:
             raise commands.BadArgument("Couldn't find an ended giveaway by the provided ID.")
@@ -254,7 +254,7 @@ class Giveaway(commands.Cog):
             ID of the giveaway message
         """
 
-        giveaway = self.bot.settings.get_giveaway(_id=message_id)
+        giveaway = await self.bot.settings.get_giveaway(_id=message_id)
         if giveaway is None:
             raise commands.BadArgument("A giveaway with that ID was not found.")
         elif giveaway.is_ended:
@@ -262,7 +262,7 @@ class Giveaway(commands.Cog):
 
         await ctx.message.delete()
         self.bot.settings.tasks.tasks.remove_job(str(message_id + 2), 'default')
-        await end_giveaway(giveaway.channel.id, message_id, giveaway.winners)
+        await end_giveaway(giveaway.channel, message_id, giveaway.winners)
 
         await ctx.send(embed=discord.Embed(description="Giveaway ended!", color=discord.Color.blurple()), delete_after=5)
 

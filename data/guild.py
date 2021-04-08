@@ -23,12 +23,12 @@ class Guild(mongoengine.Document):
     channel_common_issues     = mongoengine.IntField()
     channel_development       = mongoengine.IntField()
     channel_emoji_log         = mongoengine.IntField()
+    channel_general           = mongoengine.IntField()
     channel_private           = mongoengine.IntField()
     channel_public            = mongoengine.IntField()
     channel_reaction_roles    = mongoengine.IntField()
     channel_reports           = mongoengine.IntField()
     channel_subnews           = mongoengine.IntField()
-    channel_stonks            = mongoengine.IntField()
     channel_music             = mongoengine.IntField()
 
     emoji_logging_webhook     = mongoengine.IntField()

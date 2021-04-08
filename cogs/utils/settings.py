@@ -182,20 +182,25 @@ class Settings(commands.Cog):
     async def remove_filtered_word(self, word: str):
         return Guild.objects(_id=self.guild_id).update_one(pull__filter_words__word=FilterWord(word=word).word)
 
+    async def update_filtered_word(self, word: FilterWord):
+        return Guild.objects(_id=self.guild_id, filter_words__word=word.word).update_one(set__filter_words__S=word)
+    
     async def add_tag(self, tag: Tag) -> None:
         Guild.objects(_id=self.guild_id).update_one(push__tags=tag)
 
     async def remove_tag(self, tag: str):
         return Guild.objects(_id=self.guild_id).update_one(pull__tags__name=Tag(name=tag).name)
 
+    async def edit_tag(self, tag):
+        return Guild.objects(_id=self.guild_id, tags__name=tag.name).update_one(set__tags__S=tag)
+
     async def get_tag(self, name: str):
-        g = Guild.objects(_id=self.guild_id).first()
-        for t in g.tags:
-            if t.name == name:
-                t.use_count += 1
-                g.save()
-                return t
-        return None
+        tag = Guild.objects.get(_id=self.guild_id).tags.filter(name=name).first()
+        if tag is None:
+            return
+        tag.use_count += 1
+        await self.edit_tag(tag)
+        return tag
 
     async def add_whitelisted_guild(self, id: int):
         g = Guild.objects(_id=self.guild_id)
@@ -380,7 +385,7 @@ class Settings(commands.Cog):
         cases.reverse()
         return cases[0:3]
     
-    async def get_giveaway(self, id: int) -> Giveaway:
+    async def get_giveaway(self, _id: int) -> Giveaway:
         """
         Return the Document representing a giveaway, whose ID (message ID) is given by `id`
         If the giveaway doesn't exist in the database, then None is returned.
@@ -394,7 +399,7 @@ class Settings(commands.Cog):
         -------
         Giveaway
         """
-        giveaway = Giveaway.objects(_id=id).first()
+        giveaway = Giveaway.objects(_id=_id).first()
         return giveaway
     
     async def add_giveaway(self, id: int, channel: int, name: str, entries: list, winners: int, ended: bool = False, prev_winners=[]) -> None:

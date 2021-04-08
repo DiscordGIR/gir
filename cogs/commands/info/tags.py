@@ -53,7 +53,7 @@ class Tags(commands.Cog):
             Content of the tag
         """
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
+        if not (self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4) or ctx.guild.get_role(self.bot.settings.guild().role_sub_mod) in ctx.author.roles):
             await ctx.message.delete()
             raise commands.BadArgument(
                 "You need to be a Genius or higher to use that command.")
@@ -79,8 +79,12 @@ class Tags(commands.Cog):
             tag.image.put(image, content_type=_type)
 
         await self.bot.settings.add_tag(tag)
+        
+        file = tag.image.read()
+        if file is not None:
+            file = discord.File(BytesIO(file), filename="image.gif" if tag.image.content_type == "image/gif" else "image.png")
 
-        await ctx.message.reply(f"Added new tag!", embed=await self.tag_embed(tag), delete_after=10)
+        await ctx.message.reply(f"Added new tag!", file=file, embed=await self.tag_embed(tag), delete_after=10)
         await ctx.message.delete(delay=10)
     
     async def do_content_parsing(self, url):
@@ -144,7 +148,7 @@ class Tags(commands.Cog):
 
         """
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
+        if not (self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4) or ctx.guild.get_role(self.bot.settings.guild().role_sub_mod) in ctx.author.roles):
             await ctx.message.delete()
             raise commands.BadArgument(
                 "You need to be a Genius or higher to use that command.")
@@ -187,7 +191,52 @@ class Tags(commands.Cog):
             file = discord.File(BytesIO(file), filename="image.gif" if tag.image.content_type == "image/gif" else "image.png")
         
         await ctx.message.reply(embed=await self.tag_embed(tag), file=file, mention_author=False)
+    
+    @commands.guild_only()
+    @commands.command(name="edittag", aliases=['et'])
+    async def edittag(self, ctx, name: str, *, content: str) -> None:
+        """Edit a tag's body.
+        
+        Example usage
+        -------------
+        !t roblox
 
+        Parameters
+        ----------
+        name : str
+            Name of tag to use
+        """
+        if not (self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4) or ctx.guild.get_role(self.bot.settings.guild().role_sub_mod) in ctx.author.roles):
+            await ctx.message.delete()
+            raise commands.BadArgument(
+                "You need to be a Genius or higher to use that command.")
+
+        name = name.lower()
+        tag = await self.bot.settings.get_tag(name)
+        
+        if tag is None:
+            await ctx.message.delete()
+            raise commands.BadArgument("That tag does not exist.")
+        
+        tag.content = content
+        if len(ctx.message.attachments) > 0:
+            image, _type = await self.do_content_parsing(ctx.message.attachments[0].url)
+            if _type is None:
+                raise commands.BadArgument("Attached file was not an image.")
+            tag.image.put(image, content_type=_type)
+        else:
+            tag.image = None
+
+        if not await self.bot.settings.edit_tag(tag):
+            raise commands.BadArgument("An error occurred editing that tag.")
+        
+        file = tag.image.read()
+        if file is not None:
+            file = discord.File(BytesIO(file), filename="image.gif" if tag.image.content_type == "image/gif" else "image.png")
+        
+        await ctx.message.reply(embed=await self.tag_embed(tag), file=file, mention_author=False)
+
+    @edittag.error
     @tag.error
     @taglist.error
     @deltag.error
