@@ -92,7 +92,7 @@ class HungerGames:
             summary['description'] = "No players have joined yet"
         else:
             summary['description'] = "The following tributes are currently in the game:\n\n" + "\n".join(player_list)
-        return summary
+        return summary, this_game.players_sorted
 
     def start_game(self, channel_id, member_id):
         if channel_id not in self.active_games:

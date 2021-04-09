@@ -20,7 +20,7 @@ class HungerGamesCog(commands.Cog):
 
     async def produce_leaderboard_image(self, ctx, title, lines):
         max_width = 6
-        line_count = ceil(len(lines) / 6)
+        line_count = 4
         title_height = 0
         
         title_font = ImageFont.truetype('Arial.ttf', 36)
@@ -73,6 +73,8 @@ class HungerGamesCog(commands.Cog):
                 pfp = pfp.convert('L')
             pfp = pfp.resize((128,128), Image.ANTIALIAS)
             pfp = ImageOps.expand(pfp, border=(5,5), fill="#b56204")
+            if not member.alive:
+                pfp = pfp.convert('L')
             image.paste(pfp, (current_x, current_y))
             
             width, height = font.getsize(member.name)
@@ -294,12 +296,16 @@ class HungerGamesCog(commands.Cog):
         Gets the status for the game in the channel.
         """
         ret = self.game_instance.status(ctx.channel.id)
-        if not await self.__check_errors(ctx, ret):
-            return
-        embed = discord.Embed(title=ret['title'], description=ret['description'])
-        embed.set_footer(text=ret['footer'])
-        await ctx.send(embed=embed)
-
+        if len(ret) == 0:
+            if not await self.__check_errors(ctx, ret):
+                return
+        ret, players = ret
+        if len(players) == 0:
+            embed = discord.Embed(title=ret['title'], description=ret['description'])
+            embed.set_footer(text=ret['footer'])
+            await ctx.reply(embed=embed)
+        else:
+            await ctx.reply(file=await self.produce_leaderboard_image(ctx, ret['title'], players))
 
     @hg.command(name="start")
     @commands.guild_only()
@@ -314,8 +320,7 @@ class HungerGamesCog(commands.Cog):
         embed = discord.Embed(title=ret['title'], description=ret['description'])
         embed.set_footer(text=ret['footer'])
         embed.color = discord.Color.random()
-        await ctx.send(embed=embed, file=await self.produce_leaderboard_image(ctx, ret['title'], players))
-        # await ctx.send(embed=embed)
+        await ctx.reply(embed=embed, file=await self.produce_leaderboard_image(ctx, ret['title'], players))
         
         if autoplay:
             self.game_instance.autoplay = True
@@ -344,10 +349,7 @@ class HungerGamesCog(commands.Cog):
         ret = self.game_instance.step(ctx.channel.id, ctx.author.id)
         if not await self.__check_errors(ctx, ret):
             return True
-        # embed = discord.Embed(title=ret['title'], color=ret['color'], description=ret['description'])
-        # if ret['footer'] is not None:
-        #     embed.set_footer(text=ret['footer'])
-        # await ctx.send(embed=embed)
+
         if ret.get('members') is not None:
             title = ret.get('title')
             lines = []
@@ -389,10 +391,8 @@ class HungerGamesCog(commands.Cog):
             if ret['footer'] is not None:
                 embed.set_footer(text=ret['footer'])
             await ctx.send(embed=embed)
-        # title = ret['title']
-        # lines = []
+
         return False
-        # await self.produce_image()
 
     def grouper(self, n, iterable, fillvalue=None):
         args = [iter(iterable)] * n
