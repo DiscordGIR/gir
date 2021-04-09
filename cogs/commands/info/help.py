@@ -41,7 +41,6 @@ class Utilities(commands.Cog):
                 string += f"== {cog_name} ==\n"
 
                 for command in cog.get_commands():
-                    # print(type(command), command)
                     spaces_left = ' ' * (self.left_col_length - len(command.name))
                     if command.help is not None:
                         command.brief = command.help.split("\n")[0]
@@ -83,7 +82,6 @@ class Utilities(commands.Cog):
         else:
             command = self.bot.get_command(command_arg.lower())
             if command:
-                # print(str(command.cog))
                 if command.cog.qualified_name in self.mod_only and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
                     raise commands.BadArgument("You don't have permission to view that command.")
                 elif command.cog.qualified_name in self.genius_only and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):

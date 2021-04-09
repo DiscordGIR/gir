@@ -5,6 +5,7 @@ import io
 import itertools
 import asyncio
 import textwrap
+from math import ceil
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from cogs.commands.hungergames.default_players import default_players
@@ -16,51 +17,10 @@ class HungerGamesCog(commands.Cog):
         self.bot = bot
         self.game_instance = HungerGames()
         self.pfp_map = {}
-    
-    # @hg.command(name="test")
-    # @commands.guild_only()
-    # async def test(self, ctx):
-    #     title = "This is a very very very very very very long title long title long title"
-    #     lines = [
-    #         # {
-    #         #     "members": [777282444931104769, 109705860275539968, 109705860275539968, 145702927099494400, 193493980611215360],
-    #         #     "message": "xd killed xd xd "
-    #         # },
-    #         # {
-    #         #     "members": [777282444931104769, 109705860275539968, 145702927099494400, 193493980611215360],
-    #         #     "message": "xd killed xd xd "
-    #         # },
-    #         # {
-    #         #     "members": [777282444931104769, 109705860275539968, 145702927099494400],
-    #         #     "message": "xd killed xd xd "
-    #         # },
-    #         # {
-    #         #     "members": [516962733497778176, 747897273777782914],
-    #         #     "message": "xd killed xd xd "
-    #         # },
-    #         {
-    #             "members": [275370518008299532],
-    #             "message":  "This is a very very very very very very long title long title long title"
-    #         },
-    #         {
-    #             "members": [516962733497778176, 747897273777782914],
-    #             "message": "xd killed xd xd "
-    #         },
-    #         # {
-    #         #     "members": [275370518008299532],
-    #         #     "message": "xd killed xd xd "
-    #         # },
-    #     ]
-    #     max_width = 0
-    #     for line in lines:
-    #         if line is not None:
-    #             if len(line["members"]) > max_width:
-    #                 max_width = len(line["members"])
-    #     await ctx.send(file=await self.produce_image(ctx, title, lines, max_width))
 
     async def produce_leaderboard_image(self, ctx, title, lines):
         max_width = 6
-        line_count = len(lines) // 6
+        line_count = ceil(len(lines) / 6)
         title_height = 0
         
         title_font = ImageFont.truetype('Arial.ttf', 36)
@@ -116,49 +76,19 @@ class HungerGamesCog(commands.Cog):
             image.paste(pfp, (current_x, current_y))
             
             width, height = font.getsize(member.name)
-            draw.text((current_x + ((col_width - width)//2) ,current_y + 128 + height1), member.name, font=font)
+            draw.text((current_x - 10 + ((col_width - width)//2) ,current_y + 128 + height1), member.name, font=font)
             # draw.text(((current_x + (pfps_added % 6)+col_width)//2, current_y + 128 + height1), member.name, font=font)
             width, height = font.getsize("Alive" if member.alive else "Dead")
-            draw.text((current_x + ((col_width - width)//2), current_y + 8 + 128 + height1 + height2), "Alive" if member.alive else "Dead", font=font, fill="#32a852" if member.alive else "#ff4040")
+            draw.text((current_x - 10 + ((col_width - width)//2), current_y + 8 + 128 + height1 + height2), "Alive" if member.alive else "Dead", font=font, fill="#32a852" if member.alive else "#ff4040")
             
             width, height = font.getsize(f"{member.kills} kills")
-            draw.text((current_x + ((col_width - width)//2), current_y + 16 + 128 + height1 + height2 + height3), f"{member.kills} kills", font=font)
+            draw.text((current_x - 10 + ((col_width - width)//2), current_y + 16 + 128 + height1 + height2 + height3), f"{member.kills} kills", font=font)
             
             current_x += col_width + BETWEEN_IMAGE_PADDING
             
             if pfps_added % 6 == 0:
                 current_x = 120
                 current_y += ROW_PADDING + 200
-            # if line is None: continue
-            # offset = (max_width - (len(line["members"]))) * 75
-            # for i, member in enumerate(line["members"]):
-            #     col_width = 150
-            #     current_x = offset + (i * col_width ) + 100
-            #     pfp = self.pfp_map.get(member)
-            #     if pfp is None:
-            #         user = ctx.guild.get_member(member)
-            #         pfp = user.avatar_url_as(format="png", size=128)
-            #     self.pfp_map[member] = pfp
-            #     pfp = Image.open(io.BytesIO(await pfp.read()))
-            #     if "Fallen" in title:
-            #         pfp = pfp.convert('L')
-            #     pfp = pfp.resize((128,128), Image.ANTIALIAS)
-            #     pfp = ImageOps.expand(pfp, border=(5,5), fill="#b56204")
-            #     image.paste(pfp, (current_x, current_y))
-                
-            # current_y += 150
-            # text_lines = textwrap.wrap(line["message"], width=15*max_width if max_width > 1 else 30)
-            # for text_line in text_lines:
-            #     width, height = font.getsize(text_line)
-            #     draw.text(((image.width - width)//2, current_y), text_line, font=font)
-            #     current_y += height
-            # current_y += ROW_PADDING
-                # text_width, text_height = draw.textsize(text, font=font)
-                
-                # x = (IMAGE_WIDTH - text_width)//2
-                # y = current_y + 140
-                # draw.text( (x, y), text, fill=(255,255,255), font=font)
-            # current_y += ROW_HEIGHT + ROW_PADDING
 
         # create buffer
         buffer = io.BytesIO()
@@ -221,8 +151,6 @@ class HungerGamesCog(commands.Cog):
 
         # create object for drawing
         draw = ImageDraw.Draw(image)
-        # draw red rectangle with green outline from point (50,50) to point (550,250) #(600-50, 300-50)
-        # draw.rectangle([50, 50, IMAGE_WIDTH-50, IMAGE_HEIGHT-50], fill=(255,0,0), outline=(0,255,0))
 
         # draw text in center
         current_y = 24
@@ -230,17 +158,12 @@ class HungerGamesCog(commands.Cog):
         for title_line in title_lines:
             width, height = title_font.getsize(title_line)
             draw.text(((IMAGE_WIDTH - width)//2, current_y), title_line, font=title_font)
-            current_y += height
-        # text_width, text_height = draw.textsize(text, font=title_font)
-        # x = (IMAGE_WIDTH - text_width)//2 + 50
-        # draw.text( (x, current_y), title, fill=(255,255,255), font=title_font)
-        
+            current_y += height        
         
         current_y += ROW_PADDING
                 
         for line in lines:
             if line is None: continue
-            # num_col = IMAGE_WIDTH // len(line["members"])
             offset = (max_width - (len(line["members"]))) * 75
             for i, member in enumerate(line["members"]):
                 col_width = 150
@@ -264,12 +187,6 @@ class HungerGamesCog(commands.Cog):
                 draw.text(((image.width - width)//2, current_y), text_line, font=font)
                 current_y += height
             current_y += ROW_PADDING
-                # text_width, text_height = draw.textsize(text, font=font)
-                
-                # x = (IMAGE_WIDTH - text_width)//2
-                # y = current_y + 140
-                # draw.text( (x, y), text, fill=(255,255,255), font=font)
-            # current_y += ROW_HEIGHT + ROW_PADDING
 
         # create buffer
         buffer = io.BytesIO()
@@ -431,8 +348,6 @@ class HungerGamesCog(commands.Cog):
         # if ret['footer'] is not None:
         #     embed.set_footer(text=ret['footer'])
         # await ctx.send(embed=embed)
-        print(ret)
-        print("#####")
         if ret.get('members') is not None:
             title = ret.get('title')
             lines = []
@@ -467,7 +382,7 @@ class HungerGamesCog(commands.Cog):
                     if self.game_instance.autoplay:
                         embed.set_footer(text="The next round commences in 20 seconds.")
                     else:
-                        embed.set_footer(text="Use command `!step`.")
+                        embed.set_footer(text="Use command `!hg step`.")
                     await ctx.send(embed=embed)
         else:
             embed = discord.Embed(title=ret['title'], color=ret['color'], description=ret['description'])
@@ -521,7 +436,6 @@ class HungerGamesCog(commands.Cog):
             raise commands.BadArgument("There is no player with that name in this game.")
             return False
 
-    # @test.error
     @start.error
     @step.error
     @end.error

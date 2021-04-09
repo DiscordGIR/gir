@@ -5,7 +5,7 @@ from cogs.commands.hungergames.game import Game
 from cogs.commands.hungergames.player import Player
 from cogs.commands.hungergames.enums import ErrorCode
 
-PLAYER_LIMIT = 18
+PLAYER_LIMIT = 24
 
 class HungerGames:
     active_games = {}
@@ -24,7 +24,7 @@ class HungerGames:
 
         if this_game.has_started:
             return ErrorCode.GAME_STARTED
-        if len(this_game.players) >= 18:
+        if len(this_game.players) >= PLAYER_LIMIT:
             return ErrorCode.GAME_FULL
 
         district = math.ceil((len(this_game.players) + 1) / 2)
@@ -110,7 +110,7 @@ class HungerGames:
         return {'title': f"{this_game.title} | The Reaping",
                 'footer': f"Total Players: {len(this_game.players)} | Owner {this_game.owner_name}",
                 'description': f"The Reaping has concluded! {this_game.owner_name}, you may now "
-                               "proceed the simulation with `!step`."}, this_game.players_sorted
+                               "proceed the simulation with !hg step."}, this_game.players_sorted
 
     def end_game(self, channel_id, owner_id):
         if channel_id not in self.active_games:

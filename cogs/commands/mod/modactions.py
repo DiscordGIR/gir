@@ -286,7 +286,6 @@ class ModActions(commands.Cog):
                 if len(message.embeds) == 0:
                     continue
                 embed = message.embeds[0]
-                # print(embed.footer.text)
                 if embed.footer.text == discord.Embed.Empty:
                     continue
                 if len(embed.footer.text.split(" ")) < 2:
