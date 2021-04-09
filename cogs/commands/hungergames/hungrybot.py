@@ -310,8 +310,8 @@ class HungerGamesCog(commands.Cog):
         ret = self.game_instance.new_game(ctx.channel.id, owner.id, owner.name, title)
         if not await self.__check_errors(ctx, ret):
             return
-        await ctx.send(f"{owner.mention} has started {title}! Use `!add [-m|-f] <name>` to add a player or `!join [-m|-f]` to enter the "
-                    "game yourself!")
+        await ctx.send(embed=discord.Embed(description=f"{owner.mention} has started {title}! Type `!hg join` to enter the "
+                    "game yourself! Admins can use `!hg add <@user>` to add someone.", color=discord.Color.random()))
 
 
     @hg.command(name="join")
@@ -364,10 +364,7 @@ class HungerGamesCog(commands.Cog):
         """Fill empty slots with random people
         """
 
-        group = []
-        for m in list(ctx.message.guild.members):
-            group.append(m)
-        ret = self.game_instance.pad_players(ctx.channel.id, group)
+        ret = self.game_instance.pad_players(ctx.channel.id, list(ctx.message.guild.members))
         if not await self.__check_errors(ctx, ret):
             return
         await ctx.send(ret)
@@ -399,6 +396,7 @@ class HungerGamesCog(commands.Cog):
         ret, players = ret
         embed = discord.Embed(title=ret['title'], description=ret['description'])
         embed.set_footer(text=ret['footer'])
+        embed.color = discord.Color.random()
         await ctx.send(embed=embed, file=await self.produce_leaderboard_image(ctx, ret['title'], players))
         # await ctx.send(embed=embed)
         
@@ -489,38 +487,38 @@ class HungerGamesCog(commands.Cog):
         if type(error_code) is not ErrorCode:
             return True
         if error_code is ErrorCode.NO_GAME:
-            await ctx.reply("There is no game currently running in this channel.")
+            raise commands.BadArgument("There is no game currently running in this channel.")
             return False
         if error_code is ErrorCode.GAME_EXISTS:
-            await ctx.reply("A game has already been started in this channel.")
+            raise commands.BadArgument("A game has already been started in this channel.")
             return False
         if error_code is ErrorCode.GAME_STARTED:
-            await ctx.reply("This game is already running.")
+            raise commands.BadArgument("This game is already running.")
             return False
         if error_code is ErrorCode.GAME_FULL:
-            await ctx.reply("This game is already at maximum capacity.")
+            raise commands.BadArgument("This game is already at maximum capacity.")
             return False
         if error_code is ErrorCode.PLAYER_EXISTS:
-            await ctx.reply("That person is already in this game.")
+            raise commands.BadArgument("That person is already in this game.")
             return False
         if error_code is ErrorCode.CHAR_LIMIT:
-            await ctx.reply("That name is too long (max 32 chars).")
+            raise commands.BadArgument("That name is too long (max 32 chars).")
             return False
         if error_code is ErrorCode.NOT_OWNER:
-            await ctx.reply("You are not the owner of this game.")
+            raise commands.BadArgument("You are not the owner of this game.")
             return False
         if error_code is ErrorCode.INVALID_GROUP:
-            await ctx.reply("That is not a valid group. Valid groups are:\n```\n{0}\n```"
+            raise commands.BadArgument("That is not a valid group. Valid groups are:\n```\n{0}\n```"
                             .format("\n".join(list(default_players.keys()))))
             return False
         if error_code is ErrorCode.NOT_ENOUGH_PLAYERS:
-            await ctx.reply("There are not enough players to start a game. There must be at least 2.")
+            raise commands.BadArgument("There are not enough players to start a game. There must be at least 2.")
             return False
         if error_code is ErrorCode.GAME_NOT_STARTED:
-            await ctx.reply("This game hasn't been started yet.")
+            raise commands.BadArgument("This game hasn't been started yet.")
             return False
         if error_code is ErrorCode.PLAYER_DOES_NOT_EXIST:
-            await ctx.reply("There is no player with that name in this game.")
+            raise commands.BadArgument("There is no player with that name in this game.")
             return False
 
     # @test.error
