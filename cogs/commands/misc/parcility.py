@@ -56,12 +56,12 @@ class TweakMenu(menus.AsyncIteratorPageSource):
         embed.add_field(name="Version", value= discord.utils.escape_markdown(entry.get('Version') or "No version"), inline=True)
         embed.add_field(name="Price", value=entry.get("Price") or "Free")
         embed.add_field(name="Repo", value=f"[{entry.get('repo').get('label')}]({entry.get('repo').get('url')})" or "No repo", inline=True)
-        embed.add_field(name="Bundle ID", value= discord.utils.escape_markdown(entry.get('Package')) or "No package", inline=True)
-        embed.add_field(name="More Info", value=f"[Click Here](https://parcility.co/package/{entry.get('Package')}/{entry.get('repo').get('slug')})", inline=False)
+        embed.add_field(name="Add Repo", value=f"[Click Here](https://cydia.saurik.com/api/share#?source={entry.get('repo').get('url')})" or "No repo", inline=True)
+        embed.add_field(name="More Info", value=f"[View on Parcility](https://parcility.co/package/{entry.get('Package')}/{entry.get('repo').get('slug')})", inline=False)
         pattern = re.compile(r"((http|https)\:\/\/)[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*")
         if (pattern.match(entry.get('Icon'))):
             embed.set_thumbnail(url=entry.get('Icon'))
-        embed.set_footer(icon_url=entry.get('repo').get('icon'), text=f"{entry.get('repo').get('label')} • Page {menu.current_page +1}/{self.page_length}")
+        embed.set_footer(icon_url=entry.get('repo').get('icon'), text=discord.utils.escape_markdown(entry.get('Package'))+f" • Page {menu.current_page +1}/{self.page_length}" or "No package")
         embed.timestamp = datetime.now()
         return embed
     
@@ -126,6 +126,7 @@ class Parcility(commands.Cog):
             raise commands.BadArgument("This command cannot be used here.")
         
         data = await self.repo_request(repo)
+        repourl = data.get('repo')
 
         if data is None:
             embed = discord.Embed(title="Error", color=discord.Color.red())
@@ -142,9 +143,11 @@ class Parcility(commands.Cog):
         
         embed = discord.Embed(title=data.get('Label'), color=discord.Color.blue())
         embed.description = data.get('Description')
-        embed.add_field(name="Packages", value=data.get('package_count'), inline=False)
+        embed.add_field(name="Packages", value=data.get('package_count'), inline=True)
+        embed.add_field(name="Sections", value=data.get('section_count'), inline=True)
         embed.add_field(name="URL", value=data.get('repo'), inline=False)
-        embed.add_field(name="More Info", value=f'[Click Here](https://parcility.co/{repo})', inline=False)
+        embed.add_field(name="Add Repo", value=f'[Click Here](https://cydia.saurik.com/api/share#?source={repourl})', inline=True)
+        embed.add_field(name="More Info", value=f'[View on Parcility](https://parcility.co/{repo})', inline=True)
         embed.set_thumbnail(url=data.get('Icon'))
         embed.set_footer(text=data.get('Label'), icon_url=data.get('Icon'))
         embed.timestamp = datetime.now()
