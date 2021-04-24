@@ -4,6 +4,7 @@ from io import BytesIO
 
 import discord
 from data.tag import Tag
+import datetime
 from discord.ext import commands
 from discord.ext import menus
 
@@ -31,10 +32,48 @@ class MenuPages(menus.MenuPages):
                 return
         await super().update(payload)
 
+class CustomBucketType(commands.BucketType):
+    custom = 7
+    
+    def get_key(self, tag):
+        return tag
+        
+        
+class CustomCooldown(commands.Cooldown):
+    __slots__ = ('rate', 'per', 'type', '_window', '_tokens', '_last')
+
+    def __init__(self, rate, per, type):
+        self.rate = int(rate)
+        self.per = float(per)
+        self.type = type
+        self._window = 0.0
+        self._tokens = self.rate
+        self._last = 0.0
+
+        if not isinstance(self.type, CustomBucketType):
+            raise TypeError('Cooldown type must be a BucketType')
+        
+    def copy(self):
+        return CustomCooldown(self.rate, self.per, self.type)
+
+
+class CustomCooldownMapping(commands.CooldownMapping):
+    def __init__(self, original):
+        self._cache = {}
+        self._cooldown = original
+        
+    @classmethod
+    def from_cooldown(cls, rate, per, type):
+        return cls(CustomCooldown(rate, per, type))
+
+
+
 
 class Tags(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        
+        self.tag_cooldown = CustomCooldownMapping.from_cooldown(1, 5, CustomBucketType.custom)
 
     @commands.guild_only()
     @commands.command(name="addtag", aliases=['addt'])
@@ -186,6 +225,12 @@ class Tags(commands.Cog):
             await ctx.message.delete()
             raise commands.BadArgument("That tag does not exist.")
         
+        bucket = self.tag_cooldown.get_bucket(tag.name)
+        current = ctx.message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
+
+        if bucket.update_rate_limit(current):
+            raise commands.BadArgument("That tag is on cooldown.")
+
         file = tag.image.read()
         if file is not None:
             file = discord.File(BytesIO(file), filename="image.gif" if tag.image.content_type == "image/gif" else "image.png")
@@ -234,7 +279,8 @@ class Tags(commands.Cog):
         if file is not None:
             file = discord.File(BytesIO(file), filename="image.gif" if tag.image.content_type == "image/gif" else "image.png")
         
-        await ctx.message.reply(embed=await self.tag_embed(tag), file=file, mention_author=False)
+        await ctx.message.reply(embed=await self.tag_embed(tag), delete_after=10, file=file, mention_author=False)
+        await ctx.message.delete(delay=10)
 
     @edittag.error
     @tag.error
@@ -242,6 +288,7 @@ class Tags(commands.Cog):
     @deltag.error
     @addtag.error
     async def info_error(self, ctx, error):
+        await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
