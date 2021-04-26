@@ -93,16 +93,13 @@ class Tags(commands.Cog):
         """
 
         if not (self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4) or ctx.guild.get_role(self.bot.settings.guild().role_sub_mod) in ctx.author.roles):
-            await ctx.message.delete()
             raise commands.BadArgument(
                 "You need to be a Genius or higher to use that command.")
 
         if not name.isalnum():
-            await ctx.message.delete()
             raise commands.BadArgument("Tag name must be alphanumeric.")
 
         if (await self.bot.settings.get_tag(name.lower())) is not None:
-            await ctx.message.delete()
             raise commands.BadArgument("Tag with that name already exists.")
 
         tag = Tag()
@@ -188,7 +185,6 @@ class Tags(commands.Cog):
         """
 
         if not (self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4) or ctx.guild.get_role(self.bot.settings.guild().role_sub_mod) in ctx.author.roles):
-            await ctx.message.delete()
             raise commands.BadArgument(
                 "You need to be a Genius or higher to use that command.")
 
@@ -196,7 +192,6 @@ class Tags(commands.Cog):
 
         tag = await self.bot.settings.get_tag(name)
         if tag is None:
-            await ctx.message.delete()
             raise commands.BadArgument("That tag does not exist.")
 
         await self.bot.settings.remove_tag(name)
@@ -222,7 +217,6 @@ class Tags(commands.Cog):
         tag = await self.bot.settings.get_tag(name)
         
         if tag is None:
-            await ctx.message.delete()
             raise commands.BadArgument("That tag does not exist.")
         if not (self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) or ctx.guild.get_role(self.bot.settings.guild().role_sub_mod) in ctx.author.roles):
             bucket = self.tag_cooldown.get_bucket(tag.name)
@@ -252,7 +246,6 @@ class Tags(commands.Cog):
             Name of tag to use
         """
         if not (self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4) or ctx.guild.get_role(self.bot.settings.guild().role_sub_mod) in ctx.author.roles):
-            await ctx.message.delete()
             raise commands.BadArgument(
                 "You need to be a Genius or higher to use that command.")
 
@@ -260,7 +253,6 @@ class Tags(commands.Cog):
         tag = await self.bot.settings.get_tag(name)
         
         if tag is None:
-            await ctx.message.delete()
             raise commands.BadArgument("That tag does not exist.")
         
         tag.content = content
