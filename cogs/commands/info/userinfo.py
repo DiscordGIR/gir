@@ -11,36 +11,20 @@ class LeaderboardSource(menus.GroupByPageSource):
         embed = discord.Embed(
             title=f'Leaderboard', color=discord.Color.blurple())
         for i, user in entry.items:
+            member = menu.ctx.guild.get_member(user._id)
             trophy = ''
             if i == 0:
                 trophy = ':first_place:'
-                try:
-                    obj = await menu.ctx.bot.fetch_user(user._id)
-                    embed.set_thumbnail(url=obj.avatar_url)
-                except discord.NotFound:
-                    pass
+                embed.set_thumbnail(url=member.avatar_url)
 
             if i == 1:
                 trophy = ':second_place:'
             if i == 2:
                 trophy = ':third_place:'
             
-            member = None
-            member_found = menu.ctx.guild.get_member(user._id) is not None
-            if not member_found:
-                if user._id not in menu.ctx.user_cache:
-                    try:
-                        member = await menu.ctx.bot.fetch_user(user._id)
-                        menu.ctx.user_cache[user._id] = member
-                    except Exception:
-                        member = None
-
-                else:
-                    member = menu.ctx.user_cache[user._id]
-
-            member_string = f'{f"({str(member)})" if member is not None else ""}'
+            
             embed.add_field(name=f"#{i+1} - Level {user.level}",
-                            value=f"{trophy} <@{user._id}> {member_string}", inline=False)
+                            value=f"{trophy} {member.mention}", inline=False)
             
         embed.set_footer(
             text=f"Page {menu.current_page +1} of {self.get_max_pages()}")
@@ -102,7 +86,6 @@ class MenuPages(menus.MenuPages):
 class UserInfo(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.user_cache = {}
 
     @commands.guild_only()
     @commands.command(name="userinfo", aliases=["info"])
@@ -237,7 +220,8 @@ class UserInfo(commands.Cog):
                 f"Command only allowed in <#{bot_chan}>")
 
         results = await self.bot.settings.leaderboard()
-        ctx.user_cache = self.user_cache
+        # ctx.user_cache = self.user_cache
+        results = [ m for m in results if ctx.guild.get_member(m._id) is not None][0:100]
         menus = MenuPages(source=LeaderboardSource(
             enumerate(results), key=lambda t: 1, per_page=10), clear_reactions_after=True)
 

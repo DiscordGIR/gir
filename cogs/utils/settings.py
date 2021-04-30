@@ -127,7 +127,7 @@ class Settings(commands.Cog):
         g.save()
 
     async def leaderboard(self) -> list:
-        return User.objects[0:100].only('_id', 'xp').order_by('-xp', '-_id').select_related()
+        return User.objects[0:130].only('_id', 'xp').order_by('-xp', '-_id').select_related()
 
     async def leaderboard_rank(self, xp):
         users = User.objects().only('_id', 'xp')
