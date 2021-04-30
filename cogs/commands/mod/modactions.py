@@ -231,7 +231,7 @@ class ModActions(commands.Cog):
 
     @commands.guild_only()
     @commands.command(name="editreason")
-    async def editreason(self, ctx: commands.Context, user: discord.Member, case_id: int, *, new_reason: str) -> None:
+    async def editreason(self, ctx: commands.Context, user: typing.Union[discord.Member, int], case_id: int, *, new_reason: str) -> None:
         """Edit case reason and the embed in #public-mod-logs. (mod only)
 
         Example usage:
@@ -251,6 +251,13 @@ class ModActions(commands.Cog):
 
         await self.check_permissions(ctx, user)
 
+        if isinstance(user, int):
+            try:
+                user = await self.bot.fetch_user(user)
+            except discord.NotFound:
+                raise commands.BadArgument(
+                    f"Couldn't find user with ID {user}")
+
         # retrieve user's case with given ID
         cases = await self.bot.settings.get_case(user.id, case_id)
         case = cases.cases.filter(_id=case_id).first()
@@ -269,11 +276,12 @@ class ModActions(commands.Cog):
         cases.save()
         
         dmed = True
-        log = await logging.prepare_editreason_log(ctx.author, user, case, old_reason)
-        try:
-            await user.send(f"Your case was updated in {ctx.guild.name}.", embed=log)
-        except Exception:
-            dmed = False
+        if isinstance(user, discord.Member):
+            log = await logging.prepare_editreason_log(ctx.author, user, case, old_reason)
+            try:
+                await user.send(f"Your case was updated in {ctx.guild.name}.", embed=log)
+            except Exception:
+                dmed = False
 
         public_chan = ctx.guild.get_channel(
             self.bot.settings.guild().channel_public)
