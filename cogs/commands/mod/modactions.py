@@ -276,8 +276,8 @@ class ModActions(commands.Cog):
         cases.save()
         
         dmed = True
+        log = await logging.prepare_editreason_log(ctx.author, user, case, old_reason)
         if isinstance(user, discord.Member):
-            log = await logging.prepare_editreason_log(ctx.author, user, case, old_reason)
             try:
                 await user.send(f"Your case was updated in {ctx.guild.name}.", embed=log)
             except Exception:
