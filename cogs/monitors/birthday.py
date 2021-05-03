@@ -43,8 +43,11 @@ class Birthday(commands.Cog):
                 print(e)
                 continue
             await user.add_roles(birthday_role)
-            await user.send(f"According to my calculations, today is your birthday! We've given you the {birthday_role} role for 36 hours.")
-
+            try:
+                await user.send(f"According to my calculations, today is your birthday! We've given you the {birthday_role} role for 36 hours.")
+            except Exception:
+                pass
+            
     @commands.guild_only()
     @commands.command(name="mybirthday")
     async def mybirthday(self, ctx: commands.Context, month: int, date: int) -> None:
@@ -112,8 +115,11 @@ class Birthday(commands.Cog):
             except Exception:
                 return
             await user.add_roles(birthday_role)
-            await user.send(f"According to my calculations, today is your birthday! We've given you the {birthday_role} role for 24 hours.")
-
+            try:
+                await user.send(f"According to my calculations, today is your birthday! We've given you the {birthday_role} role for 24 hours.")
+            except Exception:
+                pass
+            
     @mybirthday.error
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
