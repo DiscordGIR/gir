@@ -219,11 +219,11 @@ class UserInfo(commands.Cog):
             raise commands.BadArgument(
                 f"Command only allowed in <#{bot_chan}>")
 
-        results = await self.bot.settings.leaderboard()
+        results = enumerate(await self.bot.settings.leaderboard())
         # ctx.user_cache = self.user_cache
-        results = [ m for m in results if ctx.guild.get_member(m._id) is not None][0:100]
+        results = [ (i, m) for (i, m) in results if ctx.guild.get_member(m._id) is not None][0:100]
         menus = MenuPages(source=LeaderboardSource(
-            enumerate(results), key=lambda t: 1, per_page=10), clear_reactions_after=True)
+            results, key=lambda t: 1, per_page=10), clear_reactions_after=True)
 
         await menus.start(ctx)
 
