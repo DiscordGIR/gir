@@ -13,14 +13,14 @@ class LeaderboardSource(menus.GroupByPageSource):
         for i, user in entry.items:
             member = menu.ctx.guild.get_member(user._id)
             trophy = ''
-            if i == 0:
-                trophy = ':first_place:'
-                embed.set_thumbnail(url=member.avatar_url)
-
-            if i == 1:
-                trophy = ':second_place:'
-            if i == 2:
-                trophy = ':third_place:'
+            if menu.current_page == 0:
+                if i == entry.items[0][0]:
+                    trophy = ':first_place:'
+                    embed.set_thumbnail(url=member.avatar_url)
+                if i == entry.items[1][0]:
+                    trophy = ':second_place:'
+                if i == entry.items[2][0]:
+                    trophy = ':third_place:'
             
             
             embed.add_field(name=f"#{i+1} - Level {user.level}",
