@@ -44,6 +44,7 @@ initial_extensions = [
                     'cogs.commands.info.tags',
                     'cogs.commands.info.userinfo',
                     'cogs.commands.mod.filter',
+                    'cogs.monitors.applenews',
                     'cogs.monitors.birthday',
                     'cogs.monitors.boosteremojis',
                     'cogs.monitors.filter',

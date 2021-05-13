@@ -29,6 +29,7 @@ async def setup():
     guild.role_sub_mod       = 123  # put in the role IDs for your server here
     guild.role_sub_news      = 123  # put in the role IDs for your server here
     
+    guild.channel_applenews      = 123  # put in the channel IDs for your server here
     guild.channel_booster_emoji  = 123  # put in the channel IDs for your server here
     guild.channel_botspam        = 123  # put in the channel IDs for your server here
     guild.channel_common_issues  = 123  # put in the channel IDs for your server here

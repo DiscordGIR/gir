@@ -18,6 +18,7 @@ class Guild(mongoengine.Document):
     role_sub_mod              = mongoengine.IntField()
     role_sub_news             = mongoengine.IntField()
     
+    channel_applenews         = mongoengine.IntField()
     channel_booster_emoji     = mongoengine.IntField()
     channel_botspam           = mongoengine.IntField()
     channel_common_issues     = mongoengine.IntField()
