@@ -928,7 +928,7 @@ class ModActions(commands.Cog):
 
         channels_to_unfreeze = await self.bot.settings.get_locked_channels()
         if not channels_to_unfreeze:
-            raise commands.BadArgument("Looks like the server isn't frozen!.")
+            raise commands.BadArgument("Looks like the server isn't frozen!")
 
         channels_to_unfreeze = [ctx.guild.get_channel(channel) for channel in channels_to_unfreeze]
         channels_unlocked = []
