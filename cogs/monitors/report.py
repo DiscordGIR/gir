@@ -104,8 +104,7 @@ async def prepare_embed(bot, user, msg, word):
     else:
         embed.add_field(name=f"Recent cases",
                         value="This user has no cases.", inline=True)
-    embed.set_footer(text="✅ to pardon, 💀to ban.")
-
+    embed.set_footer(text="React with ✅ to dismiss.")
     return embed
 
 async def report_ping_spam(bot, msg, user):
@@ -212,6 +211,6 @@ async def prepare_ping_embed(bot, user, msg):
     else:
         embed.add_field(name=f"Recent cases",
                         value="This user has no cases.", inline=True)
-        embed.set_footer(text="React with ✅ to dismiss.")
+    embed.set_footer(text="✅ to pardon, 💀 to ban.")
 
     return embed
