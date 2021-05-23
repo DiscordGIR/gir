@@ -3,6 +3,7 @@ import traceback
 import typing
 
 import cogs.utils.logs as logging
+from cogs.utils.decorators import PermissionChecks as checks
 import discord
 import humanize
 import pytimeparse
@@ -47,6 +48,7 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_guild_permissions(kick_members=True, ban_members=True)
     @commands.command(name="warn")
+    @checks.mods_and_up()
     async def warn(self, ctx: commands.Context, user: typing.Union[discord.Member, int], points: int, *, reason: str = "No reason.") -> None:
         """Warn a user (mod only)
 
@@ -65,7 +67,7 @@ class ModActions(commands.Cog):
 
         """
 
-        await self.check_permissions(ctx, user)
+        # await self.check_permissions(ctx, user)
 
         if points < 1:  # can't warn for negative/0 points
             raise commands.BadArgument(message="Points can't be lower than 1.")
