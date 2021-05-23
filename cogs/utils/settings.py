@@ -429,7 +429,14 @@ class Settings(commands.Cog):
         giveaway.previous_winners = prev_winners
         giveaway.save()
 
+    async def get_locked_channels(self):
+        return self.guild().locked_channels
 
+    async def set_locked_channels(self, locked_channels):
+        guild = self.guild()
+        guild.locked_channels = locked_channels
+        guild.save()
+        
 class Permissions:
     """A way of calculating a user's permissions.
     Level 0 is everyone.

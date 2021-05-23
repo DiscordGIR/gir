@@ -18,7 +18,7 @@ class AntiRaid(commands.Cog):
             return
         if message.guild.id != self.bot.settings.guild_id:
             return
-        if self.settings.permissions.hasAtLeast(message.guild, message.author, 5):
+        if self.bot.settings.permissions.hasAtLeast(message.guild, message.author, 5):
             return
         
         if await self.ping_spam(message):

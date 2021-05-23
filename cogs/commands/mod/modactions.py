@@ -2,6 +2,8 @@ import datetime
 import traceback
 import typing
 
+from discord.ext.commands.core import command
+
 import cogs.utils.logs as logging
 import discord
 import humanize
@@ -799,6 +801,119 @@ class ModActions(commands.Cog):
             log.set_thumbnail(url=user.avatar_url)
             await public_chan.send(user.mention if not dmed else "", embed=log)
 
+    @commands.guild_only()
+    @commands.bot_has_guild_permissions(manage_channels=True)
+    @commands.command(name="lock")
+    async def lock(self, ctx, channel: discord.TextChannel = None):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise commands.BadArgument(
+                "You do not have permission to use this command.")
+
+        if channel is None:
+            channel = ctx.channel
+            
+        if await self.lock_unlock_channel(ctx, channel, True) is not None:
+            await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description=f"Locked {channel.mention}!"), delete_after=5)
+            await ctx.message.delete(delay=5)
+        else:
+            raise commands.BadArgument(f"I wasn't able to lock {channel.mention}.")
+
+    @commands.guild_only()
+    @commands.bot_has_guild_permissions(manage_channels=True)
+    @commands.command(name="unlock")
+    async def unlock(self, ctx, channel: discord.TextChannel = None):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise commands.BadArgument(
+                "You do not have permission to use this command.")
+
+        if channel is None:
+            channel = ctx.channel
+            
+        if await self.lock_unlock_channel(ctx, channel) is not None:
+            await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description=f"Unocked {channel.mention}!"), delete_after=5)
+            await ctx.message.delete(delay=5)
+        else:
+            raise commands.BadArgument(f"I wasn't able to unlock {channel.mention}.")
+
+    async def lock_unlock_channel(self, ctx, channel, mode=None):
+        default_role = ctx.guild.default_role
+        settings = self.bot.settings.guild()
+        member_plus = ctx.guild.get_role(settings.role_memberplus)   
+        
+        default_perms = channel.overwrites_for(default_role)
+        default_perms.send_messages = mode if mode is None else False
+
+        memberplus_perms = channel.overwrites_for(default_role)
+        memberplus_perms.send_messages = mode if mode is None else True
+
+        try:
+            await channel.set_permissions(default_role, overwrite=default_perms, reason="Locked!" if mode is True else "Unlocked!")
+            await channel.set_permissions(member_plus, overwrite=memberplus_perms, reason="Locked!" if mode is True else "Unlocked!")
+        except Exception:
+            return None
+        
+        return channel.id
+
+    @commands.guild_only()
+    @commands.bot_has_guild_permissions(manage_channels=True)
+    @commands.command(name="freeze")
+    @commands.max_concurrency(1, per=commands.BucketType.guild)
+    async def freeze(self, ctx):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise commands.BadArgument(
+                "You do not have permission to use this command.")
+
+        if await self.bot.settings.get_locked_channels():
+            raise commands.BadArgument("Looks like the server is already frozen. You can try unfreezing with `!unfreeze`.")
+
+        channels_to_lock = []
+        async with ctx.typing():
+            for channel in ctx.guild.channels:
+                if not isinstance(channel, discord.TextChannel):
+                    continue
+                if channel.overwrites_for(ctx.guild.default_role).send_messages not in [True, None]:
+                    continue
+                
+                if id_ := await self.lock_unlock_channel(ctx, channel, True) is not None:
+                    channels_to_lock.append(id_)
+                    
+        await self.bot.settings.set_locked_channels(channels_to_lock)        
+        await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description=f"Locked {len(channels_to_lock)} channels!"), delete_after=5)
+        await ctx.message.delete(delay=5)
+    
+    @commands.guild_only()
+    @commands.bot_has_guild_permissions(manage_channels=True)
+    @commands.command(name="unfreeze")
+    @commands.max_concurrency(1, per=commands.BucketType.guild)
+    async def unfreeze(self, ctx):
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise commands.BadArgument(
+                "You do not have permission to use this command.")
+
+        channels_to_unfreeze = await self.bot.settings.get_locked_channels()
+        if not channels_to_unfreeze:
+            raise commands.BadArgument("Looks like the server isn't frozen!.")
+
+        channels_to_unfreeze = [ctx.guild.get_channel(channel) for channel in channels_to_unfreeze]
+        channels_unlocked = []
+        async with ctx.typing():
+            for channel in ctx.guild.channels:
+                if channel is None:
+                    continue
+                if not isinstance(channel, discord.TextChannel):
+                    continue
+                
+                if id_ := await self.lock_unlock_channel(ctx, channel) is not None:
+                    channels_unlocked.append(id_)
+                    
+        await self.bot.settings.set_locked_channels([])        
+        await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description=f"Unocked {len(channels_unlocked)} channels!"), delete_after=5)
+        await ctx.message.delete(delay=5)
+                
+    @lock.error
+    @unlock.error
+    @freeze.error
+    @unfreeze.error
     @unmute.error
     @mute.error
     @liftwarn.error
@@ -817,6 +932,7 @@ class ModActions(commands.Cog):
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.BotMissingPermissions)
             or isinstance(error, commands.MissingPermissions)
+            or isinstance(error, commands.MaxConcurrencyReached)
                 or isinstance(error, commands.NoPrivateMessage)):
             await self.bot.send_error(ctx, error)
         else:
