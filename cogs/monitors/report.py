@@ -36,7 +36,7 @@ async def report(bot, msg, user, word, invite=None):
 
     while True:
         try:
-            reaction, _ = await bot.wait_for('reaction_add', timeout=120.0, check=check)
+            reaction, _ = await bot.wait_for('reaction_add', timeout=300.0, check=check)
         except asyncio.TimeoutError:
             try:
                 await report_msg.clear_reactions()
@@ -134,7 +134,7 @@ async def report_ping_spam(bot, msg, user):
 
     while True:
         try:
-            reaction, reactor = await bot.wait_for('reaction_add', timeout=120.0, check=check)
+            reaction, reactor = await bot.wait_for('reaction_add', timeout=300.0, check=check)
         except asyncio.TimeoutError:
             try:
                 await report_msg.clear_reactions()

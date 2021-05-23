@@ -857,25 +857,6 @@ class ModActions(commands.Cog):
         else:
             raise commands.BadArgument(f"I wasn't able to unlock {channel.mention}.")
 
-    async def lock_unlock_channel(self, ctx, channel, mode=None):
-        default_role = ctx.guild.default_role
-        settings = self.bot.settings.guild()
-        member_plus = ctx.guild.get_role(settings.role_memberplus)   
-        
-        default_perms = channel.overwrites_for(default_role)
-        default_perms.send_messages = mode if mode is None else False
-
-        memberplus_perms = channel.overwrites_for(default_role)
-        memberplus_perms.send_messages = mode if mode is None else True
-
-        try:
-            await channel.set_permissions(default_role, overwrite=default_perms, reason="Locked!" if mode is True else "Unlocked!")
-            await channel.set_permissions(member_plus, overwrite=memberplus_perms, reason="Locked!" if mode is True else "Unlocked!")
-        except Exception:
-            return None
-        
-        return channel.id
-
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_channels=True)
     @commands.command(name="freeze")
@@ -945,7 +926,26 @@ class ModActions(commands.Cog):
         await self.bot.settings.set_locked_channels([])        
         await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description=f"Unocked {len(channels_unlocked)} channels!"), delete_after=5)
         await ctx.message.delete(delay=5)
-                
+
+    async def lock_unlock_channel(self, ctx, channel, mode=None):
+        default_role = ctx.guild.default_role
+        settings = self.bot.settings.guild()
+        member_plus = ctx.guild.get_role(settings.role_memberplus)   
+        
+        default_perms = channel.overwrites_for(default_role)
+        default_perms.send_messages = mode if mode is None else False
+
+        memberplus_perms = channel.overwrites_for(default_role)
+        memberplus_perms.send_messages = mode if mode is None else True
+
+        try:
+            await channel.set_permissions(default_role, overwrite=default_perms, reason="Locked!" if mode is True else "Unlocked!")
+            await channel.set_permissions(member_plus, overwrite=memberplus_perms, reason="Locked!" if mode is True else "Unlocked!")
+        except Exception:
+            return None
+        
+        return channel.id
+                    
     @lock.error
     @unlock.error
     @freeze.error
