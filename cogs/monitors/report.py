@@ -104,7 +104,7 @@ async def prepare_embed(bot, user, msg, word):
     else:
         embed.add_field(name=f"Recent cases",
                         value="This user has no cases.", inline=True)
-    embed.set_footer(text="✅ to pardon, ❌ to ban.")
+    embed.set_footer(text="✅ to pardon, 💀to ban.")
 
     return embed
 
@@ -121,7 +121,7 @@ async def report_ping_spam(bot, msg, user):
     embed = await prepare_ping_embed(bot, user, msg)
 
     report_msg = await channel.send(ping_string, embed=embed)
-    report_reactions = ['✅', '❌']
+    report_reactions = ['✅', '💀']
 
     for reaction in report_reactions:
         await report_msg.add_reaction(reaction)
@@ -154,7 +154,7 @@ async def report_ping_spam(bot, msg, user):
                     await ctx.send("I wasn't able to unmute them.")
                 return
             
-            elif str(reaction.emoji) == '❌':
+            elif str(reaction.emoji) == '💀':
                 ctx = await bot.get_context(report_msg, cls=commands.Context)
                 ctx.author = ctx.message.author = reactor
                 ban = bot.get_command("ban")
