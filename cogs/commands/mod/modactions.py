@@ -805,6 +805,17 @@ class ModActions(commands.Cog):
     @commands.bot_has_guild_permissions(manage_channels=True)
     @commands.command(name="lock")
     async def lock(self, ctx, channel: discord.TextChannel = None):
+        """Lock a channel (admin only)
+
+        Example usage
+        --------------
+        !lock or !lock #channel
+            
+        Parameters
+        ----------
+        channel : discord.TextChannel, optional
+            Channel to lock
+        """
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             raise commands.BadArgument(
                 "You do not have permission to use this command.")
@@ -822,6 +833,17 @@ class ModActions(commands.Cog):
     @commands.bot_has_guild_permissions(manage_channels=True)
     @commands.command(name="unlock")
     async def unlock(self, ctx, channel: discord.TextChannel = None):
+        """Unlock a channel (admin only)
+
+        Example usage
+        --------------
+        !unlock or !unlock #channel
+            
+        Parameters
+        ----------
+        channel : discord.TextChannel, optional
+            Channel to unlock
+        """
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             raise commands.BadArgument(
                 "You do not have permission to use this command.")
@@ -859,6 +881,13 @@ class ModActions(commands.Cog):
     @commands.command(name="freeze")
     @commands.max_concurrency(1, per=commands.BucketType.guild)
     async def freeze(self, ctx):
+        """Freeze all channels (admin only)
+
+        Example usage
+        --------------
+        !freeze
+        """
+        
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             raise commands.BadArgument(
                 "You do not have permission to use this command.")
@@ -886,6 +915,13 @@ class ModActions(commands.Cog):
     @commands.command(name="unfreeze")
     @commands.max_concurrency(1, per=commands.BucketType.guild)
     async def unfreeze(self, ctx):
+        """Unreeze all channels (admin only)
+
+        Example usage
+        --------------
+        !unfreeze
+        """
+        
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
             raise commands.BadArgument(
                 "You do not have permission to use this command.")
