@@ -914,7 +914,7 @@ class ModActions(commands.Cog):
         channels_to_unfreeze = [ctx.guild.get_channel(channel) for channel in channels_to_unfreeze]
         channels_unlocked = []
         async with ctx.typing():
-            for channel in ctx.guild.channels:
+            for channel in channels_to_unfreeze:
                 if channel is None:
                     continue
                 if not isinstance(channel, discord.TextChannel):
