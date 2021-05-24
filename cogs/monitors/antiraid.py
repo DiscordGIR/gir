@@ -67,10 +67,15 @@ class AntiRaidMonitor(commands.Cog):
                         bucket = self.spam_cooldown.get_bucket(message)
                         
                         if bucket.update_rate_limit(current):
+                            
                             bucket = self.report_cooldown.get_bucket(message)
                             if not bucket.update_rate_limit(current):
-                                await report_raid_phrase(self.bot, message.author, message, word.word)                        
-                        
+                                await report_raid_phrase(self.bot, message.author, message, word.word)
+                                freeze = self.bot.get_command("freeze")
+                                if freeze is not None:
+                                    ctx = await self.bot.get_context(message, cls=commands.Context)
+                                    ctx.author = ctx.message.author = ctx.me
+                                    await freeze(ctx=ctx)                        
                         return True
             
         return False
