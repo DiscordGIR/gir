@@ -432,10 +432,12 @@ class Settings(commands.Cog):
     async def get_locked_channels(self):
         return self.guild().locked_channels
 
-    async def set_locked_channels(self, locked_channels):
-        guild = self.guild()
-        guild.locked_channels = locked_channels
-        guild.save()
+    async def add_locked_channels(self, channel):
+        Guild.objects(_id=self.guild_id).update_one(push__locked_channels=channel)
+
+    async def remove_locked_channels(self, channel):
+        Guild.objects(_id=self.guild_id).update_one(pull__locked_channels=channel)
+
     
     async def add_raid_phrase(self, phrase: str) -> bool:
         existing = self.guild().raid_phrases.filter(word=phrase)
