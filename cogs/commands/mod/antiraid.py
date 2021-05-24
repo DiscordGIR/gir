@@ -9,7 +9,7 @@ class AntiRaid(commands.Cog):
     
     @commands.guild_only()
     @commands.command(name="raid")
-    async def raid(self, ctx: commands.Context, phrase: str) -> None:
+    async def raid(self, ctx: commands.Context, *, phrase: str) -> None:
         """Add a phrase to the raid filter.
 
         Example Usage:
@@ -35,7 +35,7 @@ class AntiRaid(commands.Cog):
     
     @commands.guild_only()
     @commands.command(name="removeraid")
-    async def removeraid(self, ctx: commands.Context, phrase: str) -> None:
+    async def removeraid(self, ctx: commands.Context, *, phrase: str) -> None:
         """Remove a phrase from the raid filter.
 
         Example Usage:
