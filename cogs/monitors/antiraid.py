@@ -35,12 +35,19 @@ class AntiRaidMonitor(commands.Cog):
             ctx = await self.bot.get_context(message, cls=commands.Context)
             await self.ping_spam_mute(ctx, message.author)
             await report_ping_spam(self.bot, message, message.author)
-        elif await self.raid_phrase_detected(message):
-            ctx = await self.bot.get_context(message, cls=commands.Context)
-            await self.raid_phrase_ban(ctx, message.author)
+        elif await self.raid_phrase_detected(message):            
+            current = message.created_at.replace(tzinfo=timezone.utc).timestamp()
+            bucket = self.report_cooldown.get_bucket(message)
+            if not bucket.update_rate_limit(current):
+                await report_raid_phrase(self.bot, message.author, message)
+                freeze = self.bot.get_command("freeze")
+                if freeze is not None:
+                    ctx = await self.bot.get_context(message, cls=commands.Context)
+                    ctx.author = ctx.message.author = ctx.me
+                    await freeze(ctx=ctx)
 
     async def raid_phrase_detected(self, message):
-        if self.bot.settings.permissions.hasAtLeast(message.guild, message.author, 1):
+        if self.bot.settings.permissions.hasAtLeast(message.guild, message.author, 2):
             return False
 
         #TODO: Unify filtering system
@@ -65,18 +72,10 @@ class AntiRaidMonitor(commands.Cog):
 
                         current = message.created_at.replace(tzinfo=timezone.utc).timestamp()
                         bucket = self.spam_cooldown.get_bucket(message)
-                        
+                        ctx = await self.bot.get_context(message, cls=commands.Context)
+                        await self.raid_phrase_ban(ctx, message.author)
                         if bucket.update_rate_limit(current):
-                            
-                            bucket = self.report_cooldown.get_bucket(message)
-                            if not bucket.update_rate_limit(current):
-                                await report_raid_phrase(self.bot, message.author, message, word.word)
-                                freeze = self.bot.get_command("freeze")
-                                if freeze is not None:
-                                    ctx = await self.bot.get_context(message, cls=commands.Context)
-                                    ctx.author = ctx.message.author = ctx.me
-                                    await freeze(ctx=ctx)                        
-                        return True
+                            return True
             
         return False
 
