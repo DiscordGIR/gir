@@ -127,6 +127,20 @@ class Tasks():
         self.tasks.add_job(reminder_callback, 'date', id=str(
             id+random.randint(5, 100)), next_run_time=date, args=[id, reminder], misfire_grace_time=3600)
 
+    def schedule_remove_raid_phrase(self, phrase: str, date: datetime) -> None:
+        """Create a task to remove a raid phrase
+
+        Parameters
+        ----------
+        phrase : str
+            Phrase to remove
+        date : datetime.datetime
+            When to remove the phrase
+        """
+
+        self.tasks.add_job(remove_raid_phrase, 'date', id=str(random.getrandbits(64)), next_run_time=date, args=[phrase], misfire_grace_time=3600)
+
+
 
 def unmute_callback(id: int) -> None:
     """Callback function for actually unmuting. Creates asyncio task
@@ -349,3 +363,6 @@ async def end_giveaway(channel_id: int, message_id: int, winners: int) -> None:
         await channel.send(f"Congratulations {mentions[0]}! You won the giveaway of **{g.name}**! Please DM or contact <@{g.sponsor}> to collect.")
     else:
         await channel.send(f"Congratulations {', '.join(mentions)}! You won the giveaway of **{g.name}**! Please DM or contact <@{g.sponsor}> to collect.")
+
+async def remove_raid_phrase(phrase: str):
+    await BOT_GLOBAL.settings.remove_raid_phrase(phrase)

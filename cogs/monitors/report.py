@@ -214,3 +214,15 @@ async def prepare_ping_embed(bot, user, msg):
     embed.set_footer(text="✅ to pardon, 💀 to ban.")
 
     return embed
+
+async def report_raid_phrase(bot, user, msg):
+    embed = discord.Embed()
+    embed.title = "Possible raid occurring"
+    embed.description = "The raid phrase filter has been triggered 5 or more times in the past 10 seconds. I am automatically locking all the channels. Use `!unfreeze` when you're done."
+    embed.color = discord.Color.red()
+    embed.set_thumbnail(url=user.avatar_url)
+    embed.add_field(name="Member", value=f"{user} ({user.mention})")
+    embed.add_field(name="Message", value=msg.content, inline=False)
+
+    reports_channel = msg.guild.get_channel(bot.settings.guild().channel_reports)
+    await reports_channel.send(f"<@&{bot.settings.guild().role_moderator}>", embed=embed, allowed_mentions=discord.AllowedMentions(roles=True))

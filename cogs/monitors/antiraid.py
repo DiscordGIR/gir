@@ -2,16 +2,20 @@ import discord
 from discord.ext import commands
 from fold_to_ascii import fold
 from data.case import Case
-from datetime import datetime
+from datetime import datetime, timezone
 import cogs.utils.logs as logger
-from cogs.monitors.report import report_ping_spam
+from fold_to_ascii import fold
+from cogs.monitors.report import report_raid_phrase, report_ping_spam
+import string
 
-class AntiRaid(commands.Cog):
+class AntiRaidMonitor(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.spam_cooldown = commands.CooldownMapping.from_cooldown(4, 10.0, commands.BucketType.guild)
+        self.report_cooldown = commands.CooldownMapping.from_cooldown(1, 600.0, commands.BucketType.guild)
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         if not message.guild:
             return
         if message.author.bot:
@@ -31,6 +35,49 @@ class AntiRaid(commands.Cog):
             ctx = await self.bot.get_context(message, cls=commands.Context)
             await self.ping_spam_mute(ctx, message.author)
             await report_ping_spam(self.bot, message, message.author)
+        elif await self.raid_phrase_detected(message):            
+            current = message.created_at.replace(tzinfo=timezone.utc).timestamp()
+            bucket = self.report_cooldown.get_bucket(message)
+            if not bucket.update_rate_limit(current):
+                await report_raid_phrase(self.bot, message.author, message)
+                freeze = self.bot.get_command("freeze")
+                if freeze is not None:
+                    ctx = await self.bot.get_context(message, cls=commands.Context)
+                    ctx.author = ctx.message.author = ctx.me
+                    await freeze(ctx=ctx)
+
+    async def raid_phrase_detected(self, message):
+        if self.bot.settings.permissions.hasAtLeast(message.guild, message.author, 2):
+            return False
+
+        #TODO: Unify filtering system
+        symbols = (u"абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ",
+                u"abBrdeex3nnKnmHonpcTyoxu4wwbbbeoRABBrDEEX3NNKNMHONPCTyOXU4WWbbbEOR")
+
+        tr = {ord(a): ord(b) for a, b in zip(*symbols)}
+
+        folded_message = fold(message.content.translate(tr).lower()).lower()
+        folded_without_spaces = "".join(folded_message.split())
+        folded_without_spaces_and_punctuation = folded_without_spaces.translate(str.maketrans('', '', string.punctuation))
+
+        if folded_message:
+            for word in self.bot.settings.guild().raid_phrases:
+                if not self.bot.settings.permissions.hasAtLeast(message.guild, message.author, word.bypass):
+                    if (word.word.lower() in folded_message) or \
+                        (not word.false_positive and word.word.lower() in folded_without_spaces) or \
+                        (not word.false_positive and word.word.lower() in folded_without_spaces_and_punctuation):
+                        # remove all whitespace, punctuation in message and run filter again
+                        if word.false_positive and word.word.lower() not in folded_message.split():
+                            continue
+
+                        current = message.created_at.replace(tzinfo=timezone.utc).timestamp()
+                        bucket = self.spam_cooldown.get_bucket(message)
+                        ctx = await self.bot.get_context(message, cls=commands.Context)
+                        await self.raid_phrase_ban(ctx, message.author)
+                        if bucket.update_rate_limit(current):
+                            return True
+            
+        return False
 
     async def ping_spam(self, message):
         return len(set(message.mentions)) > 4
@@ -73,10 +120,33 @@ class AntiRaid(commands.Cog):
         try:
             await user.send(f"You have been muted in {ctx.guild.name}", embed=log)
         except Exception:
-            pass           
+            pass
+    
+    async def raid_phrase_ban(self, ctx: commands.Context, user: discord.Member):
+        case = Case(
+            _id=self.bot.settings.guild().case_id,
+            _type="BAN",
+            date=datetime.now(),
+            mod_id=ctx.me.id,
+            mod_tag=str(ctx.me),
+            punishment="PERMANENT",
+            reason="Raid phrase detected"
+        )
+
+        await self.bot.settings.inc_caseid()
+        await self.bot.settings.add_case(user.id, case)
+        
+        await user.ban(reason="Raid")
+
+        log = await logger.prepare_ban_log(ctx.me, user, case)
+        public_logs = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
+        if public_logs:
+            log.remove_author()
+            log.set_thumbnail(url=user.avatar_url)
+            await public_logs.send(embed=log)
 
     # async def ratelimit(self, message):
-    #     current = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
+    #     current = message.created_at.replace(tzinfo=timezone.utc).timestamp()
 
     #     bucket = self.spam_cooldown.get_bucket(message)
     #     if bucket.update_rate_limit(current):
@@ -84,4 +154,4 @@ class AntiRaid(commands.Cog):
     #         await self.mute(ctx, message.author)
 
 def setup(bot):
-    bot.add_cog(AntiRaid(bot))
+    bot.add_cog(AntiRaidMonitor(bot))
