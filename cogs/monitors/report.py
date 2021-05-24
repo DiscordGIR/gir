@@ -217,12 +217,12 @@ async def prepare_ping_embed(bot, user, msg):
 
 async def report_raid_phrase(bot, user, msg, phrase):
     embed = discord.Embed()
-    embed.title = "User banned for raid phrase"
+    embed.title = "Possible raid occurring"
     embed.color = discord.Color.red()
     embed.set_thumbnail(url=user.avatar_url)
     embed.add_field(name="Member", value=f"{user} ({user.mention})")
     embed.add_field(name="Message", value=msg.content)
-    embed.add_field(name="Phrase", value=phrase)
+    embed.add_field(name="Phrase", value=phrase, inline=False)
 
     reports_channel = msg.guild.get_channel(bot.settings.guild().channel_reports)
-    await reports_channel.send(embed=embed)
+    await reports_channel.send(f"<@&{bot.settings.guild().role_moderator}>", embed=embed, allowed_mentions=discord.AllowedMentions(roles=True))

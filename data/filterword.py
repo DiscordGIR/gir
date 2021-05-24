@@ -7,4 +7,3 @@ class FilterWord(mongoengine.EmbeddedDocument):
     word                 = mongoengine.StringField(required=True)
     false_positive       = mongoengine.BooleanField(default=False)
     piracy               = mongoengine.BooleanField(default=False)
-    raid                 = mongoengine.BooleanField(default=False)

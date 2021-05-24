@@ -1,5 +1,6 @@
 from discord.ext import commands
 import discord
+import traceback
 import datetime
 
 class AntiRaid(commands.Cog):
@@ -7,13 +8,13 @@ class AntiRaid(commands.Cog):
         self.bot = bot
     
     @commands.guild_only()
-    @commands.command(name="raidphrase")
-    async def raidphrase(self, ctx: commands.Context, phrase: str) -> None:
+    @commands.command(name="raid")
+    async def raid(self, ctx: commands.Context, phrase: str) -> None:
         """Add a phrase to the raid filter.
 
         Example Usage:
         --------------
-        `!raidphrase <phrase>`
+        `!raid <phrase>`
 
         Parameters
         ----------
@@ -21,18 +22,48 @@ class AntiRaid(commands.Cog):
             Phrase to add
         """
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
-            raise commands.BadArgument("You need to be at least a Moderator to run that command.")
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise commands.BadArgument("You need to be at least an Administrator to run that command.")
         
         done = await self.bot.settings.add_raid_phrase(phrase)
         if not done:
-            await ctx.send("That phrase is already in the list.")
+            raise commands.BadArgument("That phrase is already in the list.")
         else:
             one_week = datetime.date.today() + datetime.timedelta(days=7)
             self.bot.settings.tasks.schedule_remove_raid_phrase(phrase, one_week)
-            await ctx.send(f"Added {phrase} to the raid phrase list! This phrase will expire in one week.")
+            await ctx.send(embed=discord.Embed(color=discord.Color.blurple(), description=f"Added {phrase} to the raid phrase list! This phrase will expire in one week."))
     
-    @raidphrase.error
+    @commands.guild_only()
+    @commands.command(name="removeraid")
+    async def removeraid(self, ctx: commands.Context, phrase: str) -> None:
+        """Remove a phrase from the raid filter.
+
+        Example Usage:
+        --------------
+        `!removeraid <phrase>`
+
+        Parameters
+        ----------
+        phrase : str
+            Phrase to remove
+        """
+
+        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise commands.BadArgument("You need to be at least an Administrator to run that command.")
+        
+        word = phrase.lower()
+
+        words = self.bot.settings.guild().raid_phrases
+        words = list(filter(lambda w: w.word.lower() == word.lower(), words))
+        
+        if len(words) > 0:
+            await self.bot.settings.remove_raid_phrase(words[0].word)
+            await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description="Deleted!"))
+        else:
+            raise commands.BadArgument("That word is not a raid phrase.")            
+    
+    @removeraid.error
+    @raid.error
     async def info_error(self, ctx, error):
         if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, commands.BadArgument)

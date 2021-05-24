@@ -441,11 +441,11 @@ class Settings(commands.Cog):
         existing = self.guild().raid_phrases.filter(word=phrase)
         if(len(existing) > 0):
             return False
-        Guild.objects(_id=self.guild_id).update_one(push__raid_phrases=FilterWord(word=phrase, bypass=5, notify=True, raid=True))
+        Guild.objects(_id=self.guild_id).update_one(push__raid_phrases=FilterWord(word=phrase, bypass=5, notify=True))
         return True
     
     async def remove_raid_phrase(self, phrase: str):
-        Guild.objects(_id=self.guild_id).update_one(pull__raid_phrases=FilterWord(word=phrase).word)
+        Guild.objects(_id=self.guild_id).update_one(pull__raid_phrases__word=FilterWord(word=phrase).word)
 
         
 class Permissions:
