@@ -32,6 +32,7 @@ def get_prefix(bot, message):
 initial_extensions = [
                     'cogs.commands.mod.modactions',
                     'cogs.commands.mod.modutils',
+                    'cogs.commands.mod.antiraid',
                     'cogs.commands.misc.admin',
                     'cogs.commands.misc.genius',
                     'cogs.commands.misc.misc',

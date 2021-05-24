@@ -37,6 +37,7 @@ class Guild(mongoengine.Document):
     filter_excluded_channels  = mongoengine.ListField(default=[])
     filter_excluded_guilds    = mongoengine.ListField(default=[349243932447604736])
     filter_words              = mongoengine.EmbeddedDocumentListField(FilterWord, default=[])
+    raid_phrases              = mongoengine.EmbeddedDocumentListField(FilterWord, default=[])
     logging_excluded_channels = mongoengine.ListField(default=[])
     nsa_guild_id              = mongoengine.IntField()
     nsa_mapping               = mongoengine.DictField(default={})
