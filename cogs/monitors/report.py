@@ -215,10 +215,10 @@ async def prepare_ping_embed(bot, user, msg):
 
     return embed
 
-async def report_raid_phrase(bot, user, msg):
+async def report_raid(bot, user, msg):
     embed = discord.Embed()
     embed.title = "Possible raid occurring"
-    embed.description = "The raid phrase filter has been triggered 5 or more times in the past 10 seconds. I am automatically locking all the channels. Use `!unfreeze` when you're done."
+    embed.description = "The raid filter has been triggered 5 or more times in the past 10 seconds. I am automatically locking all the channels. Use `!unfreeze` when you're done."
     embed.color = discord.Color.red()
     embed.set_thumbnail(url=user.avatar_url)
     embed.add_field(name="Member", value=f"{user} ({user.mention})")
