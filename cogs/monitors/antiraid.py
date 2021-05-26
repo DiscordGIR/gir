@@ -7,6 +7,8 @@ import cogs.utils.logs as logger
 from fold_to_ascii import fold
 from cogs.monitors.report import report_raid, report_ping_spam
 import string
+from expiringdict import ExpiringDict
+from asyncio import sleep
 
 class RaidType:
     PingSpam = 1
@@ -15,9 +17,39 @@ class RaidType:
 class AntiRaidMonitor(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.spam_detection_threshold = commands.CooldownMapping.from_cooldown(3, 10.0, commands.BucketType.guild)
+        self.join_spam_detection_threshold = commands.CooldownMapping.from_cooldown(10, 7, commands.BucketType.guild)
+        self.spam_detection_threshold = commands.CooldownMapping.from_cooldown(4, 10.0, commands.BucketType.guild)
         self.raid_alert_cooldown = commands.CooldownMapping.from_cooldown(1, 600.0, commands.BucketType.guild)
+        
+        self.spam_user_mapping = ExpiringDict(max_len=100, max_age_seconds=10)
+        self.join_user_mapping = ExpiringDict(max_len=100, max_age_seconds=10)
+        self.ban_user_mapping = ExpiringDict(max_len=100, max_age_seconds=120)
 
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member):
+        if member.guild.id != self.bot.settings.guild_id:
+            return
+        if member.bot:
+            return
+        
+        current = datetime.now().timestamp()
+        join_spam_detection_bucket = self.join_spam_detection_threshold.get_bucket(member)
+        self.join_user_mapping[member.id] = member
+        
+        if join_spam_detection_bucket.update_rate_limit(current):
+            for user in self.join_user_mapping:
+                try:
+                    user = self.join_user_mapping[user]
+                    await self.raid_phrase_ban(user, reason="Join spam detected")
+                except KeyError:
+                    continue
+                
+            raid_alert_bucket = self.raid_alert_cooldown.get_bucket(user.guild)
+            if not raid_alert_bucket.update_rate_limit(current):
+                await report_raid(self.bot, user)
+                await self.freeze_server(member.guild)
+                
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if not message.guild:
@@ -41,6 +73,7 @@ class AntiRaidMonitor(commands.Cog):
         user = message.author
         
         do_freeze = False
+        self.spam_user_mapping[user.id] = 1
         
         # has the antiraid filter been triggered 5 or more times in the past 10 seconds?
         if spam_detection_bucket.update_rate_limit(current):
@@ -56,6 +89,17 @@ class AntiRaidMonitor(commands.Cog):
             if freeze is not None:
                 ctx.author = ctx.message.author = ctx.me
                 await freeze(ctx=ctx)
+                
+            for user in self.spam_user_mapping:
+                try:
+                    _ = self.spam_user_mapping[user]
+                except KeyError:
+                    pass
+                user = message.guild.get_member(user)
+                if user is None:
+                    continue
+                
+                await self.raid_phrase_ban(user, reason="Ping spam detected")
         else:
             # for ping spam: report to mods only we aren't in panic mode. 
             # this is because the report has a blocking wait_for reaction, 
@@ -101,40 +145,67 @@ class AntiRaidMonitor(commands.Cog):
                             continue
 
                         ctx = await self.bot.get_context(message, cls=commands.Context)
-                        await self.raid_phrase_ban(ctx, message.author)
+                        await self.raid_phrase_ban(message.author)
                         return True
         return False
             
-    async def raid_phrase_ban(self, ctx: commands.Context, user: discord.Member):
+    async def raid_phrase_ban(self, user: discord.Member, reason="Raid phrase detected"):
         case = Case(
             _id=self.bot.settings.guild().case_id,
             _type="BAN",
             date=datetime.now(),
-            mod_id=ctx.me.id,
-            mod_tag=str(ctx.me),
+            mod_id=self.bot.user.id,
+            mod_tag=str(self.bot),
             punishment="PERMANENT",
-            reason="Raid phrase detected"
+            reason=reason
         )
 
         await self.bot.settings.inc_caseid()
         await self.bot.settings.add_case(user.id, case)
         
+        continue_ = False
+        try:
+            _ = self.ban_user_mapping[user.id]
+        except KeyError:
+            continue_ = True
+            
+        if not continue_:
+            return
+        
+        self.ban_user_mapping[user.id] = 1
         await user.ban(reason="Raid")
 
-        log = await logger.prepare_ban_log(ctx.me, user, case)
-        public_logs = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
+        log = await logger.prepare_ban_log(self.bot.user, user, case)
+        public_logs = user.guild.get_channel(self.bot.settings.guild().channel_public)
         if public_logs:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
             await public_logs.send(embed=log)
 
-    # async def ratelimit(self, message):
-    #     current = message.created_at.replace(tzinfo=timezone.utc).timestamp()
+    async def freeze_server(self, guild):
+        settings = self.bot.settings.guild()
+        
+        for channel in settings.locked_channels:
+            channel = guild.get_channel(channel)
+            if channel is None:
+                continue
+            
+            default_role = guild.default_role
+            member_plus = guild.get_role(settings.role_memberplus)   
+            
+            default_perms = channel.overwrites_for(default_role)
+            memberplus_perms = channel.overwrites_for(member_plus)
 
-    #     bucket = self.spam_detection_threshold.get_bucket(message)
-    #     if bucket.update_rate_limit(current):
-    #         ctx = await self.get_context(message, cls=commands.Context)
-    #         await self.mute(ctx, message.author)
+            if default_perms.send_messages is None and memberplus_perms.send_messages is None:
+                default_perms.send_messages = False
+                memberplus_perms.send_messages = True
+
+                try:
+                    await channel.set_permissions(default_role, overwrite=default_perms, reason="Locked!")
+                    await channel.set_permissions(member_plus, overwrite=memberplus_perms, reason="Locked!")
+                except Exception:
+                    pass
+
 
 def setup(bot):
     bot.add_cog(AntiRaidMonitor(bot))
