@@ -1,3 +1,4 @@
+from re import U
 import discord
 from discord.ext import commands
 from fold_to_ascii import fold
@@ -96,7 +97,11 @@ class AntiRaidMonitor(commands.Cog):
                 ctx.author = ctx.message.author = ctx.me
                 await freeze(ctx=ctx)
             
-            if raid_type is RaidType.PingSpam:
+
+        if raid_type is RaidType.PingSpam:
+            if not do_banning:
+                await report_ping_spam(self.bot, message, user)
+            else:
                 users = list(self.spam_user_mapping.keys())
                 for user in users:
                     try:
@@ -111,31 +116,9 @@ class AntiRaidMonitor(commands.Cog):
                         await self.raid_ban(user, reason="Ping spam detected")
                     except Exception:
                         pass
-        else:
-            # for ping spam: report to mods only we aren't in panic mode. 
-            # this is because the report has a blocking wait_for reaction, 
-            # which means we can't proceed while this is running.
-            if raid_type is RaidType.PingSpam:
-                if not do_banning:
-                    await report_ping_spam(self.bot, message, user)
-                else:
-                    users = list(self.spam_user_mapping.keys())
-                    for user in users:
-                        try:
-                            _ = self.spam_user_mapping[user]
-                        except KeyError:
-                            pass
-                        user = message.guild.get_member(user)
-                        if user is None:
-                            continue
-                        
-                        try:
-                            await self.raid_ban(user, reason="Ping spam detected")
-                        except Exception:
-                            pass
 
     async def ping_spam(self, message):
-        if len(set(message.mentions)) > 4:
+        if len(set(message.mentions)) > 4 or len(set(message.role_mentions)) > 2:
             mute = self.bot.get_command("mute")
             if mute is not None:
                 ctx = await self.bot.get_context(message, cls=commands.Context)
