@@ -6,7 +6,6 @@ import cogs.utils.logs as logging
 import discord
 import humanize
 import pytimeparse
-from expiringdict import ExpiringDict
 from data.case import Case
 from discord.ext import commands
 
@@ -25,7 +24,6 @@ class ModActions(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.ban_cache = ExpiringDict(max_len=100, max_age_seconds=120)
 
     async def check_permissions(self, ctx, user: typing.Union[discord.Member, int] = None):
         if isinstance(user, discord.Member):
@@ -511,8 +509,6 @@ class ModActions(commands.Cog):
 
         # if the ID given is of a user who isn't in the guild, try to fetch the profile
         if isinstance(user, int):
-            if self.ban_cache.get(user) is not None:
-                return
             try:
                 user = await self.bot.fetch_user(user)
                 
@@ -520,16 +516,9 @@ class ModActions(commands.Cog):
                 if user in previous_bans:
                     raise commands.BadArgument("That user is already banned!")
                 
-                self.ban_cache[user.id] = 1
             except discord.NotFound:
                 raise commands.BadArgument(
                     f"Couldn't find user with ID {user}")
-        else:
-            if self.ban_cache.get(user.id) is not None:
-                return
-            
-            self.ban_cache[user.id] = 1
-
             
         log = await self.add_ban_case(ctx, user, reason)
 
