@@ -36,28 +36,35 @@ class AntiRaidMonitor(commands.Cog):
 
     async def handle_raid_detection(self, message: discord.Message, raid_type: RaidType):
         current = message.created_at.replace(tzinfo=timezone.utc).timestamp()
-        spam_bucket = self.spam_detection_threshold.get_bucket(message)
+        spam_detection_bucket = self.spam_detection_threshold.get_bucket(message)
         ctx = await self.bot.get_context(message, cls=commands.Context)
         user = message.author
         
         do_freeze = False
-        if spam_bucket.update_rate_limit(current):
+        
+        # has the antiraid filter been triggered 5 or more times in the past 10 seconds?
+        if spam_detection_bucket.update_rate_limit(current):
+            # yes! notify the mods and lock the server.
             raid_alert_bucket = self.raid_alert_cooldown.get_bucket(message)
             if not raid_alert_bucket.update_rate_limit(current):
                 await report_raid(self.bot, user, message)
                 do_freeze = True
 
+        # lock the server
         if do_freeze:
             freeze = self.bot.get_command("freeze")
             if freeze is not None:
                 ctx.author = ctx.message.author = ctx.me
                 await freeze(ctx=ctx)
         else:
+            # for ping spam: report to mods only we aren't in panic mode. 
+            # this is because the report has a blocking wait_for reaction, 
+            # which means we can't proceed while this is running.
             if raid_type is RaidType.PingSpam:
                 await report_ping_spam(self.bot, message, user)
 
     async def ping_spam(self, message):
-        if len(set(message.mentions)) > 3:
+        if len(set(message.mentions)) > 4:
             mute = self.bot.get_command("mute")
             if mute is not None:
                 ctx = await self.bot.get_context(message, cls=commands.Context)
@@ -93,55 +100,11 @@ class AntiRaidMonitor(commands.Cog):
                         if word.false_positive and word.word.lower() not in folded_message.split():
                             continue
 
-                        current = message.created_at.replace(tzinfo=timezone.utc).timestamp()
-                        bucket = self.spam_detection_threshold.get_bucket(message)
                         ctx = await self.bot.get_context(message, cls=commands.Context)
                         await self.raid_phrase_ban(ctx, message.author)
-                        if bucket.update_rate_limit(current):
-                            return True
-            
+                        return True
         return False
             
-
-    # async def ping_spam_mute(self, ctx: commands.Context, user: discord.Member) -> None:
-    #     u = await self.bot.settings.user(id=user.id)
-    #     mute_role = self.bot.settings.guild().role_mute
-    #     mute_role = ctx.guild.get_role(mute_role)
-
-    #     if mute_role in user.roles or u.is_muted:
-    #         return
-
-    #     case = Case(
-    #         _id=self.bot.settings.guild().case_id,
-    #         _type="MUTE",
-    #         date=datetime.now(),
-    #         mod_id=ctx.me.id,
-    #         mod_tag=str(ctx.me),
-    #         reason="Ping spam",
-    #         punishment="PERMANENT"
-    #     )
-
-    #     await self.bot.settings.inc_caseid()
-    #     await self.bot.settings.add_case(user.id, case)
-    #     u = await self.bot.settings.user(id=user.id)
-    #     u.is_muted = True
-    #     u.save()
-
-    #     await user.add_roles(mute_role)
-
-    #     log = await logger.prepare_mute_log(ctx.me, user, case)
-
-    #     public_chan = ctx.guild.get_channel(self.bot.settings.guild().channel_public)
-    #     if public_chan:
-    #         log.remove_author()
-    #         log.set_thumbnail(url=user.avatar_url)
-    #         await public_chan.send(embed=log)
-
-    #     try:
-    #         await user.send(f"You have been muted in {ctx.guild.name}", embed=log)
-    #     except Exception:
-    #         pass
-    
     async def raid_phrase_ban(self, ctx: commands.Context, user: discord.Member):
         case = Case(
             _id=self.bot.settings.guild().case_id,
