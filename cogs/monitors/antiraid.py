@@ -17,7 +17,7 @@ class RaidType:
 class AntiRaidMonitor(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.join_spam_detection_threshold = commands.CooldownMapping.from_cooldown(10, 7, commands.BucketType.guild)
+        self.join_spam_detection_threshold = commands.CooldownMapping.from_cooldown(10, 8, commands.BucketType.guild)
         self.spam_detection_threshold = commands.CooldownMapping.from_cooldown(4, 10.0, commands.BucketType.guild)
         self.raid_alert_cooldown = commands.CooldownMapping.from_cooldown(1, 600.0, commands.BucketType.guild)
         
@@ -38,14 +38,18 @@ class AntiRaidMonitor(commands.Cog):
         self.join_user_mapping[member.id] = member
         
         if join_spam_detection_bucket.update_rate_limit(current):
-            for user in self.join_user_mapping:
+            users = list(self.join_user_mapping.keys())
+            for user in users:
                 try:
                     user = self.join_user_mapping[user]
-                    await self.raid_phrase_ban(user, reason="Join spam detected")
+                    try:
+                        await self.raid_ban(user, reason="Join spam detected")
+                    except Exception:
+                        pass
                 except KeyError:
                     continue
                 
-            raid_alert_bucket = self.raid_alert_cooldown.get_bucket(user.guild)
+            raid_alert_bucket = self.raid_alert_cooldown.get_bucket(user)
             if not raid_alert_bucket.update_rate_limit(current):
                 await report_raid(self.bot, user)
                 await self.freeze_server(member.guild)
@@ -73,10 +77,12 @@ class AntiRaidMonitor(commands.Cog):
         user = message.author
         
         do_freeze = False
+        do_banning = False
         self.spam_user_mapping[user.id] = 1
         
         # has the antiraid filter been triggered 5 or more times in the past 10 seconds?
         if spam_detection_bucket.update_rate_limit(current):
+            do_banning = True
             # yes! notify the mods and lock the server.
             raid_alert_bucket = self.raid_alert_cooldown.get_bucket(message)
             if not raid_alert_bucket.update_rate_limit(current):
@@ -89,23 +95,44 @@ class AntiRaidMonitor(commands.Cog):
             if freeze is not None:
                 ctx.author = ctx.message.author = ctx.me
                 await freeze(ctx=ctx)
-                
-            for user in self.spam_user_mapping:
-                try:
-                    _ = self.spam_user_mapping[user]
-                except KeyError:
-                    pass
-                user = message.guild.get_member(user)
-                if user is None:
-                    continue
-                
-                await self.raid_phrase_ban(user, reason="Ping spam detected")
+            
+            if raid_type is RaidType.PingSpam:
+                users = list(self.spam_user_mapping.keys())
+                for user in users:
+                    try:
+                        _ = self.spam_user_mapping[user]
+                    except KeyError:
+                        pass
+                    user = message.guild.get_member(user)
+                    if user is None:
+                        continue
+                    
+                    try:
+                        await self.raid_ban(user, reason="Ping spam detected")
+                    except Exception:
+                        pass
         else:
             # for ping spam: report to mods only we aren't in panic mode. 
             # this is because the report has a blocking wait_for reaction, 
             # which means we can't proceed while this is running.
             if raid_type is RaidType.PingSpam:
-                await report_ping_spam(self.bot, message, user)
+                if not do_banning:
+                    await report_ping_spam(self.bot, message, user)
+                else:
+                    users = list(self.spam_user_mapping.keys())
+                    for user in users:
+                        try:
+                            _ = self.spam_user_mapping[user]
+                        except KeyError:
+                            pass
+                        user = message.guild.get_member(user)
+                        if user is None:
+                            continue
+                        
+                        try:
+                            await self.raid_ban(user, reason="Ping spam detected")
+                        except Exception:
+                            pass
 
     async def ping_spam(self, message):
         if len(set(message.mentions)) > 4:
@@ -145,11 +172,11 @@ class AntiRaidMonitor(commands.Cog):
                             continue
 
                         ctx = await self.bot.get_context(message, cls=commands.Context)
-                        await self.raid_phrase_ban(message.author)
+                        await self.raid_ban(message.author)
                         return True
         return False
             
-    async def raid_phrase_ban(self, user: discord.Member, reason="Raid phrase detected"):
+    async def raid_ban(self, user: discord.Member, reason="Raid phrase detected"):
         case = Case(
             _id=self.bot.settings.guild().case_id,
             _type="BAN",
