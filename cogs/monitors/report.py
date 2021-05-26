@@ -111,11 +111,11 @@ async def report_ping_spam(bot, msg, user):
     role = msg.guild.get_role(bot.settings.guild().role_moderator)
     channel = msg.guild.get_channel(bot.settings.guild().channel_reports)
 
-    # ping_string = ""
-    # for member in role.members:
-    #     offline_ping = (await bot.settings.user(member.id)).offline_report_ping
-    #     if member.status == discord.Status.online or offline_ping:
-    #         ping_string += f"{member.mention} "
+    ping_string = ""
+    for member in role.members:
+        offline_ping = (await bot.settings.user(member.id)).offline_report_ping
+        if member.status == discord.Status.online or offline_ping:
+            ping_string += f"{member.mention} "
 
     embed = await prepare_ping_embed(bot, user, msg)
 
@@ -225,6 +225,6 @@ async def report_raid(bot, user, msg=None):
     if msg is not None:
         embed.add_field(name="Message", value=msg.content, inline=False)
 
-    reports_channel = user.guild.get_channel(bot.settings.guild().channel_reports)
-    # await reports_channel.send(f"<@&{bot.settings.guild().role_moderator}>", embed=embed, allowed_mentions=discord.AllowedMentions(roles=True))
+    # reports_channel = user.guild.get_channel(bot.settings.guild().channel_reports)
+    await reports_channel.send(f"<@&{bot.settings.guild().role_moderator}>", embed=embed, allowed_mentions=discord.AllowedMentions(roles=True))
     await reports_channel.send(f"", embed=embed, allowed_mentions=discord.AllowedMentions(roles=True))
