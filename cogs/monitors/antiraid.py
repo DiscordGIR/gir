@@ -1,31 +1,35 @@
-from re import U
-import discord
-from discord.ext import commands
-from fold_to_ascii import fold
-from data.case import Case
-from datetime import datetime, timezone
-import cogs.utils.logs as logger
-from fold_to_ascii import fold
-from cogs.monitors.report import report_raid, report_ping_spam
 import string
-from expiringdict import ExpiringDict
 from asyncio import sleep
+from datetime import datetime, timezone
+from re import U
+
+import cogs.utils.logs as logger
+import discord
+from cogs.monitors.report import report_spam, report_raid
+from data.case import Case
+from discord.ext import commands
+from expiringdict import ExpiringDict
+from fold_to_ascii import fold
+
 
 class RaidType:
     PingSpam = 1
     RaidPhrase = 2
+    MessageSpam = 3
 
 class AntiRaidMonitor(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.join_spam_detection_threshold = commands.CooldownMapping.from_cooldown(10, 8, commands.BucketType.guild)
-        self.spam_detection_threshold = commands.CooldownMapping.from_cooldown(4, 10.0, commands.BucketType.guild)
+        self.join_raid_detection_threshold = commands.CooldownMapping.from_cooldown(10, 8, commands.BucketType.guild)
+        self.raid_detection_threshold = commands.CooldownMapping.from_cooldown(4, 15.0, commands.BucketType.guild)
+        self.message_spam_detection_threshold = commands.CooldownMapping.from_cooldown(7, 5.0, commands.BucketType.member)
+        # self.message_spam_detection_threshold = MessageCooldownMapping.from_cooldown(4, 8, BucketType.message)
+
         self.raid_alert_cooldown = commands.CooldownMapping.from_cooldown(1, 600.0, commands.BucketType.guild)
         
         self.spam_user_mapping = ExpiringDict(max_len=100, max_age_seconds=10)
         self.join_user_mapping = ExpiringDict(max_len=100, max_age_seconds=10)
         self.ban_user_mapping = ExpiringDict(max_len=100, max_age_seconds=120)
-
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -35,7 +39,7 @@ class AntiRaidMonitor(commands.Cog):
             return
         
         current = datetime.now().timestamp()
-        join_spam_detection_bucket = self.join_spam_detection_threshold.get_bucket(member)
+        join_spam_detection_bucket = self.join_raid_detection_threshold.get_bucket(member)
         self.join_user_mapping[member.id] = member
         
         if join_spam_detection_bucket.update_rate_limit(current):
@@ -43,12 +47,16 @@ class AntiRaidMonitor(commands.Cog):
             for user in users:
                 try:
                     user = self.join_user_mapping[user]
-                    try:
-                        await self.raid_ban(user, reason="Join spam detected")
-                    except Exception:
-                        pass
                 except KeyError:
                     continue
+                
+                if user in self.ban_user_mapping:
+                    continue
+                
+                try:
+                    await self.raid_ban(user, reason="Join spam detected")
+                except Exception:
+                    pass
                 
             raid_alert_bucket = self.raid_alert_cooldown.get_bucket(user)
             if not raid_alert_bucket.update_rate_limit(current):
@@ -70,10 +78,12 @@ class AntiRaidMonitor(commands.Cog):
             await self.handle_raid_detection(message, RaidType.PingSpam)
         elif await self.raid_phrase_detected(message):
             await self.handle_raid_detection(message, RaidType.RaidPhrase)
+        elif await self.message_spam(message):
+            await self.handle_raid_detection(message, RaidType.MessageSpam)
 
     async def handle_raid_detection(self, message: discord.Message, raid_type: RaidType):
         current = message.created_at.replace(tzinfo=timezone.utc).timestamp()
-        spam_detection_bucket = self.spam_detection_threshold.get_bucket(message)
+        spam_detection_bucket = self.raid_detection_threshold.get_bucket(message)
         ctx = await self.bot.get_context(message, cls=commands.Context)
         user = message.author
         
@@ -90,24 +100,29 @@ class AntiRaidMonitor(commands.Cog):
                 await report_raid(self.bot, user, message)
                 do_freeze = True
 
+
         # lock the server
         if do_freeze:
-            freeze = self.bot.get_command("freeze")
-            if freeze is not None:
-                ctx.author = ctx.message.author = ctx.me
-                await freeze(ctx=ctx)
-            
+            await self.freeze_server(message.guild)
 
-        if raid_type is RaidType.PingSpam:
-            if not do_banning:
-                await report_ping_spam(self.bot, message, user)
+        if raid_type in [RaidType.PingSpam, RaidType.MessageSpam]:
+            if not do_banning and not do_freeze:
+                if raid_type is RaidType.PingSpam:
+                    title = "Ping spam detected"
+                else:
+                    title = "Message spam detected"
+                await report_spam(self.bot, message, user, title=title)
             else:
                 users = list(self.spam_user_mapping.keys())
                 for user in users:
                     try:
                         _ = self.spam_user_mapping[user]
                     except KeyError:
-                        pass
+                        continue
+                    
+                    if user in self.ban_user_mapping:
+                        continue
+                    
                     user = message.guild.get_member(user)
                     if user is None:
                         continue
@@ -129,6 +144,29 @@ class AntiRaidMonitor(commands.Cog):
                 return True
 
         return False
+    
+    async def message_spam(self, message):
+        if self.bot.settings.permissions.hasAtLeast(message.guild, message.author, 5):
+            return False
+                
+        bucket = self.message_spam_detection_threshold.get_bucket(message)
+        current = message.created_at.replace(tzinfo=timezone.utc).timestamp()
+
+        if bucket.update_rate_limit(current):
+            if message.author.id in self.spam_user_mapping:
+                return True
+            
+            mute = self.bot.get_command("mute")
+            if mute is not None:
+                ctx = await self.bot.get_context(message, cls=commands.Context)
+                user = message.author
+                ctx.message.author = ctx.author = ctx.me
+                try:
+                    await mute(ctx=ctx, user=user, reason="Message spam")
+                except Exception:
+                    pass
+                ctx.message.author = ctx.author = user
+                return True
     
     async def raid_phrase_detected(self, message):
         if self.bot.settings.permissions.hasAtLeast(message.guild, message.author, 2):
