@@ -3,7 +3,7 @@ import traceback
 import typing
 
 import cogs.utils.logs as logging
-from cogs.utils.decorators import PermissionChecks as checks
+import cogs.utils.permission_checks as Permissions
 import discord
 import humanize
 import pytimeparse
@@ -48,8 +48,7 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_guild_permissions(kick_members=True, ban_members=True)
     @commands.command(name="warn")
-    @checks.mods_and_up()
-    async def warn(self, ctx: commands.Context, user: typing.Union[discord.Member, int], points: int, *, reason: str = "No reason.") -> None:
+    async def warn(self, ctx: commands.Context, user: Permissions.ModsAndBelowExternal, points: int, *, reason: str = "No reason.") -> None:
         """Warn a user (mod only)
 
         Example usage:
@@ -73,12 +72,7 @@ class ModActions(commands.Cog):
             raise commands.BadArgument(message="Points can't be lower than 1.")
 
         # if the ID given is of a user who isn't in the guild, try to fetch the profile
-        if isinstance(user, int):
-            try:
-                user = await self.bot.fetch_user(user)
-            except discord.NotFound:
-                raise commands.BadArgument(
-                    f"Couldn't find user with ID {user}")
+        
 
         guild = self.bot.settings.guild()
 
