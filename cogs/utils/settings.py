@@ -429,7 +429,27 @@ class Settings(commands.Cog):
         giveaway.previous_winners = prev_winners
         giveaway.save()
 
+    async def get_locked_channels(self):
+        return self.guild().locked_channels
 
+    async def add_locked_channels(self, channel):
+        Guild.objects(_id=self.guild_id).update_one(push__locked_channels=channel)
+
+    async def remove_locked_channels(self, channel):
+        Guild.objects(_id=self.guild_id).update_one(pull__locked_channels=channel)
+
+    
+    async def add_raid_phrase(self, phrase: str) -> bool:
+        existing = self.guild().raid_phrases.filter(word=phrase)
+        if(len(existing) > 0):
+            return False
+        Guild.objects(_id=self.guild_id).update_one(push__raid_phrases=FilterWord(word=phrase, bypass=5, notify=True))
+        return True
+    
+    async def remove_raid_phrase(self, phrase: str):
+        Guild.objects(_id=self.guild_id).update_one(pull__raid_phrases__word=FilterWord(word=phrase).word)
+
+        
 class Permissions:
     """A way of calculating a user's permissions.
     Level 0 is everyone.

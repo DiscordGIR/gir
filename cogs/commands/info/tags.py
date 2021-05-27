@@ -67,8 +67,6 @@ class CustomCooldownMapping(commands.CooldownMapping):
         return cls(CustomCooldown(rate, per, type))
 
 
-
-
 class Tags(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
