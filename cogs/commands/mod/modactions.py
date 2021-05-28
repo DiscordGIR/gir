@@ -26,24 +26,24 @@ class ModActions(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def check_permissions(self, ctx, user: typing.Union[discord.Member, int] = None):
-        if isinstance(user, discord.Member):
-            if user.id == ctx.author.id:
-                await ctx.message.add_reaction("🤔")
-                raise commands.BadArgument("You can't call that on yourself.")
-            if user.id == self.bot.user.id:
-                await ctx.message.add_reaction("🤔")
-                raise commands.BadArgument("You can't call that on me :(")
+    # async def check_permissions(self, ctx, user: typing.Union[discord.Member, int] = None):
+    #     if isinstance(user, discord.Member):
+    #         if user.id == ctx.author.id:
+    #             await ctx.message.add_reaction("🤔")
+    #             raise commands.BadArgument("You can't call that on yourself.")
+    #         if user.id == self.bot.user.id:
+    #             await ctx.message.add_reaction("🤔")
+    #             raise commands.BadArgument("You can't call that on me :(")
 
-        # must be at least a mod
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
-        if user:
-            if isinstance(user, discord.Member):
-                if user.top_role >= ctx.author.top_role:
-                    raise commands.BadArgument(
-                        message=f"{user.mention}'s top role is the same or higher than yours!")
+    #     # must be at least a mod
+    #     if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+    #         raise commands.BadArgument(
+    #             "You do not have permission to use this command.")
+    #     if user:
+    #         if isinstance(user, discord.Member):
+    #             if user.top_role >= ctx.author.top_role:
+    #                 raise commands.BadArgument(
+    #                     message=f"{user.mention}'s top role is the same or higher than yours!")
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(kick_members=True, ban_members=True)
@@ -66,13 +66,8 @@ class ModActions(commands.Cog):
 
         """
 
-        # await self.check_permissions(ctx, user)
-
         if points < 1:  # can't warn for negative/0 points
             raise commands.BadArgument(message="Points can't be lower than 1.")
-
-        # if the ID given is of a user who isn't in the guild, try to fetch the profile
-        
 
         guild = self.bot.settings.guild()
 
@@ -154,7 +149,7 @@ class ModActions(commands.Cog):
 
     @commands.guild_only()
     @commands.command(name="liftwarn")
-    async def liftwarn(self, ctx: commands.Context, user: discord.Member, case_id: int, *, reason: str = "No reason.") -> None:
+    async def liftwarn(self, ctx: commands.Context, user: Permissions.ModsAndBelowMember, case_id: int, *, reason: str = "No reason.") -> None:
         """Mark a warn as lifted and remove points. (mod only)
 
         Example usage:
@@ -171,8 +166,6 @@ class ModActions(commands.Cog):
             Reason for lifting warn, by default "No reason."
 
         """
-
-        await self.check_permissions(ctx, user)
 
         # retrieve user's case with given ID
         cases = await self.bot.settings.get_case(user.id, case_id)
@@ -227,7 +220,7 @@ class ModActions(commands.Cog):
 
     @commands.guild_only()
     @commands.command(name="editreason")
-    async def editreason(self, ctx: commands.Context, user: typing.Union[discord.Member, int], case_id: int, *, new_reason: str) -> None:
+    async def editreason(self, ctx: commands.Context, user: Permissions.ModsAndBelowExternal, case_id: int, *, new_reason: str) -> None:
         """Edit case reason and the embed in #public-mod-logs. (mod only)
 
         Example usage:
@@ -244,15 +237,6 @@ class ModActions(commands.Cog):
             New reason
 
         """
-
-        await self.check_permissions(ctx, user)
-
-        if isinstance(user, int):
-            try:
-                user = await self.bot.fetch_user(user)
-            except discord.NotFound:
-                raise commands.BadArgument(
-                    f"Couldn't find user with ID {user}")
 
         # retrieve user's case with given ID
         cases = await self.bot.settings.get_case(user.id, case_id)
@@ -315,7 +299,7 @@ class ModActions(commands.Cog):
             
     @commands.guild_only()
     @commands.command(name="removepoints")
-    async def removepoints(self, ctx: commands.Context, user: discord.Member, points: int, *, reason: str = "No reason.") -> None:
+    async def removepoints(self, ctx: commands.Context, user: Permissions.ModsAndBelowMember, points: int, *, reason: str = "No reason.") -> None:
         """Remove warnpoints from a user. (mod only)
 
         Example usage:
@@ -332,8 +316,6 @@ class ModActions(commands.Cog):
             Reason for lifting warn, by default "No reason."
 
         """
-
-        await self.check_permissions(ctx, user)
 
         reason = discord.utils.escape_markdown(reason)
         reason = discord.utils.escape_mentions(reason)
@@ -385,7 +367,7 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_guild_permissions(kick_members=True)
     @commands.command(name="roblox")
-    async def roblox(self, ctx: commands.Context, user: discord.Member) -> None:
+    async def roblox(self, ctx: commands.Context, user: Permissions.ModsAndBelowMember) -> None:
         """Kick a Roblox user and tell them where to go (mod only)
 
         Example usage:
@@ -398,7 +380,6 @@ class ModActions(commands.Cog):
             User to kick
         """
         
-        await self.check_permissions(ctx, user)
         reason = "This Discord server is for iOS jailbreaking, not Roblox. Please join https://discord.gg/jailbreak instead, thank you!"
         log = await self.add_kick_case(ctx, user, reason)
 
@@ -422,7 +403,7 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_guild_permissions(kick_members=True)
     @commands.command(name="kick")
-    async def kick(self, ctx: commands.Context, user: discord.Member, *, reason: str = "No reason.") -> None:
+    async def kick(self, ctx: commands.Context, user: Permissions.ModsAndBelowMember, *, reason: str = "No reason.") -> None:
         """Kick a user (mod only)
 
         Example usage:
@@ -437,8 +418,6 @@ class ModActions(commands.Cog):
             Reason for kick, by default "No reason."
 
         """
-
-        await self.check_permissions(ctx, user)
 
         reason = discord.utils.escape_markdown(reason)
         reason = discord.utils.escape_mentions(reason)
@@ -482,7 +461,7 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_guild_permissions(ban_members=True)
     @commands.command(name="ban")
-    async def ban(self, ctx: commands.Context, user: typing.Union[discord.Member, int], *, reason: str = "No reason."):
+    async def ban(self, ctx: commands.Context, user: Permissions.ModsAndBelowExternal, *, reason: str = "No reason."):
         """Ban a user (mod only)
 
         Example usage:
@@ -498,24 +477,15 @@ class ModActions(commands.Cog):
 
         """
 
-        await self.check_permissions(ctx, user)
-
         reason = discord.utils.escape_markdown(reason)
         reason = discord.utils.escape_mentions(reason)
 
         # if the ID given is of a user who isn't in the guild, try to fetch the profile
-        if isinstance(user, int):
-            try:
-                user = await self.bot.fetch_user(user)
-                
-                previous_bans = [user for _, user in await ctx.guild.bans()]
-                if user in previous_bans:
-                    raise commands.BadArgument("That user is already banned!")
-                
-            except discord.NotFound:
-                raise commands.BadArgument(
-                    f"Couldn't find user with ID {user}")
-            
+        if ctx.guild.get_member(user.id) is None:
+            previous_bans = [user for _, user in await ctx.guild.bans()]
+            if user in previous_bans:
+                raise commands.BadArgument("That user is already banned!")
+
         log = await self.add_ban_case(ctx, user, reason)
 
         try:
@@ -560,7 +530,7 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_guild_permissions(ban_members=True)
     @commands.command(name="unban")
-    async def unban(self, ctx: commands.Context, user: int, *, reason: str = "No reason.") -> None:
+    async def unban(self, ctx: commands.Context, user: Permissions.ModsAndBelowExternal, *, reason: str = "No reason.") -> None:
         """Unban a user (must use ID) (mod only)
 
         Example usage:
@@ -576,19 +546,12 @@ class ModActions(commands.Cog):
 
         """
 
-        await self.check_permissions(ctx)
-
         reason = discord.utils.escape_markdown(reason)
         reason = discord.utils.escape_mentions(reason)
 
-        try:
-            user = await self.bot.fetch_user(user)
-            previous_bans = [user for _, user in await ctx.guild.bans()]
-            if user not in previous_bans:
-                raise commands.BadArgument("That user isn't banned!")
-                
-        except discord.NotFound:
-            raise commands.BadArgument(f"Couldn't find user with ID {user}")
+        previous_bans = [user for _, user in await ctx.guild.bans()]
+        if user not in previous_bans:
+            raise commands.BadArgument("That user isn't banned!")
 
         try:
             await ctx.guild.unban(discord.Object(id=user.id), reason=reason)
@@ -633,11 +596,13 @@ class ModActions(commands.Cog):
 
         """
 
-        await self.check_permissions(ctx)
+        # TODO: add check here!
 
         if limit <= 0:
             raise commands.BadArgument(
                 "Number of messages to purge must be greater than 0")
+        elif limit >= 100:
+            limit = 100
 
         msgs = await ctx.channel.history(limit=limit+1).flatten()
 
