@@ -2,14 +2,7 @@ import discord
 from discord.ext import commands
 
 
-class PermissionFailure(commands.CheckFailure):
-    def __init__(self, message):
-        super(message)
-
-# class PermissionChecks:
-#     @staticmethod
-
-class ModsAndBelowMember(commands.Converter):
+class ModsAndAboveMember(commands.Converter):
     async def convert(self, ctx, argument):
         user = await commands.MemberConverter().convert(ctx, argument)
         await self.check_perms(ctx, user)
@@ -18,17 +11,11 @@ class ModsAndBelowMember(commands.Converter):
     @staticmethod
     async def check_perms(ctx, user):
         await check_invokee(ctx, user)
-        # must be at least a mod
-        if not ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
-        
-    
-        # return commands.check(predicate)
-class ModsAndBelowExternal(commands.Converter):
+
+class ModsAndAboveExternal(commands.Converter):
     async def convert(self, ctx, argument):
         try:
-            user = await ModsAndBelowMember().convert(ctx, argument)
+            user = await ModsAndAboveMember().convert(ctx, argument)
         except Exception:
             try:
                 argument = int(argument)
@@ -39,7 +26,7 @@ class ModsAndBelowExternal(commands.Converter):
                 raise commands.BadArgument(
                     f"Couldn't find user with ID {argument}")
             
-            await ModsAndBelowMember.check_perms(ctx, user)
+            await ModsAndAboveMember.check_perms(ctx, user)
         
         return user 
 
@@ -58,3 +45,32 @@ async def check_invokee(ctx, user):
                     if user.top_role >= ctx.author.top_role:
                         raise commands.BadArgument(
                             message=f"{user.mention}'s top role is the same or higher than yours!")
+
+def genius_and_up():
+    async def predicate(ctx):
+        if not ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
+            raise commands.BadArgument(
+                "You do not have permission to use this command.")
+        
+        return True
+    return commands.check(predicate)
+
+
+def mod_and_up():
+    async def predicate(ctx):
+        if not ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+            raise commands.BadArgument(
+                "You do not have permission to use this command.")
+        
+        return True
+    return commands.check(predicate)
+
+
+def admin_and_up():
+    async def predicate(ctx):
+        if not ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise commands.BadArgument(
+                "You do not have permission to use this command.")
+        
+        return True
+    return commands.check(predicate)

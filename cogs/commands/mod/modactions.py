@@ -26,29 +26,11 @@ class ModActions(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # async def check_permissions(self, ctx, user: typing.Union[discord.Member, int] = None):
-    #     if isinstance(user, discord.Member):
-    #         if user.id == ctx.author.id:
-    #             await ctx.message.add_reaction("🤔")
-    #             raise commands.BadArgument("You can't call that on yourself.")
-    #         if user.id == self.bot.user.id:
-    #             await ctx.message.add_reaction("🤔")
-    #             raise commands.BadArgument("You can't call that on me :(")
-
-    #     # must be at least a mod
-    #     if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
-    #         raise commands.BadArgument(
-    #             "You do not have permission to use this command.")
-    #     if user:
-    #         if isinstance(user, discord.Member):
-    #             if user.top_role >= ctx.author.top_role:
-    #                 raise commands.BadArgument(
-    #                     message=f"{user.mention}'s top role is the same or higher than yours!")
-
     @commands.guild_only()
     @commands.bot_has_guild_permissions(kick_members=True, ban_members=True)
+    @Permissions.mod_and_up()
     @commands.command(name="warn")
-    async def warn(self, ctx: commands.Context, user: Permissions.ModsAndBelowExternal, points: int, *, reason: str = "No reason.") -> None:
+    async def warn(self, ctx: commands.Context, user: Permissions.ModsAndAboveExternal, points: int, *, reason: str = "No reason.") -> None:
         """Warn a user (mod only)
 
         Example usage:
@@ -148,8 +130,9 @@ class ModActions(commands.Cog):
                 await public_chan.send(embed=log_kickban)
 
     @commands.guild_only()
+    @Permissions.mod_and_up()
     @commands.command(name="liftwarn")
-    async def liftwarn(self, ctx: commands.Context, user: Permissions.ModsAndBelowMember, case_id: int, *, reason: str = "No reason.") -> None:
+    async def liftwarn(self, ctx: commands.Context, user: Permissions.ModsAndAboveMember, case_id: int, *, reason: str = "No reason.") -> None:
         """Mark a warn as lifted and remove points. (mod only)
 
         Example usage:
@@ -219,8 +202,9 @@ class ModActions(commands.Cog):
             await public_chan.send(user.mention if not dmed else "", embed=log)
 
     @commands.guild_only()
+    @Permissions.mod_and_up()
     @commands.command(name="editreason")
-    async def editreason(self, ctx: commands.Context, user: Permissions.ModsAndBelowExternal, case_id: int, *, new_reason: str) -> None:
+    async def editreason(self, ctx: commands.Context, user: Permissions.ModsAndAboveExternal, case_id: int, *, new_reason: str) -> None:
         """Edit case reason and the embed in #public-mod-logs. (mod only)
 
         Example usage:
@@ -298,8 +282,9 @@ class ModActions(commands.Cog):
           
             
     @commands.guild_only()
+    @Permissions.mod_and_up()
     @commands.command(name="removepoints")
-    async def removepoints(self, ctx: commands.Context, user: Permissions.ModsAndBelowMember, points: int, *, reason: str = "No reason.") -> None:
+    async def removepoints(self, ctx: commands.Context, user: Permissions.ModsAndAboveMember, points: int, *, reason: str = "No reason.") -> None:
         """Remove warnpoints from a user. (mod only)
 
         Example usage:
@@ -366,8 +351,9 @@ class ModActions(commands.Cog):
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(kick_members=True)
+    @Permissions.mod_and_up()
     @commands.command(name="roblox")
-    async def roblox(self, ctx: commands.Context, user: Permissions.ModsAndBelowMember) -> None:
+    async def roblox(self, ctx: commands.Context, user: Permissions.ModsAndAboveMember) -> None:
         """Kick a Roblox user and tell them where to go (mod only)
 
         Example usage:
@@ -402,8 +388,9 @@ class ModActions(commands.Cog):
             
     @commands.guild_only()
     @commands.bot_has_guild_permissions(kick_members=True)
+    @Permissions.mod_and_up()
     @commands.command(name="kick")
-    async def kick(self, ctx: commands.Context, user: Permissions.ModsAndBelowMember, *, reason: str = "No reason.") -> None:
+    async def kick(self, ctx: commands.Context, user: Permissions.ModsAndAboveMember, *, reason: str = "No reason.") -> None:
         """Kick a user (mod only)
 
         Example usage:
@@ -460,8 +447,9 @@ class ModActions(commands.Cog):
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(ban_members=True)
+    @Permissions.mod_and_up()
     @commands.command(name="ban")
-    async def ban(self, ctx: commands.Context, user: Permissions.ModsAndBelowExternal, *, reason: str = "No reason."):
+    async def ban(self, ctx: commands.Context, user: Permissions.ModsAndAboveExternal, *, reason: str = "No reason."):
         """Ban a user (mod only)
 
         Example usage:
@@ -529,8 +517,9 @@ class ModActions(commands.Cog):
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(ban_members=True)
+    @Permissions.mod_and_up()
     @commands.command(name="unban")
-    async def unban(self, ctx: commands.Context, user: Permissions.ModsAndBelowExternal, *, reason: str = "No reason.") -> None:
+    async def unban(self, ctx: commands.Context, user: Permissions.ModsAndAboveExternal, *, reason: str = "No reason.") -> None:
         """Unban a user (must use ID) (mod only)
 
         Example usage:
@@ -581,6 +570,7 @@ class ModActions(commands.Cog):
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_messages=True)
+    @Permissions.mod_and_up()
     @commands.command(name="purge")
     async def purge(self, ctx: commands.Context, limit: int = 0) -> None:
         """Purge messages from current channel (mod only)
@@ -596,8 +586,6 @@ class ModActions(commands.Cog):
 
         """
 
-        # TODO: add check here!
-
         if limit <= 0:
             raise commands.BadArgument(
                 "Number of messages to purge must be greater than 0")
@@ -612,7 +600,7 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_roles=True)
     @commands.command(name="mute")
-    async def mute(self, ctx: commands.Context, user: discord.Member, dur: str = "", *, reason: str = "No reason.") -> None:
+    async def mute(self, ctx: commands.Context, user: Permissions.ModsAndAboveMember, dur: str = "", *, reason: str = "No reason.") -> None:
         """Mute a user (mod only)
 
         Example usage:
@@ -629,7 +617,6 @@ class ModActions(commands.Cog):
             Reason for mute, by default "No reason."
 
         """
-        await self.check_permissions(ctx, user)
 
         reason = discord.utils.escape_markdown(reason)
         reason = discord.utils.escape_mentions(reason)
@@ -702,7 +689,7 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_roles=True)
     @commands.command(name="unmute")
-    async def unmute(self, ctx: commands.Context, user: discord.Member, *, reason: str = "No reason.") -> None:
+    async def unmute(self, ctx: commands.Context, user: Permissions.ModsAndAboveMember, *, reason: str = "No reason.") -> None:
         """Unmute a user (mod only)
 
         Example usage:
@@ -717,8 +704,6 @@ class ModActions(commands.Cog):
             Reason for unmute, by default "No reason."
 
         """
-
-        await self.check_permissions(ctx, user)
 
         mute_role = self.bot.settings.guild().role_mute
         mute_role = ctx.guild.get_role(mute_role)
@@ -764,6 +749,7 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_channels=True)
     @commands.command(name="lock")
+    @Permissions.admin_and_up()
     async def lock(self, ctx, channel: discord.TextChannel = None):
         """Lock a channel (admin only)
 
@@ -776,9 +762,6 @@ class ModActions(commands.Cog):
         channel : discord.TextChannel, optional
             Channel to lock
         """
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
 
         if channel is None:
             channel = ctx.channel
@@ -791,6 +774,7 @@ class ModActions(commands.Cog):
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_channels=True)
+    @Permissions.admin_and_up()
     @commands.command(name="unlock")
     async def unlock(self, ctx, channel: discord.TextChannel = None):
         """Unlock a channel (admin only)
@@ -804,9 +788,6 @@ class ModActions(commands.Cog):
         channel : discord.TextChannel, optional
             Channel to unlock
         """
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
 
         if channel is None:
             channel = ctx.channel
@@ -819,13 +800,10 @@ class ModActions(commands.Cog):
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_channels=True)
+    @Permissions.admin_and_up()
     @commands.command(name="freezeable")
     @commands.max_concurrency(1, per=commands.BucketType.guild)
     async def freezeable(self, ctx, channel: discord.TextChannel=None):
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
-
         channel = channel or ctx.channel
         if channel.id in await self.bot.settings.get_locked_channels():
             raise commands.BadArgument("That channel is already lockable.")
@@ -835,12 +813,9 @@ class ModActions(commands.Cog):
 
     @commands.bot_has_guild_permissions(manage_channels=True)
     @commands.command(name="unfreezeable")
+    @Permissions.admin_and_up()
     @commands.max_concurrency(1, per=commands.BucketType.guild)
     async def unfreezeable(self, ctx, channel: discord.TextChannel=None):
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
-
         channel = channel or ctx.channel
         if channel.id not in await self.bot.settings.get_locked_channels():
             raise commands.BadArgument("That channel isn't already lockable.")
@@ -850,6 +825,7 @@ class ModActions(commands.Cog):
             
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_channels=True)
+    @Permissions.admin_and_up()
     @commands.command(name="freeze")
     @commands.max_concurrency(1, per=commands.BucketType.guild)
     async def freeze(self, ctx):
@@ -860,10 +836,6 @@ class ModActions(commands.Cog):
         !freeze
         """
         
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
-
         channels = await self.bot.settings.get_locked_channels()
         if not channels:
             raise commands.BadArgument("No freezeable channels! Set some using `!freezeable`.")
@@ -885,6 +857,7 @@ class ModActions(commands.Cog):
     
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_channels=True)
+    @Permissions.admin_and_up()
     @commands.command(name="unfreeze")
     @commands.max_concurrency(1, per=commands.BucketType.guild)
     async def unfreeze(self, ctx):
@@ -894,10 +867,6 @@ class ModActions(commands.Cog):
         --------------
         !unfreeze
         """
-        
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
 
         channels = await self.bot.settings.get_locked_channels()
         if not channels:
