@@ -599,6 +599,7 @@ class ModActions(commands.Cog):
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_roles=True)
+    @Permissions.mod_and_up()
     @commands.command(name="mute")
     async def mute(self, ctx: commands.Context, user: Permissions.ModsAndAboveMember, dur: str = "", *, reason: str = "No reason.") -> None:
         """Mute a user (mod only)
@@ -688,6 +689,7 @@ class ModActions(commands.Cog):
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_roles=True)
+    @Permissions.mod_and_up()
     @commands.command(name="unmute")
     async def unmute(self, ctx: commands.Context, user: Permissions.ModsAndAboveMember, *, reason: str = "No reason.") -> None:
         """Unmute a user (mod only)
@@ -931,6 +933,7 @@ class ModActions(commands.Cog):
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, Permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.BotMissingPermissions)
