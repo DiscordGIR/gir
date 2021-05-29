@@ -13,7 +13,6 @@ class ModsAndAboveMember(commands.Converter):
         return user
 
 class ModsAndAboveExternal(commands.Converter):
-    # TODO: fix same role exception
     async def convert(self, ctx, argument):
         try:
             user = await commands.MemberConverter().convert(ctx, argument)
@@ -65,7 +64,7 @@ def bot_channel_only_unless_mod():
 # Member Roles
 ####################
 
-def memplus_or_booster_and_up():
+def memplus_and_up():
     async def predicate(ctx):
         if not ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 1):
             raise PermissionsFailure("You do not have permission to use this command.")
@@ -115,6 +114,20 @@ def submod_or_admin_and_up():
         return True
     return commands.check(predicate)
 
+def genius_or_submod_and_up():
+    async def predicate(ctx):
+        db = ctx.bot.settings.guild()
+        submod = ctx.guild.get_role(db.role_sub_mod)
+        if not submod:
+            return
+
+        if not (ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4) or submod in ctx.author.roles):
+            raise commands.BadArgument(
+                "You do not have permission to use this command.")
+
+        return True
+    return commands.check(predicate)
+
 def mod_and_up():
     async def predicate(ctx):
         if not ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
@@ -151,6 +164,15 @@ def bot_owner_and_up():
         if not ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 9):
             raise PermissionsFailure(
                 "You do not have permission to use this command.")
+        
+        return True
+    return commands.check(predicate)
+
+def ensure_invokee_role_lower_than_bot():
+    async def predicate(ctx):
+        if ctx.me.top_role < ctx.author.top_role:
+            raise PermissionsFailure(
+                f"Your top role is higher than mine. I can't change your nickname :(")
         
         return True
     return commands.check(predicate)

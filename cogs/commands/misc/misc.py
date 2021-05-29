@@ -60,6 +60,7 @@ class Misc(commands.Cog):
         await ctx.message.reply(embed=embed, delete_after=10)
         
     @commands.command(name="jumbo")
+    @permissions.bot_channel_only_unless_mod()
     @commands.guild_only()
     async def jumbo(self, ctx, emoji: typing.Union[discord.Emoji, discord.PartialEmoji, str]):
         """Post large version of a given emoji
@@ -73,11 +74,6 @@ class Misc(commands.Cog):
         emoji : typing.Union[discord.Emoji, discord.PartialEmoji]
             Emoji to post
         """
-        
-        bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            if await self.ratelimit(ctx.message):
-                raise commands.BadArgument("This command is on cooldown.")
 
         if isinstance(emoji, str):
             emoji_url = await emoji_to_url(emoji)

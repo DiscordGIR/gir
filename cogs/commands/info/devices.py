@@ -5,6 +5,7 @@ import traceback
 import aiohttp
 import asyncio
 import discord
+import cogs.utils.permission_checks as permissions
 from discord.ext import commands
 
 
@@ -19,6 +20,8 @@ class Devices(commands.Cog):
     @commands.guild_only()
     @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
     @commands.bot_has_guild_permissions(change_nickname=True)
+    @permissions.bot_channel_only_unless_mod()
+    @permissions.ensure_invokee_role_lower_than_bot()
     @commands.command(name="adddevice")
     async def adddevice(self, ctx: commands.Context, *, device: str) -> None:
         """Add device name to your nickname, i.e `SlimShadyIAm [iPhone 12, 14.2]`. See !listdevices to see the list of possible devices.
@@ -32,8 +35,6 @@ class Devices(commands.Cog):
             device user wants to use
 
         """
-
-        await self.check_permissions(ctx)
 
         # check if user already has a device in their nick
         if re.match(self.devices_test, ctx.author.display_name):
@@ -73,12 +74,8 @@ class Devices(commands.Cog):
             raise commands.BadArgument("Device doesn't exist!")
 
         # is this a supported device type for nicknames?
-        # if not the_device["name"].split(" ")[0].lower() in self.possible_devices:
-        #     raise commands.BadArgument(
-        #         "Unsupported device. Please see `!listdevices` for possible devices.")
 
         # firmware stuff for nickname
-
         def check(m):
             return m.author == ctx.author and m.channel == ctx.channel
 
@@ -142,6 +139,8 @@ class Devices(commands.Cog):
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(change_nickname=True)
+    @permissions.bot_channel_only_unless_mod()
+    @permissions.ensure_invokee_role_lower_than_bot()
     @commands.command(name="removedevice")
     async def removedevice(self, ctx: commands.Context) -> None:
         """Removes device from your nickname
@@ -150,8 +149,6 @@ class Devices(commands.Cog):
         `!removedevice`
 
         """
-
-        await self.check_permissions(ctx)
 
         if not re.match(self.devices_test, ctx.author.display_name):
             raise commands.BadArgument("You don't have a device nickname set!")
@@ -166,6 +163,7 @@ class Devices(commands.Cog):
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(change_nickname=True)
+    @permissions.bot_channel_only_unless_mod()
     @commands.command(name="listdevices")
     async def listdevices(self, ctx: commands.Context) -> None:
         """List all possible devices you can set your nickname to.
@@ -174,8 +172,6 @@ class Devices(commands.Cog):
         `!listdevices`
 
         """
-
-        await self.check_permissions(ctx)
 
         devices_dict = {
             'iPhone': set(),
@@ -202,8 +198,6 @@ class Devices(commands.Cog):
 
         # stupid ipsw.me api doesn't have these devices
         devices_dict["iPhone"].add("iPhone SE 2")
-        # devices_dict["Apple Watch"].add("Apple Watch Series 6")
-        # devices_dict["Apple Watch"].add("Apple Watch SE")
 
         embed = discord.Embed(title="Devices list")
         embed.color = discord.Color.blurple()
@@ -217,23 +211,13 @@ class Devices(commands.Cog):
 
         await ctx.message.reply(embed=embed)
 
-    async def check_permissions(self, ctx: commands.Context):
-        # non-mods can only use this in #bot-commands
-        bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(
-                f"Command only allowed in <#{bot_chan}>")
-
-        if ctx.me.top_role < ctx.author.top_role:
-            raise commands.BadArgument(
-                f"Your top role is higher than mine. I can't change your nickname :(")
-
     @removedevice.error
     @adddevice.error
     @listdevices.error
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)

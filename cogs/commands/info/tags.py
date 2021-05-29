@@ -5,6 +5,7 @@ from io import BytesIO
 import discord
 from data.tag import Tag
 import datetime
+import cogs.utils.permission_checks as permissions
 from discord.ext import commands
 from discord.ext import menus
 
@@ -74,6 +75,7 @@ class Tags(commands.Cog):
         self.tag_cooldown = CustomCooldownMapping.from_cooldown(1, 5, CustomBucketType.custom)
 
     @commands.guild_only()
+    @permissions.genius_or_submod_and_up()
     @commands.command(name="addtag", aliases=['addt'])
     async def addtag(self, ctx, name: str, *, content: str) -> None:
         """Add a tag. Optionally attach an iamge. (Genius only)
@@ -89,10 +91,6 @@ class Tags(commands.Cog):
         content : str
             Content of the tag
         """
-
-        if not (self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4) or ctx.guild.get_role(self.bot.settings.guild().role_sub_mod) in ctx.author.roles):
-            raise commands.BadArgument(
-                "You need to be a Genius or higher to use that command.")
 
         if not name.isalnum():
             raise commands.BadArgument("Tag name must be alphanumeric.")
@@ -146,15 +144,11 @@ class Tags(commands.Cog):
         return embed
 
     @commands.guild_only()
+    @permissions.genius_or_submod_and_up()
     @commands.command(name="taglist", aliases=['tlist'])
     async def taglist(self, ctx):
         """List all tags
         """
-
-        bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(
-                f"Command only allowed in <#{bot_chan}>")
 
         tags = sorted(self.bot.settings.guild().tags, key=lambda tag: tag.name)
 
@@ -167,6 +161,7 @@ class Tags(commands.Cog):
         await menus.start(ctx)
 
     @commands.guild_only()
+    @permissions.genius_or_submod_and_up()
     @commands.command(name="deltag", aliases=['dtag'])
     async def deltag(self, ctx, name: str):
         """Delete tag (geniuses only)
@@ -181,10 +176,6 @@ class Tags(commands.Cog):
             Name of tag to delete
 
         """
-
-        if not (self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4) or ctx.guild.get_role(self.bot.settings.guild().role_sub_mod) in ctx.author.roles):
-            raise commands.BadArgument(
-                "You need to be a Genius or higher to use that command.")
 
         name = name.lower()
 
@@ -230,6 +221,7 @@ class Tags(commands.Cog):
         await ctx.message.reply(embed=await self.tag_embed(tag), file=file, mention_author=False)
     
     @commands.guild_only()
+    @permissions.genius_or_submod_and_up()
     @commands.command(name="edittag", aliases=['et'])
     async def edittag(self, ctx, name: str, *, content: str) -> None:
         """Edit a tag's body.
@@ -243,9 +235,6 @@ class Tags(commands.Cog):
         name : str
             Name of tag to use
         """
-        if not (self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4) or ctx.guild.get_role(self.bot.settings.guild().role_sub_mod) in ctx.author.roles):
-            raise commands.BadArgument(
-                "You need to be a Genius or higher to use that command.")
 
         name = name.lower()
         tag = await self.bot.settings.get_tag(name)
@@ -280,6 +269,7 @@ class Tags(commands.Cog):
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)

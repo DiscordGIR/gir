@@ -51,7 +51,6 @@ class Birthday(commands.Cog):
             
     @commands.guild_only()
     @permissions.bot_channel_only_unless_mod()
-    @permissions.memplus_or_booster_and_up()
     @commands.command(name="mybirthday")
     async def mybirthday(self, ctx: commands.Context, month: int, date: int) -> None:
         """Set your birthday. The birthday role will be given to you on that day. THIS COMMAND IS ONE TIME USE ONLY!

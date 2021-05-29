@@ -1,4 +1,5 @@
 from discord.ext import commands
+import cogs.utils.permission_checks as permissions
 import discord
 import traceback
 import datetime
@@ -8,6 +9,7 @@ class AntiRaid(commands.Cog):
         self.bot = bot
     
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="raid")
     async def raid(self, ctx: commands.Context, *, phrase: str) -> None:
         """Add a phrase to the raid filter.
@@ -21,9 +23,6 @@ class AntiRaid(commands.Cog):
         phrase : str
             Phrase to add
         """
-
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument("You need to be at least an Administrator to run that command.")
         
         done = await self.bot.settings.add_raid_phrase(phrase)
         if not done:
@@ -34,6 +33,7 @@ class AntiRaid(commands.Cog):
             await ctx.send(embed=discord.Embed(color=discord.Color.blurple(), description=f"Added {phrase} to the raid phrase list! This phrase will expire in one week."))
     
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="removeraid")
     async def removeraid(self, ctx: commands.Context, *, phrase: str) -> None:
         """Remove a phrase from the raid filter.
@@ -47,9 +47,6 @@ class AntiRaid(commands.Cog):
         phrase : str
             Phrase to remove
         """
-
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument("You need to be at least an Administrator to run that command.")
         
         word = phrase.lower()
 
@@ -66,6 +63,7 @@ class AntiRaid(commands.Cog):
     @raid.error
     async def info_error(self, ctx, error):
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.BotMissingPermissions)

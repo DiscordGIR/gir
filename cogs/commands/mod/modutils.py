@@ -5,6 +5,7 @@ import typing
 import humanize
 
 import discord
+import cogs.utils.permission_checks as permissions
 from data.case import Case
 from discord.ext import commands
 
@@ -14,6 +15,7 @@ class ModUtils(commands.Cog):
         self.bot = bot
 
     @commands.guild_only()
+    @permissions.mod_and_up()
     @commands.command(name="rundown", aliases=['rd'])
     async def rundown(self, ctx: commands.Context, user: discord.Member) -> None:
         """Get information about a user (join/creation date, xp, etc.), defaults to command invoker.
@@ -28,13 +30,10 @@ class ModUtils(commands.Cog):
             User to get info about, by default the author of command, by default None
         """
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
-            raise commands.BadArgument(
-                "You need to be at least a Moderator to use that command.")
-
         await ctx.message.reply(embed=await self.prepare_rundown_embed(ctx, user))
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="transferprofile")
     async def transferprofile(self, ctx, oldmember: typing.Union[int, discord.Member], newmember: discord.Member):
         """Transfer all data in the database between users (admin only)
@@ -51,10 +50,6 @@ class ModUtils(commands.Cog):
             ID/@tag of the new user, must be in the
 
         """
-
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument(
-                "You need to be at least an Administrator to use that command.")
 
         if isinstance(oldmember, int):
             try:
@@ -81,6 +76,7 @@ class ModUtils(commands.Cog):
             pass
 
     @commands.guild_only()
+    @permissions.guild_owner_and_up()
     @commands.command(name="clem")
     async def clem(self, ctx: commands.Context, user: discord.Member) -> None:
         """Sets user's XP and Level to 0, freezes XP, sets warn points to 599 (AARON ONLY)
@@ -96,10 +92,6 @@ class ModUtils(commands.Cog):
 
         """
 
-        # must be owner
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 7):
-            raise commands.BadArgument(
-                "You need to be Aaron to use that command.")
         if user.id == ctx.author.id:
             await ctx.message.add_reaction("🤔")
             raise commands.BadArgument("You can't call that on yourself.")
@@ -130,6 +122,7 @@ class ModUtils(commands.Cog):
         await ctx.message.reply(f"{user.mention} was put on clem.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
 
     @commands.guild_only()
+    @permissions.mod_and_up()
     @commands.command(name="musicban")
     async def musicban(self, ctx: commands.Context, user: discord.Member) -> None:
         """Ban a user from using music commands (mod only)
@@ -144,10 +137,6 @@ class ModUtils(commands.Cog):
             User to ban from music
         """
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
-            raise commands.BadArgument(
-                "You need to be at least a Moderator to use that command.")
-
         if user.id == self.bot.user.id:
             await ctx.message.add_reaction("🤔")
             raise commands.BadArgument("You can't call that on me :(")
@@ -159,6 +148,7 @@ class ModUtils(commands.Cog):
         await ctx.send("Done", delete_after=5)
 
     @commands.guild_only()
+    @permissions.mod_and_up()
     @commands.command(name="birthdayexclude")
     async def birthdayexclude(self, ctx: commands.Context, user: discord.Member) -> None:
         """Remove a user's birthday (mod only)
@@ -172,10 +162,6 @@ class ModUtils(commands.Cog):
         user : discord.Member
             User to ban from birthdays
         """
-
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
-            raise commands.BadArgument(
-                "You need to be at least a Moderator to use that command.")
 
         if user.id == self.bot.user.id:
             await ctx.message.add_reaction("🤔")
@@ -196,6 +182,7 @@ class ModUtils(commands.Cog):
         await ctx.message.reply(f"{user.mention} was banned from birthdays.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
 
     @commands.guild_only()
+    @permissions.mod_and_up()
     @commands.command(name="removebirthday")
     async def removebirthday(self, ctx: commands.Context, user: discord.Member) -> None:
         """Remove a user's birthday (mod only)
@@ -209,10 +196,6 @@ class ModUtils(commands.Cog):
         user : discord.Member
             User to remove birthday of
         """
-
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
-            raise commands.BadArgument(
-                "You need to be at least a Moderator to use that command.")
 
         if user.id == self.bot.user.id:
             await ctx.message.add_reaction("🤔")
@@ -238,6 +221,7 @@ class ModUtils(commands.Cog):
         await ctx.message.delete(delay=5)
 
     @commands.guild_only()
+    @permissions.mod_and_up()
     @commands.command(name="setbirthday")
     async def setbirthday(self, ctx: commands.Context, user: discord.Member, month: int, date: int) -> None:
         """Override a user's birthday (mod only)
@@ -255,11 +239,6 @@ class ModUtils(commands.Cog):
         date : int
             Date of birthday
         """
-
-        # must be mod
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
-            raise commands.BadArgument(
-                "You need to be at least a Moderator to use that command.")
 
         if user.id == self.bot.user.id:
             await ctx.message.add_reaction("🤔")
@@ -364,6 +343,7 @@ class ModUtils(commands.Cog):
     @clem.error
     async def info_error(self, ctx, error):
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.BotMissingPermissions)

@@ -112,11 +112,6 @@ class Utilities(commands.Cog):
             Name of command
         """
         
-        bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(
-                f"Command only allowed in <#{bot_chan}>")
-
         await ctx.message.delete(delay=5)
         command = self.bot.get_command(command_arg.lower())
         if command:
@@ -152,6 +147,7 @@ class Utilities(commands.Cog):
     @help_comm.error
     async def info_error(self, ctx, error):
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)

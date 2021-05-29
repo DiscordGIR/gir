@@ -6,6 +6,7 @@ import json
 import aiohttp
 import urllib
 from datetime import datetime
+import cogs.utils.permission_checks as permissions
 from discord.ext import commands, menus
 from yarl import URL
 
@@ -121,10 +122,9 @@ class Parcility(commands.Cog):
         await menu.start(ctx)
     
     @commands.command(name="repo")
+    @permissions.bot_channel_only_unless_mod()
     @commands.guild_only()
     async def repo(self, ctx, *, repo):
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id == self.bot.settings.guild().channel_general:
-            raise commands.BadArgument("This command cannot be used here.")
         
         data = await self.repo_request(repo)
         repourl = data.get('repo')
@@ -175,7 +175,7 @@ class Parcility(commands.Cog):
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
-            or isinstance(error, Permissions.PermissionsFailure)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)

@@ -201,6 +201,7 @@ class UserInfo(commands.Cog):
         await ctx.message.reply(embed=embed)
 
     @commands.guild_only()
+    @permissions.bot_channel_only_unless_mod()
     @commands.command(name="xptop", aliases=["leaderboard"])
     async def xptop(self, ctx):
         """Show XP leaderboard for top 100, ranked highest to lowest.
@@ -211,11 +212,6 @@ class UserInfo(commands.Cog):
 
         """
 
-        bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(
-                f"Command only allowed in <#{bot_chan}>")
-
         results = enumerate(await self.bot.settings.leaderboard())
         # ctx.user_cache = self.user_cache
         results = [ (i, m) for (i, m) in results if ctx.guild.get_member(m._id) is not None][0:100]
@@ -225,6 +221,7 @@ class UserInfo(commands.Cog):
         await menus.start(ctx)
 
     @commands.guild_only()
+    @permissions.bot_channel_only_unless_mod()
     @commands.command(name="warnpoints", aliases=["wp"])
     async def warnpoints(self, ctx, user: discord.Member = None):
         """Show a user's warnpoints (mod only)
@@ -241,11 +238,6 @@ class UserInfo(commands.Cog):
         """
 
         user = user or ctx.author
-
-        bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(
-                f"Command only allowed in <#{bot_chan}>")
 
         if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user.id != ctx.author.id:
             raise commands.BadArgument(
@@ -329,6 +321,7 @@ class UserInfo(commands.Cog):
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)

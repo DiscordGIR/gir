@@ -1,6 +1,7 @@
 import traceback
 
 import discord
+import cogs.utils.permission_checks as permissions
 from data.filterword import FilterWord
 from discord.ext import commands
 from discord.ext import menus
@@ -42,6 +43,7 @@ class Filters(commands.Cog):
         self.bot = bot
 
     @commands.guild_only()
+    @permissions.mod_and_up()
     @commands.command(name="offlineping")
     async def offlineping(self, ctx, val: bool):
         """Bot will ping for reports when offline (mod only)
@@ -57,11 +59,6 @@ class Filters(commands.Cog):
 
         """
 
-        # must be at least a mod
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
-            raise commands.BadArgument(
-                "You need to be a moderator or higher to use that command.")
-
         cur = await self.bot.settings.user(ctx.author.id)
         cur.offline_report_ping = val
         cur.save()
@@ -72,6 +69,7 @@ class Filters(commands.Cog):
             await ctx.send("You won't be pinged for reports when offline")
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="filter")
     async def filteradd(self, ctx, notify: bool, bypass: int, *, phrase: str) -> None:
         """Add a word to filter (admin only)
@@ -90,12 +88,6 @@ class Filters(commands.Cog):
             Phrase to filter
         """
 
-        # must be at least admin
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            await ctx.message.delete()
-            raise commands.BadArgument(
-                "You need to be an Administrator or higher to use that command.")
-
         fw = FilterWord()
         fw.bypass = bypass
         fw.notify = notify
@@ -109,16 +101,12 @@ class Filters(commands.Cog):
         await ctx.message.reply(f"Added new word to filter! This filter {'will' if notify else 'will not'} ping for reports, level {bypass} can bypass it, and the phrase is {phrase}")
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="filterlist")
     async def filterlist(self, ctx):
         """List filtered words (admin only)
 
         """
-
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            await ctx.message.delete()
-            raise commands.BadArgument(
-                "You need to be an Administrator or higher to use that command.")
 
         filters = self.bot.settings.guild().filter_words
         if len(filters) == 0:
@@ -132,6 +120,7 @@ class Filters(commands.Cog):
         await menus.start(ctx)
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="piracy")
     async def piracy(self, ctx, *, word: str):
         """Mark a word as piracy, will be ignored in #dev (admin only)
@@ -146,11 +135,6 @@ class Filters(commands.Cog):
             Word to mark as piracy
 
         """
-        # must be at least admin
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            await ctx.message.delete()
-            raise commands.BadArgument(
-                "You need to be an Administrator or higher to use that command.")
 
         word = word.lower()
 
@@ -167,6 +151,7 @@ class Filters(commands.Cog):
         await ctx.message.delete(delay=5)
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="filterremove")
     async def filterremove(self, ctx, *, word: str):
         """Remove word from filter (admin only)
@@ -181,11 +166,6 @@ class Filters(commands.Cog):
             Word to remove
 
         """
-        # must be at least admin
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            await ctx.message.delete()
-            raise commands.BadArgument(
-                "You need to be an Administrator or higher to use that command.")
 
         word = word.lower()
 
@@ -200,6 +180,7 @@ class Filters(commands.Cog):
         await ctx.message.delete(delay=5)
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="whitelist")
     async def whitelist(self, ctx, id: int):
         """Whitelist a guild from invite filter (admin only)
@@ -215,12 +196,6 @@ class Filters(commands.Cog):
 
         """
 
-        # must be at least admin
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            await ctx.message.delete()
-            raise commands.BadArgument(
-                "You need to be an Administrator or higher to use that command.")
-
         if await self.bot.settings.add_whitelisted_guild(id):
             await ctx.message.reply("Whitelisted.", delete_after=10)
         else:
@@ -228,6 +203,7 @@ class Filters(commands.Cog):
         await ctx.message.delete(delay=10)
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="ignorechannel")
     async def ignorechannel(self, ctx, channel: discord.TextChannel) -> None:
         """Ignore channel in filter (admin only)
@@ -243,12 +219,6 @@ class Filters(commands.Cog):
 
         """
 
-        # must be at least admin
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            await ctx.message.delete()
-            raise commands.BadArgument(
-                "You need to be an Administrator or higher to use that command.")
-
         if await self.bot.settings.add_ignored_channel(channel.id):
             await ctx.message.reply("Ignored.", delete_after=10)
         else:
@@ -256,6 +226,7 @@ class Filters(commands.Cog):
         await ctx.message.delete(delay=10)
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="unignorechannel")
     async def unignorechannel(self, ctx, channel: discord.TextChannel) -> None:
         """Unignore channel in filter (admin only)
@@ -270,12 +241,6 @@ class Filters(commands.Cog):
             Channel to unignore
         """
 
-        # must be at least admin
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            await ctx.message.delete()
-            raise commands.BadArgument(
-                "You need to be an Administrator or higher to use that command.")
-
         if await self.bot.settings.remove_ignored_channel(channel.id):
             await ctx.message.reply("Unignored.", delete_after=10)
         else:
@@ -284,6 +249,7 @@ class Filters(commands.Cog):
 
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="blacklist")
     async def blacklist(self, ctx, id: int):
         """Blacklist a guild from invite filter (admin only)
@@ -299,12 +265,6 @@ class Filters(commands.Cog):
 
         """
 
-        # must be at least admin
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            await ctx.message.delete()
-            raise commands.BadArgument(
-                "You need to be an Administrator or higher to use that command.")
-
         if await self.bot.settings.remove_whitelisted_guild(id):
             await ctx.message.reply("Blacklisted.", delete_after=10)
         else:
@@ -312,6 +272,7 @@ class Filters(commands.Cog):
         await ctx.message.delete(delay=10)
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="falsepositive")
     async def falsepositive(self, ctx, *, word: str):
         """Disabling enhanced filter checks on a word (admin only)
@@ -326,10 +287,6 @@ class Filters(commands.Cog):
             Word to mark as false positive
 
         """
-        # must be at least admin
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument(
-                "You need to be an administator or higher to use that command.")
 
         word = word.lower()
 
@@ -357,6 +314,7 @@ class Filters(commands.Cog):
     @unignorechannel.error
     async def info_error(self, ctx, error):
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
