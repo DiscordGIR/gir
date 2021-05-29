@@ -175,6 +175,7 @@ class Parcility(commands.Cog):
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, Permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)

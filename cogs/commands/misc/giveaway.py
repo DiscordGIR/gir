@@ -3,6 +3,7 @@ import datetime
 import random
 import traceback
 
+import cogs.utils.permission_checks as permissions
 import discord
 import humanize
 import pytimeparse
@@ -50,16 +51,13 @@ class Giveaway(commands.Cog):
         return ret
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
     @commands.group()
     async def giveaway(self, ctx):
         """
         Manage giveaways using !giveaway <action>, choosing from below...
         """
-
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument(
-                "You need to be an Administrator or higher to use that command.")
 
         if ctx.invoked_subcommand is None:
             raise commands.BadArgument("Invalid giveaway subcommand passed. Options: `start`, `reroll`, `end`")
@@ -274,6 +272,7 @@ class Giveaway(commands.Cog):
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, Permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)

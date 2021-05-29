@@ -2,6 +2,7 @@ import traceback
 import typing
 from math import floor
 
+import cogs.utils.permission_checks as permissions
 import discord
 from discord.ext import commands, menus
 
@@ -165,6 +166,7 @@ class UserInfo(commands.Cog):
         await ctx.message.reply(embed=embed)
 
     @commands.guild_only()
+    @permissions.bot_channel_only_unless_mod()
     @commands.command(name="xpstats", aliases=["xp"])
     async def xp(self, ctx, user: discord.Member = None):
         """Show your or another user's XP
@@ -179,11 +181,6 @@ class UserInfo(commands.Cog):
             User to get XP of, by default None
 
         """
-
-        bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(
-                f"Command only allowed in <#{bot_chan}>")
 
         if user is None:
             user = ctx.author

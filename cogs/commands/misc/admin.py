@@ -1,6 +1,7 @@
 import datetime as dt
 import traceback
 
+import cogs.utils.permission_checks as permissions
 import discord
 from discord.ext import commands
 
@@ -11,13 +12,11 @@ class Admin(commands.Cog):
 
     @commands.command(name="setpfp")
     @commands.guild_only()
+    @permissions.guild_owner_and_up()
     async def setpfp(self, ctx: commands.Context):
         """Set the bot's profile picture (admin only)
         """
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 7):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
         if len(ctx.message.attachments) < 1:
             raise commands.BadArgument("Please attach an image to use as the profile picture.")
         
@@ -28,6 +27,7 @@ class Admin(commands.Cog):
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)

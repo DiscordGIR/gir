@@ -2,6 +2,7 @@ import traceback
 
 import discord
 from discord.ext import commands
+import cogs.utils.permission_checks as permissions
 
 
 class Utilities(commands.Cog):
@@ -100,6 +101,7 @@ class Utilities(commands.Cog):
 
     @commands.command(name="usage", hidden=True)
     @commands.guild_only()
+    @permissions.bot_channel_only_unless_mod()
     @commands.has_permissions(add_reactions=True, embed_links=True)
     async def usage(self, ctx: commands.Context, *, command_arg: str):
         """Show usage of one command

@@ -10,6 +10,7 @@ import aiohttp
 import discord
 import humanize
 import pytimeparse
+import cogs.utils.permission_checks as permissions
 from discord.ext import commands
 from twemoji_parser import emoji_to_url
 
@@ -25,6 +26,7 @@ class Misc(commands.Cog):
         
     @commands.command(name="remindme")
     @commands.guild_only()
+    @permissions.bot_channel_only_unless_mod()
     async def remindme(self, ctx, dur: str, *, reminder: str):
         """Send yourself a reminder after a given time gap
 
@@ -39,10 +41,6 @@ class Misc(commands.Cog):
         reminder : str
             What to remind you of
         """
-         
-        bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>.")
         
         now = datetime.datetime.now()
         delta = pytimeparse.parse(dur)
@@ -113,8 +111,9 @@ class Misc(commands.Cog):
         bucket = self.spam_cooldown.get_bucket(message)
         return bucket.update_rate_limit()
 
-    @commands.command(name="avatar")
+    @commands.command(name="avatar", aliases=["pfp"])
     @commands.guild_only()
+    @permissions.bot_channel_only_unless_mod()
     async def avatar(self, ctx, member: discord.Member = None):
         """Post large version of a given user's avatar
 
@@ -126,12 +125,6 @@ class Misc(commands.Cog):
 
         if member is None:
             member = ctx.author
-
-        bot_chan = self.bot.settings.guild().channel_botspam
-
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(
-                f"Command only allowed in <#{bot_chan}>")
 
         await ctx.message.delete()
         embed = discord.Embed(title=f"{member}'s avatar")
@@ -222,6 +215,7 @@ class Misc(commands.Cog):
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)

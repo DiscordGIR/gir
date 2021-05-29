@@ -2,6 +2,7 @@ import traceback
 
 import datetime
 import asyncio
+import cogs.utils.permission_checks as permissions
 import discord
 from discord.ext import commands
 
@@ -12,6 +13,7 @@ class Genius(commands.Cog):
 
     @commands.command(name="commonissue")
     @commands.guild_only()
+    @permissions.genius_and_up()
     @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
     async def commonissue(self, ctx, *, title: str):
         """Submit a new common issue (Geniuses only)
@@ -29,9 +31,6 @@ class Genius(commands.Cog):
 
         if not ctx.guild.id == self.bot.settings.guild_id:
             return
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
 
         channel = ctx.guild.get_channel(self.bot.settings.guild().channel_common_issues)
         if not channel:
@@ -64,6 +63,7 @@ class Genius(commands.Cog):
         
     @commands.command(name="postembed")
     @commands.guild_only()
+    @permissions.genius_and_up()
     @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
     async def postembed(self, ctx, *, title: str):
         """Post an embed in the current channel (Geniuses only)
@@ -81,9 +81,6 @@ class Genius(commands.Cog):
 
         if not ctx.guild.id == self.bot.settings.guild_id:
             return
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
 
         channel = ctx.channel
         description = None
@@ -127,6 +124,7 @@ class Genius(commands.Cog):
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)

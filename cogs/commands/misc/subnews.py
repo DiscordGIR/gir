@@ -2,6 +2,7 @@ import traceback
 
 import discord
 from discord.ext import commands
+import cogs.utils.permission_checks as permissions
 
 
 class SubNews(commands.Cog):
@@ -10,6 +11,7 @@ class SubNews(commands.Cog):
 
     @commands.command(name="subnews")
     @commands.guild_only()
+    @permissions.submod_or_admin_and_up()
     async def subnews(self, ctx, *, description: str):
         """Post a new subreddit news post (subreddit mods only).
 
@@ -28,12 +30,6 @@ class SubNews(commands.Cog):
 
         db = self.bot.settings.guild()
         submod = ctx.guild.get_role(db.role_sub_mod)
-        if not submod:
-            return
-
-        if not (self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) or submod in ctx.author.roles):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
 
         channel = ctx.guild.get_channel(db.channel_subnews)
         if not channel:
@@ -57,6 +53,7 @@ class SubNews(commands.Cog):
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)

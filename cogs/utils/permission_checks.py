@@ -48,15 +48,72 @@ async def check_invokee(ctx, user):
                         raise PermissionsFailure(
                             message=f"{user.mention}'s top role is the same or higher than yours!")
 
-def genius_and_up():
+####################
+# Channels
+####################
+
+def bot_channel_only_unless_mod():
     async def predicate(ctx):
-        if not ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
-            raise PermissionsFailure(
-                "You do not have permission to use this command.")
+        bot_chan = ctx.bot.settings.guild().channel_botspam
+        if not ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
+            raise PermissionsFailure(f"Command only allowed in <#{bot_chan}>.")
         
         return True
     return commands.check(predicate)
 
+####################
+# Member Roles
+####################
+
+def memplus_or_booster_and_up():
+    async def predicate(ctx):
+        if not ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 1):
+            raise PermissionsFailure("You do not have permission to use this command.")
+        
+        return True
+    return commands.check(predicate)
+
+def mempro_and_up():
+    async def predicate(ctx):
+        if not ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 2):
+            raise PermissionsFailure("You do not have permission to use this command.")
+        
+        return True
+    return commands.check(predicate)
+
+def memed_and_up():
+    async def predicate(ctx):
+        if not ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 3):
+            raise PermissionsFailure("You do not have permission to use this command.")
+        
+        return True
+    return commands.check(predicate)
+
+def genius_and_up():
+    async def predicate(ctx):
+        if not ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
+            raise PermissionsFailure("You do not have permission to use this command.")
+        
+        return True
+    return commands.check(predicate)
+
+####################
+# Staff Roles
+####################
+
+def submod_or_admin_and_up():
+    async def predicate(ctx):
+        db = ctx.bot.settings.guild()
+        submod = ctx.guild.get_role(db.role_sub_mod)
+        if not submod:
+            return
+
+        if not (ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) or submod in ctx.author.roles):
+            raise commands.BadArgument(
+                "You do not have permission to use this command.")
+
+        return True
+    return commands.check(predicate)
 
 def mod_and_up():
     async def predicate(ctx):
@@ -67,10 +124,31 @@ def mod_and_up():
         return True
     return commands.check(predicate)
 
-
 def admin_and_up():
     async def predicate(ctx):
         if not ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
+            raise PermissionsFailure(
+                "You do not have permission to use this command.")
+        
+        return True
+    return commands.check(predicate)
+
+####################
+# Other
+####################
+
+def guild_owner_and_up():
+    async def predicate(ctx):
+        if not ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 7):
+            raise PermissionsFailure(
+                "You do not have permission to use this command.")
+        
+        return True
+    return commands.check(predicate)
+
+def bot_owner_and_up():
+    async def predicate(ctx):
+        if not ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 9):
             raise PermissionsFailure(
                 "You do not have permission to use this command.")
         

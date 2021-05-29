@@ -2,6 +2,7 @@ import discord
 from datetime import datetime, timedelta
 import pytz
 import traceback
+import cogs.utils.permission_checks as permissions
 from discord.ext import tasks, commands
 
 class Birthday(commands.Cog):
@@ -49,6 +50,8 @@ class Birthday(commands.Cog):
                 pass
             
     @commands.guild_only()
+    @permissions.bot_channel_only_unless_mod()
+    @permissions.memplus_or_booster_and_up()
     @commands.command(name="mybirthday")
     async def mybirthday(self, ctx: commands.Context, month: int, date: int) -> None:
         """Set your birthday. The birthday role will be given to you on that day. THIS COMMAND IS ONE TIME USE ONLY!
@@ -66,11 +69,6 @@ class Birthday(commands.Cog):
         """
 
         user = ctx.author
-
-        bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(
-                f"Command only allowed in <#{bot_chan}>")
 
         if not (self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 1) or user.premium_since is not None):
             raise commands.BadArgument(
@@ -124,6 +122,7 @@ class Birthday(commands.Cog):
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.BotMissingPermissions)
