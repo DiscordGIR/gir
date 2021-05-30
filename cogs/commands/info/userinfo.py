@@ -3,6 +3,7 @@ import typing
 from math import floor
 
 import cogs.utils.permission_checks as permissions
+import cogs.utils.context as context
 import discord
 from discord.ext import commands, menus
 
@@ -90,7 +91,7 @@ class UserInfo(commands.Cog):
 
     @commands.guild_only()
     @commands.command(name="userinfo", aliases=["info"])
-    async def userinfo(self, ctx: commands.Context, user: typing.Union[discord.Member, int] = None) -> None:
+    async def userinfo(self, ctx: context.Context, user: typing.Union[discord.Member, int] = None) -> None:
         """Get information about a user (join/creation date, xp, etc.), defaults to command invoker.
 
         Example usage:
@@ -106,7 +107,7 @@ class UserInfo(commands.Cog):
         if user is None:
             user = ctx.author
 
-        is_mod = self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5)
+        is_mod = ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5)
 
         if isinstance(user, int):
             if not is_mod:
@@ -122,7 +123,7 @@ class UserInfo(commands.Cog):
             raise commands.BadArgument(
                 "You do not have permission to use this command.")
 
-        bot_chan = self.bot.settings.guild().channel_botspam
+        bot_chan = ctx.settings.guild().channel_botspam
         if not is_mod and ctx.channel.id != bot_chan:
             raise commands.BadArgument(
                 f"Command only allowed in <#{bot_chan}>")
@@ -142,7 +143,7 @@ class UserInfo(commands.Cog):
             roles = "No roles."
             joined = f"User not in {ctx.guild.name}."
 
-        results = (await self.bot.settings.user(user.id))
+        results = (await ctx.settings.user(user.id))
 
         created = user.created_at.strftime("%B %d, %Y, %I:%M %p") + " UTC"
 
@@ -168,7 +169,7 @@ class UserInfo(commands.Cog):
     @commands.guild_only()
     @permissions.bot_channel_only_unless_mod()
     @commands.command(name="xpstats", aliases=["xp"])
-    async def xp(self, ctx, user: discord.Member = None):
+    async def xp(self, ctx: context.Context, user: discord.Member = None):
         """Show your or another user's XP
 
         Example usage:
@@ -185,7 +186,7 @@ class UserInfo(commands.Cog):
         if user is None:
             user = ctx.author
 
-        results = await self.bot.settings.user(user.id)
+        results = await ctx.settings.user(user.id)
 
         embed = discord.Embed(title="Level Statistics")
         embed.color = user.top_role.color
@@ -194,7 +195,7 @@ class UserInfo(commands.Cog):
             name="Level", value=results.level if not results.is_clem else "0", inline=True)
         embed.add_field(
             name="XP", value=f'{results.xp}/{xp_for_next_level(results.level)}' if not results.is_clem else "0/0", inline=True)
-        rank, overall = await self.bot.settings.leaderboard_rank(results.xp) 
+        rank, overall = await ctx.settings.leaderboard_rank(results.xp) 
         embed.add_field(name="Rank", value=f"{rank}/{overall}" if not results.is_clem else f"{overall}/{overall}", inline=True)
         embed.set_footer(text=f"Requested by {ctx.author}")
 
@@ -203,7 +204,7 @@ class UserInfo(commands.Cog):
     @commands.guild_only()
     @permissions.bot_channel_only_unless_mod()
     @commands.command(name="xptop", aliases=["leaderboard"])
-    async def xptop(self, ctx):
+    async def xptop(self, ctx: context.Context):
         """Show XP leaderboard for top 100, ranked highest to lowest.
 
         Example usage:
@@ -212,7 +213,7 @@ class UserInfo(commands.Cog):
 
         """
 
-        results = enumerate(await self.bot.settings.leaderboard())
+        results = enumerate(await ctx.settings.leaderboard())
         # ctx.user_cache = self.user_cache
         results = [ (i, m) for (i, m) in results if ctx.guild.get_member(m._id) is not None][0:100]
         menus = MenuPages(source=LeaderboardSource(
@@ -223,7 +224,7 @@ class UserInfo(commands.Cog):
     @commands.guild_only()
     @permissions.bot_channel_only_unless_mod()
     @commands.command(name="warnpoints", aliases=["wp"])
-    async def warnpoints(self, ctx, user: discord.Member = None):
+    async def warnpoints(self, ctx: context.Context, user: discord.Member = None):
         """Show a user's warnpoints (mod only)
 
         Example usage:
@@ -239,11 +240,11 @@ class UserInfo(commands.Cog):
 
         user = user or ctx.author
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user.id != ctx.author.id:
+        if not ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user.id != ctx.author.id:
             raise commands.BadArgument(
                 f"You don't have permissions to check others' warnpoints.")
 
-        results = await self.bot.settings.user(user.id)
+        results = await ctx.settings.user(user.id)
 
         embed = discord.Embed(title="Warn Points")
         embed.color = discord.Color.orange()
@@ -258,7 +259,7 @@ class UserInfo(commands.Cog):
 
     @commands.guild_only()
     @commands.command(name="cases")
-    async def cases(self, ctx, user: typing.Union[discord.Member, int] = None):
+    async def cases(self, ctx: context.Context, user: typing.Union[discord.Member, int] = None):
         """Show list of cases of a user (mod only)
 
         Example usage:
@@ -276,17 +277,17 @@ class UserInfo(commands.Cog):
             user = ctx.author
             ctx.args[2] = user
 
-        bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
+        bot_chan = ctx.settings.guild().channel_botspam
+        if not ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
             raise commands.BadArgument(
                 f"Command only allowed in <#{bot_chan}>")
 
         if not isinstance(user, int):
-            if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user.id != ctx.author.id:
+            if not ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user.id != ctx.author.id:
                 raise commands.BadArgument(
                     f"You don't have permissions to check others' cases.")
         else:
-            if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+            if not ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
                 raise commands.BadArgument(
                     f"You don't have permissions to check others' cases.")
 
@@ -298,7 +299,7 @@ class UserInfo(commands.Cog):
                     f"Couldn't find user with ID {user}")
             ctx.args[2] = user
 
-        results = await self.bot.settings.cases(user.id)
+        results = await ctx.settings.cases(user.id)
         if len(results.cases) == 0:
             if isinstance(user, int):
                 raise commands.BadArgument(
@@ -318,7 +319,7 @@ class UserInfo(commands.Cog):
     @warnpoints.error
     @xp.error
     @xptop.error
-    async def info_error(self, ctx, error):
+    async def info_error(self, ctx: context.Context, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, permissions.PermissionsFailure)
@@ -326,9 +327,9 @@ class UserInfo(commands.Cog):
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
                 or isinstance(error, commands.NoPrivateMessage)):
-            await self.bot.send_error(ctx, error)
+            await ctx.send_error(ctx, error)
         else:
-            await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
+            await ctx.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
 
 
