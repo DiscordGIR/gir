@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+import cogs.utils.permission_checks as permissions
 import traceback
 import asyncio
 import re
@@ -12,6 +13,7 @@ class ReactionRoles(commands.Cog):
 
     @commands.command(name='setreactions', hidden=True)
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
     async def setreactions(self, ctx: commands.Context, message_id: int):
         """Prompt to add multiple reaction roles to a message (admin only)
@@ -118,6 +120,7 @@ class ReactionRoles(commands.Cog):
 
     @commands.command(name="newreaction")
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
     async def newreaction(self, ctx, message_id: int):
         """Add one new reaction to a given message
@@ -229,6 +232,7 @@ class ReactionRoles(commands.Cog):
     @commands.command(name="movereactions")
     @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
     @commands.guild_only()
+    @permissions.admin_and_up()
     async def movereactions(self, ctx, before: int, after: int):
         """Move reactions from one message to another.
 
@@ -290,6 +294,7 @@ class ReactionRoles(commands.Cog):
         await ctx.send(the_string, delete_after=10)
 
     @commands.command(name="repostreactions")
+    @permissions.admin_and_up()
     @commands.guild_only()
     async def repostreactions(self, ctx):
         """Repost all reactions to messages with reaction roles (admin only)
@@ -365,6 +370,7 @@ class ReactionRoles(commands.Cog):
 
     @commands.command(name="postembeds")
     @commands.guild_only()
+    @permissions.admin_and_up()
     async def postembeds(self, ctx):
         """Post the reaction role embeds (admin only)
         """
@@ -427,6 +433,7 @@ class ReactionRoles(commands.Cog):
     async def info_error(self, ctx, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.BotMissingPermissions)

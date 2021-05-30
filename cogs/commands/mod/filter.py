@@ -313,6 +313,7 @@ class Filters(commands.Cog):
     @ignorechannel.error
     @unignorechannel.error
     async def info_error(self, ctx, error):
+        await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)

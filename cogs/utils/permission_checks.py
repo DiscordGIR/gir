@@ -9,7 +9,7 @@ class PermissionsFailure(commands.BadArgument):
 class ModsAndAboveMember(commands.Converter):
     async def convert(self, ctx, argument):
         user = await commands.MemberConverter().convert(ctx, argument)
-        await self.check_invokee(ctx, user)
+        await check_invokee(ctx, user)
         return user
 
 class ModsAndAboveExternal(commands.Converter):

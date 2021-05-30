@@ -335,6 +335,7 @@ class ModUtils(commands.Cog):
 
         return embed
 
+    @musicban.error
     @birthdayexclude.error
     @removebirthday.error
     @setbirthday.error
@@ -342,6 +343,7 @@ class ModUtils(commands.Cog):
     @rundown.error
     @clem.error
     async def info_error(self, ctx, error):
+        await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
