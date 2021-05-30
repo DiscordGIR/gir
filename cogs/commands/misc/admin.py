@@ -24,7 +24,7 @@ class Admin(commands.Cog):
         await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description="Done!"), delete_after=5)
         
     @setpfp.error
-    async def info_error(self, ctx, error):
+    async def info_error(self,  ctx: context.Context, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, permissions.PermissionsFailure)
@@ -35,9 +35,9 @@ class Admin(commands.Cog):
             or isinstance(error, commands.CommandOnCooldown)
             or isinstance(error, commands.CommandInvokeError)
                 or isinstance(error, commands.NoPrivateMessage)):
-            await self.bot.send_error(ctx, error)
+            await ctx.send_error(ctx, error)
         else:
-            await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
+            await ctx.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
 
 

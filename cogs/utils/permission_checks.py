@@ -7,13 +7,13 @@ class PermissionsFailure(commands.BadArgument):
 
 
 class ModsAndAboveMember(commands.Converter):
-    async def convert(self, ctx, argument):
+    async def convert(self,  ctx: context.Context, argument):
         user = await commands.MemberConverter().convert(ctx, argument)
         await check_invokee(ctx, user)
         return user
 
 class ModsAndAboveExternal(commands.Converter):
-    async def convert(self, ctx, argument):
+    async def convert(self,  ctx: context.Context, argument):
         try:
             user = await commands.MemberConverter().convert(ctx, argument)
         except PermissionsFailure as e:

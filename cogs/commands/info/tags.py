@@ -6,6 +6,7 @@ import discord
 from data.tag import Tag
 import datetime
 import cogs.utils.permission_checks as permissions
+import cogs.utils.context as context
 from discord.ext import commands
 from discord.ext import menus
 
@@ -77,7 +78,7 @@ class Tags(commands.Cog):
     @commands.guild_only()
     @permissions.genius_or_submod_and_up()
     @commands.command(name="addtag", aliases=['addt'])
-    async def addtag(self, ctx, name: str, *, content: str) -> None:
+    async def addtag(self, ctx: context.Context, name: str, *, content: str) -> None:
         """Add a tag. Optionally attach an iamge. (Genius only)
 
         Example usage:
@@ -95,7 +96,7 @@ class Tags(commands.Cog):
         if not name.isalnum():
             raise commands.BadArgument("Tag name must be alphanumeric.")
 
-        if (await self.bot.settings.get_tag(name.lower())) is not None:
+        if (await ctx.settings.get_tag(name.lower())) is not None:
             raise commands.BadArgument("Tag with that name already exists.")
 
         tag = Tag()
@@ -110,7 +111,7 @@ class Tags(commands.Cog):
                 raise commands.BadArgument("Attached file was not an image.")
             tag.image.put(image, content_type=_type)
 
-        await self.bot.settings.add_tag(tag)
+        await ctx.settings.add_tag(tag)
         
         file = tag.image.read()
         if file is not None:
@@ -146,11 +147,11 @@ class Tags(commands.Cog):
     @commands.guild_only()
     @permissions.genius_or_submod_and_up()
     @commands.command(name="taglist", aliases=['tlist'])
-    async def taglist(self, ctx):
+    async def taglist(self, ctx: context.Context):
         """List all tags
         """
 
-        tags = sorted(self.bot.settings.guild().tags, key=lambda tag: tag.name)
+        tags = sorted(ctx.settings.guild().tags, key=lambda tag: tag.name)
 
         if len(tags) == 0:
             raise commands.BadArgument("There are no tags defined.")
@@ -163,7 +164,7 @@ class Tags(commands.Cog):
     @commands.guild_only()
     @permissions.genius_or_submod_and_up()
     @commands.command(name="deltag", aliases=['dtag'])
-    async def deltag(self, ctx, name: str):
+    async def deltag(self, ctx: context.Context, name: str):
         """Delete tag (geniuses only)
 
         Example usage:
@@ -179,17 +180,17 @@ class Tags(commands.Cog):
 
         name = name.lower()
 
-        tag = await self.bot.settings.get_tag(name)
+        tag = await ctx.settings.get_tag(name)
         if tag is None:
             raise commands.BadArgument("That tag does not exist.")
 
-        await self.bot.settings.remove_tag(name)
+        await ctx.settings.remove_tag(name)
         await ctx.message.reply("Deleted.", delete_after=5)
         await ctx.message.delete(delay=5)
 
     @commands.guild_only()
     @commands.command(name="tag", aliases=['t'])
-    async def tag(self, ctx, name: str):
+    async def tag(self, ctx: context.Context, name: str):
         """Use a tag with a given name.
         
         Example usage
@@ -203,11 +204,11 @@ class Tags(commands.Cog):
         """
 
         name = name.lower()
-        tag = await self.bot.settings.get_tag(name)
+        tag = await ctx.settings.get_tag(name)
         
         if tag is None:
             raise commands.BadArgument("That tag does not exist.")
-        if not (self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) or ctx.guild.get_role(self.bot.settings.guild().role_sub_mod) in ctx.author.roles):
+        if not (ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5) or ctx.guild.get_role(ctx.settings.guild().role_sub_mod) in ctx.author.roles):
             bucket = self.tag_cooldown.get_bucket(tag.name)
             current = ctx.message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
 
@@ -223,7 +224,7 @@ class Tags(commands.Cog):
     @commands.guild_only()
     @permissions.genius_or_submod_and_up()
     @commands.command(name="edittag", aliases=['et'])
-    async def edittag(self, ctx, name: str, *, content: str) -> None:
+    async def edittag(self, ctx: context.Context, name: str, *, content: str) -> None:
         """Edit a tag's body.
         
         Example usage
@@ -237,7 +238,7 @@ class Tags(commands.Cog):
         """
 
         name = name.lower()
-        tag = await self.bot.settings.get_tag(name)
+        tag = await ctx.settings.get_tag(name)
         
         if tag is None:
             raise commands.BadArgument("That tag does not exist.")
@@ -251,7 +252,7 @@ class Tags(commands.Cog):
         else:
             tag.image = None
 
-        if not await self.bot.settings.edit_tag(tag):
+        if not await ctx.settings.edit_tag(tag):
             raise commands.BadArgument("An error occurred editing that tag.")
         
         file = tag.image.read()
@@ -266,7 +267,7 @@ class Tags(commands.Cog):
     @taglist.error
     @deltag.error
     @addtag.error
-    async def info_error(self, ctx, error):
+    async def info_error(self, ctx: context.Context, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, permissions.PermissionsFailure)
@@ -274,9 +275,9 @@ class Tags(commands.Cog):
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
                 or isinstance(error, commands.NoPrivateMessage)):
-            await self.bot.send_error(ctx, error)
+            await ctx.send_error(ctx, error)
         else:
-            await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
+            await ctx.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
 
 

@@ -9,6 +9,7 @@ import humanize
 import pytimeparse
 from data.case import Case
 import cogs.utils.logs as logger
+import cogs.utils.context as context
 from discord.ext import commands
 from dotenv import find_dotenv, load_dotenv
 from fold_to_ascii import fold
@@ -80,6 +81,10 @@ class Bot(commands.Bot):
                     return
                                 
         await self.process_commands(message)
+
+    async def process_commands(self, message):
+        ctx = await self.get_context(message, cls=context.Context)
+        await self.invoke(ctx)
 
     async def filter(self, message):
         if not message.guild:
@@ -281,18 +286,9 @@ bot = Bot(command_prefix=get_prefix,
                    intents=intents, allowed_mentions=mentions)
 bot.max_messages = 10000
 
-
-async def send_error(ctx, error):
-    embed = discord.Embed(title=":(\nYour command ran into a problem")
-    embed.color = discord.Color.red()
-    embed.description = discord.utils.escape_markdown(f'{error}')
-    await ctx.send(embed=embed, delete_after=8)
-
-
 # Here we load our extensions(cogs) listed above in [initial_extensions].
 if __name__ == '__main__':
     bot.owner_id = int(os.environ.get("BOTTY_OWNER"))
-    bot.send_error = send_error
     bot.remove_command("help")
     for extension in initial_extensions:
         bot.load_extension(extension)

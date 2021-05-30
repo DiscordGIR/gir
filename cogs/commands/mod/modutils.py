@@ -6,6 +6,7 @@ import humanize
 
 import discord
 import cogs.utils.permission_checks as permissions
+import cogs.utils.context as context
 from data.case import Case
 from discord.ext import commands
 
@@ -17,7 +18,7 @@ class ModUtils(commands.Cog):
     @commands.guild_only()
     @permissions.mod_and_up()
     @commands.command(name="rundown", aliases=['rd'])
-    async def rundown(self, ctx: commands.Context, user: discord.Member) -> None:
+    async def rundown(self, ctx: context.Context, user: discord.Member) -> None:
         """Get information about a user (join/creation date, xp, etc.), defaults to command invoker.
 
         Example usage:
@@ -35,7 +36,7 @@ class ModUtils(commands.Cog):
     @commands.guild_only()
     @permissions.admin_and_up()
     @commands.command(name="transferprofile")
-    async def transferprofile(self, ctx, oldmember: typing.Union[int, discord.Member], newmember: discord.Member):
+    async def transferprofile(self,  ctx: context.Context, oldmember: typing.Union[int, discord.Member], newmember: discord.Member):
         """Transfer all data in the database between users (admin only)
 
         Example usage
@@ -58,7 +59,7 @@ class ModUtils(commands.Cog):
                 raise commands.BadArgument(
                     f"Couldn't find user with ID {oldmember}")
 
-        u, case_count = await self.bot.settings.transfer_profile(oldmember.id, newmember.id)
+        u, case_count = await ctx.settings.transfer_profile(oldmember.id, newmember.id)
 
         embed = discord.Embed(title="Transferred profile")
         embed.description = f"We transferred {oldmember.mention}'s profile to {newmember.mention}"
@@ -78,7 +79,7 @@ class ModUtils(commands.Cog):
     @commands.guild_only()
     @permissions.guild_owner_and_up()
     @commands.command(name="clem")
-    async def clem(self, ctx: commands.Context, user: discord.Member) -> None:
+    async def clem(self, ctx: context.Context, user: discord.Member) -> None:
         """Sets user's XP and Level to 0, freezes XP, sets warn points to 599 (AARON ONLY)
 
         Example usage:
@@ -99,14 +100,14 @@ class ModUtils(commands.Cog):
             await ctx.message.add_reaction("🤔")
             raise commands.BadArgument("You can't call that on me :(")
 
-        results = await self.bot.settings.user(user.id)
+        results = await ctx.settings.user(user.id)
         results.is_clem = True
         results.is_xp_frozen = True
         results.warn_points = 599
         results.save()
 
         case = Case(
-            _id=self.bot.settings.guild().case_id,
+            _id=ctx.settings.guild().case_id,
             _type="CLEM",
             mod_id=ctx.author.id,
             mod_tag=str(ctx.author),
@@ -115,16 +116,16 @@ class ModUtils(commands.Cog):
         )
 
         # increment DB's max case ID for next case
-        await self.bot.settings.inc_caseid()
+        await ctx.settings.inc_caseid()
         # add case to db
-        await self.bot.settings.add_case(user.id, case)
+        await ctx.settings.add_case(user.id, case)
 
         await ctx.message.reply(f"{user.mention} was put on clem.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
 
     @commands.guild_only()
     @permissions.mod_and_up()
     @commands.command(name="musicban")
-    async def musicban(self, ctx: commands.Context, user: discord.Member) -> None:
+    async def musicban(self, ctx: context.Context, user: discord.Member) -> None:
         """Ban a user from using music commands (mod only)
 
         Example usage:
@@ -141,7 +142,7 @@ class ModUtils(commands.Cog):
             await ctx.message.add_reaction("🤔")
             raise commands.BadArgument("You can't call that on me :(")
 
-        results = await self.bot.settings.user(user.id)
+        results = await ctx.settings.user(user.id)
         results.is_music_banned = True
         results.save()
         
@@ -150,7 +151,7 @@ class ModUtils(commands.Cog):
     @commands.guild_only()
     @permissions.mod_and_up()
     @commands.command(name="birthdayexclude")
-    async def birthdayexclude(self, ctx: commands.Context, user: discord.Member) -> None:
+    async def birthdayexclude(self, ctx: context.Context, user: discord.Member) -> None:
         """Remove a user's birthday (mod only)
 
         Example usage:
@@ -167,12 +168,12 @@ class ModUtils(commands.Cog):
             await ctx.message.add_reaction("🤔")
             raise commands.BadArgument("You can't call that on me :(")
 
-        results = await self.bot.settings.user(user.id)
+        results = await ctx.settings.user(user.id)
         results.birthday_excluded = True
         results.birthday = None
         results.save()
 
-        birthday_role = ctx.guild.get_role(self.bot.settings.guild().role_birthday)
+        birthday_role = ctx.guild.get_role(ctx.settings.guild().role_birthday)
         if birthday_role is None:
             return
 
@@ -184,7 +185,7 @@ class ModUtils(commands.Cog):
     @commands.guild_only()
     @permissions.mod_and_up()
     @commands.command(name="removebirthday")
-    async def removebirthday(self, ctx: commands.Context, user: discord.Member) -> None:
+    async def removebirthday(self, ctx: context.Context, user: discord.Member) -> None:
         """Remove a user's birthday (mod only)
 
         Example usage:
@@ -201,16 +202,16 @@ class ModUtils(commands.Cog):
             await ctx.message.add_reaction("🤔")
             raise commands.BadArgument("You can't call that on me :(")
 
-        results = await self.bot.settings.user(user.id)
+        results = await ctx.settings.user(user.id)
         results.birthday = None
         results.save()
 
         try:
-            self.bot.settings.tasks.cancel_unbirthday(user.id)
+            ctx.settings.tasks.cancel_unbirthday(user.id)
         except Exception:
             pass
 
-        birthday_role = ctx.guild.get_role(self.bot.settings.guild().role_birthday)
+        birthday_role = ctx.guild.get_role(ctx.settings.guild().role_birthday)
         if birthday_role is None:
             return
 
@@ -223,7 +224,7 @@ class ModUtils(commands.Cog):
     @commands.guild_only()
     @permissions.mod_and_up()
     @commands.command(name="setbirthday")
-    async def setbirthday(self, ctx: commands.Context, user: discord.Member, month: int, date: int) -> None:
+    async def setbirthday(self, ctx: context.Context, user: discord.Member, month: int, date: int) -> None:
         """Override a user's birthday (mod only)
 
         Example usage:
@@ -249,7 +250,7 @@ class ModUtils(commands.Cog):
         except ValueError:
             raise commands.BadArgument("You gave an invalid date.")
 
-        results = await self.bot.settings.user(user.id)
+        results = await ctx.settings.user(user.id)
         results.birthday = [month, date]
         results.save()
 
@@ -262,7 +263,7 @@ class ModUtils(commands.Cog):
         eastern = pytz.timezone('US/Eastern')
         today = datetime.datetime.today().astimezone(eastern)
         if today.month == month and today.day == date:
-            birthday_role = ctx.guild.get_role(self.bot.settings.guild().role_birthday)
+            birthday_role = ctx.guild.get_role(ctx.settings.guild().role_birthday)
             if birthday_role is None:
                 return
             print("here")
@@ -275,18 +276,18 @@ class ModUtils(commands.Cog):
 
             try:
                 time = now + datetime.timedelta(days=1-h-m)
-                self.bot.settings.tasks.schedule_remove_bday(user.id, time)
+                ctx.settings.tasks.schedule_remove_bday(user.id, time)
             except Exception as e:
                 print(e)
                 return
             await user.add_roles(birthday_role)
             await user.send(f"According to my calculations, today is your birthday! We've given you the {birthday_role} role for 24 hours.")
 
-    async def prepare_rundown_embed(self, ctx, user):
-        user_info = await self.bot.settings.user(user.id)
+    async def prepare_rundown_embed(self,  ctx: context.Context, user):
+        user_info = await ctx.settings.user(user.id)
         joined = user.joined_at.strftime("%B %d, %Y, %I:%M %p")
         created = user.created_at.strftime("%B %d, %Y, %I:%M %p")
-        rd = await self.bot.settings.rundown(user.id)
+        rd = await ctx.settings.rundown(user.id)
         rd_text = ""
         for r in rd:
             if r._type == "WARN":
@@ -351,9 +352,9 @@ class ModUtils(commands.Cog):
             or isinstance(error, commands.BotMissingPermissions)
             or isinstance(error, commands.MissingPermissions)
                 or isinstance(error, commands.NoPrivateMessage)):
-            await self.bot.send_error(ctx, error)
+            await ctx.send_error(ctx, error)
         else:
-            await self.bot.send_error(ctx, error)
+            await ctx.send_error(ctx, error)
             traceback.print_exc()
 
 
