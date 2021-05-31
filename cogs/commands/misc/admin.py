@@ -2,6 +2,7 @@ import datetime as dt
 import traceback
 
 import cogs.utils.permission_checks as permissions
+import cogs.utils.context as context
 import discord
 from discord.ext import commands
 
@@ -13,7 +14,7 @@ class Admin(commands.Cog):
     @commands.command(name="setpfp")
     @commands.guild_only()
     @permissions.guild_owner_and_up()
-    async def setpfp(self, ctx: commands.Context):
+    async def setpfp(self, ctx: context.Context):
         """Set the bot's profile picture (admin only)
         """
 

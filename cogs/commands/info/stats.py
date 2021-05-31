@@ -8,6 +8,7 @@ import discord
 import humanize
 import psutil
 from asyncio import sleep
+import cogs.utils.context as context
 import cogs.utils.permission_checks as permissions
 from discord.ext import commands
 
@@ -20,7 +21,7 @@ class Stats(commands.Cog):
     @commands.guild_only()
     @commands.command(name="roleinfo")
     @permissions.bot_channel_only_unless_mod()
-    async def roleinfo(self, ctx: commands.Context, role: discord.Role) -> None:
+    async def roleinfo(self, ctx: context.Context, role: discord.Role) -> None:
         """Get number of users of a role
 
         Example usage
@@ -44,7 +45,7 @@ class Stats(commands.Cog):
     @commands.guild_only()
     @permissions.bot_channel_only_unless_mod()
     @commands.command(name="ping")
-    async def ping(self, ctx: commands.Context) -> None:
+    async def ping(self, ctx: context.Context) -> None:
         """Pong
 
         Example usage:
@@ -67,7 +68,7 @@ class Stats(commands.Cog):
     @commands.guild_only()
     @permissions.bot_channel_only_unless_mod()
     @commands.command(name="stats")
-    async def stats(self, ctx: commands.Context) -> None:
+    async def stats(self, ctx: context.Context) -> None:
         """Statistics about the bot
 
         Example usage:
@@ -93,7 +94,7 @@ class Stats(commands.Cog):
     @commands.guild_only()
     @permissions.bot_channel_only_unless_mod()
     @commands.command(name="serverinfo")
-    async def serverinfo(self, ctx: commands.Context) -> None:
+    async def serverinfo(self, ctx: context.Context) -> None:
         """Displays info about the server
 
         Example usage:

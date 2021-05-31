@@ -148,7 +148,7 @@ async def report_spam(bot, msg, user, title):
                 pass
         else:
             if str(reaction.emoji) == '✅':
-                ctx = await bot.get_context(report_msg, cls=commands.Context)
+                ctx = await bot.get_context(report_msg, cls=context.Context)
                 ctx.author = ctx.message.author = reactor
                 unmute = bot.get_command("unmute")
                 if unmute is not None:
@@ -162,7 +162,7 @@ async def report_spam(bot, msg, user, title):
                 return
             
             elif str(reaction.emoji) == '💀':
-                ctx = await bot.get_context(report_msg, cls=commands.Context)
+                ctx = await bot.get_context(report_msg, cls=context.Context)
                 ctx.author = ctx.message.author = reactor
                 ban = bot.get_command("ban")
                 if ban is not None:

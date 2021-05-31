@@ -218,7 +218,7 @@ class Bot(commands.Bot):
             embed.set_footer(text=footer)
             await channel.send(member.mention, embed=embed, delete_after=10)
 
-    async def mute(self, ctx: commands.Context, user: discord.Member) -> None:
+    async def mute(self, ctx: context.Context, user: discord.Member) -> None:
         dur = "15m"
         reason = "Filter spam"
 
@@ -278,7 +278,7 @@ class Bot(commands.Bot):
 
         bucket = self.spam_cooldown.get_bucket(message)
         if bucket.update_rate_limit(current):
-            ctx = await self.get_context(message, cls=commands.Context)
+            ctx = await self.get_context(message, cls=context.Context)
             await self.mute(ctx, message.author)
 
 

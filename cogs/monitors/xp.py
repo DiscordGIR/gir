@@ -4,6 +4,7 @@ from random import randint
 
 import discord
 from discord.ext import commands
+import cogs.utils.context as context
 
 
 class Xp(commands.Cog):

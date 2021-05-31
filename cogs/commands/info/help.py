@@ -104,7 +104,7 @@ class Utilities(commands.Cog):
     @commands.guild_only()
     @permissions.bot_channel_only_unless_mod()
     @commands.has_permissions(add_reactions=True, embed_links=True)
-    async def usage(self, ctx: commands.Context, *, command_arg: str):
+    async def usage(self, ctx: context.Context, *, command_arg: str):
         """Show usage of one command
 
         Parameters

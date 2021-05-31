@@ -6,6 +6,7 @@ import aiohttp
 import asyncio
 import discord
 import cogs.utils.permission_checks as permissions
+import cogs.utils.context as context
 from discord.ext import commands
 
 
@@ -23,7 +24,7 @@ class Devices(commands.Cog):
     @permissions.bot_channel_only_unless_mod()
     @permissions.ensure_invokee_role_lower_than_bot()
     @commands.command(name="adddevice")
-    async def adddevice(self, ctx: commands.Context, *, device: str) -> None:
+    async def adddevice(self, ctx: context.Context, *, device: str) -> None:
         """Add device name to your nickname, i.e `SlimShadyIAm [iPhone 12, 14.2]`. See !listdevices to see the list of possible devices.
 
         Example usage:
@@ -142,7 +143,7 @@ class Devices(commands.Cog):
     @permissions.bot_channel_only_unless_mod()
     @permissions.ensure_invokee_role_lower_than_bot()
     @commands.command(name="removedevice")
-    async def removedevice(self, ctx: commands.Context) -> None:
+    async def removedevice(self, ctx: context.Context) -> None:
         """Removes device from your nickname
 
         Example usage:
@@ -165,7 +166,7 @@ class Devices(commands.Cog):
     @commands.bot_has_guild_permissions(change_nickname=True)
     @permissions.bot_channel_only_unless_mod()
     @commands.command(name="listdevices")
-    async def listdevices(self, ctx: commands.Context) -> None:
+    async def listdevices(self, ctx: context.Context) -> None:
         """List all possible devices you can set your nickname to.
 
         Example usage:

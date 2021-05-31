@@ -84,7 +84,7 @@ class AntiRaidMonitor(commands.Cog):
     async def handle_raid_detection(self, message: discord.Message, raid_type: RaidType):
         current = message.created_at.replace(tzinfo=timezone.utc).timestamp()
         spam_detection_bucket = self.raid_detection_threshold.get_bucket(message)
-        ctx = await self.bot.get_context(message, cls=commands.Context)
+        ctx = await self.bot.get_context(message, cls=context.Context)
         user = message.author
         
         do_freeze = False
@@ -136,7 +136,7 @@ class AntiRaidMonitor(commands.Cog):
         if len(set(message.mentions)) > 4 or len(set(message.role_mentions)) > 2:
             mute = self.bot.get_command("mute")
             if mute is not None:
-                ctx = await self.bot.get_context(message, cls=commands.Context)
+                ctx = await self.bot.get_context(message, cls=context.Context)
                 user = message.author
                 ctx.message.author = ctx.author = ctx.me
                 await mute(ctx=ctx, user=user, reason="Ping spam")
@@ -158,7 +158,7 @@ class AntiRaidMonitor(commands.Cog):
             
             mute = self.bot.get_command("mute")
             if mute is not None:
-                ctx = await self.bot.get_context(message, cls=commands.Context)
+                ctx = await self.bot.get_context(message, cls=context.Context)
                 user = message.author
                 ctx.message.author = ctx.author = ctx.me
                 try:
@@ -192,7 +192,7 @@ class AntiRaidMonitor(commands.Cog):
                         if word.false_positive and word.word.lower() not in folded_message.split():
                             continue
 
-                        ctx = await self.bot.get_context(message, cls=commands.Context)
+                        ctx = await self.bot.get_context(message, cls=context.Context)
                         await self.raid_ban(message.author)
                         return True
         return False
