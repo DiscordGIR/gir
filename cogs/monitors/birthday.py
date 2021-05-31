@@ -31,6 +31,8 @@ class Birthday(commands.Cog):
             if person.birthday_excluded:
                 continue
             user = guild.get_member(person._id)
+            if user is None:
+                return
             if birthday_role in user.roles:
                 continue
             
