@@ -11,7 +11,7 @@ class Context(commands.Context):
     # TODO: send_success
     # TODO: prompt
         
-    async def send_error(self, ctx: context.Context,error):
+    async def send_error(self, ctx, error):
         embed = discord.Embed(title=":(\nYour command ran into a problem")
         embed.color = discord.Color.red()
         embed.description = discord.utils.escape_markdown(f'{error}')
