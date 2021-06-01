@@ -31,7 +31,7 @@ class AntiRaid(commands.Cog):
         else:
             one_week = datetime.date.today() + datetime.timedelta(days=7)
             ctx.tasks.schedule_remove_raid_phrase(phrase, one_week)
-            await ctx.send(embed=discord.Embed(color=discord.Color.blurple(), description=f"Added {phrase} to the raid phrase list! This phrase will expire in one week."))
+            await ctx.send_success(description=f"Added {phrase} to the raid phrase list! This phrase will expire in one week.")
     
     @commands.guild_only()
     @permissions.admin_and_up()
@@ -56,7 +56,7 @@ class AntiRaid(commands.Cog):
         
         if len(words) > 0:
             await ctx.settings.remove_raid_phrase(words[0].word)
-            await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description="Deleted!"))
+            await ctx.send_success("Deleted!", delete_after=5)
         else:
             raise commands.BadArgument("That word is not a raid phrase.")            
     

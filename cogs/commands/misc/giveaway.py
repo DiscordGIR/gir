@@ -212,7 +212,7 @@ class Giveaway(commands.Cog):
         channel = ctx.guild.get_channel(g.channel)
 
         await channel.send(f"**Reroll**\nThe new winner of the giveaway of **{g.name}** is {the_winner.mention}! Congratulations!")
-        await ctx.send(embed=discord.Embed(description="Rerolled!", color=discord.Color.blurple()), delete_after=5)
+        await ctx.send_success("Rerolled!", delete_after=5)
 
     @giveaway.command()
     async def end(self, ctx: context.Context, message_id: int):
@@ -238,7 +238,7 @@ class Giveaway(commands.Cog):
         ctx.tasks.tasks.remove_job(str(message_id + 2), 'default')
         await end_giveaway(giveaway.channel, message_id, giveaway.winners)
 
-        await ctx.send(embed=discord.Embed(description="Giveaway ended!", color=discord.Color.blurple()), delete_after=5)
+        await ctx.send_success("Giveaway ended!", delete_after=5)
 
     @time_updater_loop.error
     @giveaway.error

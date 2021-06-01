@@ -22,7 +22,7 @@ class Admin(commands.Cog):
             raise commands.BadArgument("Please attach an image to use as the profile picture.")
         
         await self.bot.user.edit(avatar=await ctx.message.attachments[0].read())
-        await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description="Done!"), delete_after=5)
+        await ctx.send_success("Done!", delete_after=5)
         
     @setpfp.error
     async def info_error(self,  ctx: context.Context, error):

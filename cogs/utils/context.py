@@ -11,8 +11,8 @@ class Context(commands.Context):
         self.permissions = self.bot.settings.permissions
         self.tasks = self.bot.settings.tasks
         
-    # TODO: send_success
-    # TODO: prompt
+    async def send_success(self, description: str, delete_after: int = None):
+        return await self.reply(embed=discord.Embed(description=description, color=discord.Color.blurple()), delete_after=delete_after)
     
     async def prompt(self, value, data):
         """Custom prompt system

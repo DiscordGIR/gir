@@ -769,7 +769,7 @@ class ModActions(commands.Cog):
             channel = ctx.channel
             
         if await self.lock_unlock_channel(ctx, channel, True) is not None:
-            await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description=f"Locked {channel.mention}!"), delete_after=5)
+            await ctx.send_success(f"Locked {channel.mention}!", delete_after=5)
             await ctx.message.delete(delay=5)
         else:
             raise commands.BadArgument(f"{channel.mention} already locked or my permissions are wrong.")
@@ -795,7 +795,7 @@ class ModActions(commands.Cog):
             channel = ctx.channel
             
         if await self.lock_unlock_channel(ctx, channel) is not None:
-            await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description=f"Unocked {channel.mention}!"), delete_after=5)
+            await ctx.send_success(f"Unocked {channel.mention}!", delete_after=5)
             await ctx.message.delete(delay=5)
         else:
             raise commands.BadArgument(f"{channel.mention} already unlocked or my permissions are wrong.")
@@ -811,7 +811,7 @@ class ModActions(commands.Cog):
             raise commands.BadArgument("That channel is already lockable.")
         
         await ctx.settings.add_locked_channels(channel.id)
-        await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description=f"Added {channel.mention} as lockable channel!"))
+        await ctx.send_success(f"Added {channel.mention} as lockable channel!")
 
     @commands.bot_has_guild_permissions(manage_channels=True)
     @commands.command(name="unfreezeable")
@@ -823,7 +823,7 @@ class ModActions(commands.Cog):
             raise commands.BadArgument("That channel isn't already lockable.")
         
         await ctx.settings.remove_locked_channels(channel.id)
-        await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description=f"Removed {channel.mention} as lockable channel!"))
+        await ctx.send_success(f"Removed {channel.mention} as lockable channel!")
             
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_channels=True)
@@ -851,7 +851,7 @@ class ModActions(commands.Cog):
                         locked.append(channel)
         
         if locked:              
-            await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description=f"Locked {len(locked)} channels!"), delete_after=5)
+            await ctx.send_success(f"Locked {len(locked)} channels!", delete_after=5)
             await ctx.message.delete(delay=5)
         else:
             raise commands.BadArgument("Server is already locked or my permissions are wrong.")
@@ -883,7 +883,7 @@ class ModActions(commands.Cog):
                         unlocked.append(channel)
         
         if unlocked:              
-            await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description=f"Unlocked {len(unlocked)} channels!"), delete_after=5)
+            await ctx.send_success(f"Unlocked {len(unlocked)} channels!", delete_after=5)
             await ctx.message.delete(delay=5)
         else:
             raise commands.BadArgument("Server is already unlocked or my permissions are wrong.")
