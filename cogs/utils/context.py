@@ -14,7 +14,7 @@ class Context(commands.Context):
     # TODO: send_success
     # TODO: prompt
     
-    async def prompt(self, data, _type):
+    async def prompt(self, value, data):
         """Custom prompt system
 
            Data format is a dictionary:
@@ -46,8 +46,14 @@ class Context(commands.Context):
                 return
             elif response.content is not None and response.content != "":
                 if convertor in [str, int, pytimeparse.parse]:
-                    ret = convertor(response.content)
+                    try:
+                        ret = convertor(response.content)
+                    except Exception:
+                        ret = None
                     
+                    if ret is None:
+                        raise commands.BadArgument(f"Could not parse value for parameter \"{value}\".")
+
                     if convertor is pytimeparse.parse:
                         now = datetime.now()
                         time = now + timedelta(seconds=ret)
@@ -57,8 +63,6 @@ class Context(commands.Context):
                 else:
                     ret = await convertor(self, response.content)
                     
-        if ret is None:
-            raise commands.BadArgument(f"Could not parse value for {_type}.")
         return ret
 
         

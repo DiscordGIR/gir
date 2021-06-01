@@ -88,7 +88,7 @@ class Giveaway(commands.Cog):
 
         for response in responses:
             if responses[response] is None:
-                res = await ctx.prompt(data=prompts[response], _type=response)
+                res = await ctx.prompt(value=response, data=prompts[response])
                 if res is None:
                     raise commands.BadArgument("Command cancelled.")
                 
