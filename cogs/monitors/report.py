@@ -1,7 +1,7 @@
 import asyncio
 import datetime
 from discord.ext import commands
-from cogs.utils.context import context
+import cogs.utils.context as context
 
 import discord
 import humanize
