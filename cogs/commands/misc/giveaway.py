@@ -22,35 +22,6 @@ class Giveaway(commands.Cog):
     def cog_unload(self):
         self.time_updater_loop.cancel()
 
-    async def prompt(self, ctx: context.Context, data, _type):
-        question = data['prompt']
-        convertor = data['convertor']
-
-        def wait_check(m):
-            return m.author == ctx.author and m.channel == ctx.channel
-        ret = None
-        prompt = await ctx.send(embed=discord.Embed(description=question, color=discord.Color.blurple()))
-        try:
-            response = await self.bot.wait_for('message', check=wait_check, timeout=120)
-        except asyncio.TimeoutError:
-            await prompt.delete()
-            return
-        else:
-            await response.delete()
-            await prompt.delete()
-            if response.content.lower() == "cancel":
-                return
-            elif response.content is not None and response.content != "":
-                if _type in ['name', 'winners', 'time']:
-                    ret = convertor(response.content)
-                    if _type == 'winners' and ret < 1:
-                        raise commands.BadArgument("Can't have less than 1 winner")
-                    if ret is None:
-                        raise commands.BadArgument(f"Improper value given for {_type}")
-                else:
-                    ret = await convertor(ctx, response.content)
-        return ret
-
     @commands.guild_only()
     @permissions.admin_and_up()
     @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
@@ -117,9 +88,13 @@ class Giveaway(commands.Cog):
 
         for response in responses:
             if responses[response] is None:
-                res = await self.prompt(ctx=ctx, data=prompts[response], _type=response)
+                res = await ctx.prompt(data=prompts[response], _type=response)
                 if res is None:
                     raise commands.BadArgument("Command cancelled.")
+                
+                if response == 'winners' and res < 1:
+                    raise commands.BadArgument("Can't have less than 1 winner")
+
                 responses[response] = res
 
         now = datetime.datetime.now()
@@ -282,9 +257,9 @@ class Giveaway(commands.Cog):
             or isinstance(error, commands.BotMissingPermissions)
             or isinstance(error, commands.MaxConcurrencyReached)
                 or isinstance(error, commands.NoPrivateMessage)):
-            await ctx.send_error(ctx, error)
+            await ctx.send_error(error)
         else:
-            await ctx.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
+            await ctx.send_error("A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
 
 

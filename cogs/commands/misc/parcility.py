@@ -113,10 +113,10 @@ class Parcility(commands.Cog):
             response = await search_request(search_term)
         
         if response is None:
-            await ctx.send_error(ctx, "An error occurred while searching for that tweak.")
+            await ctx.send_error("An error occurred while searching for that tweak.")
             return
         elif len(response) == 0:
-            await ctx.send_error(ctx, "Sorry, I couldn't find any tweaks with that name.")
+            await ctx.send_error("Sorry, I couldn't find any tweaks with that name.")
             return
        
         menu = MenuPages(source=TweakMenu(aiter(response), len(response)), clear_reactions_after=True)
@@ -183,9 +183,9 @@ class Parcility(commands.Cog):
             or isinstance(error, commands.BotMissingPermissions)
             or isinstance(error, commands.MaxConcurrencyReached)
                 or isinstance(error, commands.NoPrivateMessage)):
-            await ctx.send_error(ctx, error)
+            await ctx.send_error(error)
         else:
-            await ctx.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
+            await ctx.send_error("A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
 
 
