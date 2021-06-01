@@ -2,44 +2,13 @@ import discord
 from discord.ext import commands
 import aiohttp
 import re
-from enum import Enum
-import traceback
+import cogs.utils.context as context
 import asyncio
 
 
 class BoosterEmojis(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
-    @commands.command(name='auditemojis', hidden=True)
-    async def auditemojis(self, ctx: commands.Context):
-        """Go through booster emojis and add approve/deny reacts (admin only)
-        """
-
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 7):
-            raise commands.BadArgument(
-                "You need to be Aaron to use that command.")
-
-        channel = ctx.guild.get_channel(self.bot.settings.guild().channel_booster_emoji)
-        if not channel:
-            return
-
-        await ctx.message.delete()
-        count = 0
-        async for msg in channel.history():
-            try:
-                _bytes, _ = await self.get_bytes(msg)
-            except commands.BadArgument:
-                await self.add_reactions(False, msg)
-                continue
-            
-            if _bytes is not None:
-                await self.add_reactions(True, msg)
-                count += 1
-            else:
-                await self.add_reactions(False, msg)
-
-        await ctx.send(f"Found {count} emojis and added reacts for them.", delete_after=5)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -199,20 +168,6 @@ class BoosterEmojis(commands.Cog):
                             return None
 
                         return await resp2.read()
-
-    @auditemojis.error
-    async def info_error(self, ctx, error):
-        await ctx.message.delete(delay=5)
-        if (isinstance(error, commands.MissingRequiredArgument)
-            or isinstance(error, commands.BadArgument)
-            or isinstance(error, commands.BadUnionArgument)
-            or isinstance(error, commands.BotMissingPermissions)
-            or isinstance(error, commands.MissingPermissions)
-                or isinstance(error, commands.NoPrivateMessage)):
-            await self.bot.send_error(ctx, error)
-        else:
-            await self.bot.send_error(ctx, error)
-            traceback.print_exc()
 
 
 def setup(bot):

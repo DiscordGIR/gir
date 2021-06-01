@@ -4,6 +4,7 @@ from random import randint
 
 import discord
 from discord.ext import commands
+import cogs.utils.context as context
 
 
 class Xp(commands.Cog):
@@ -90,13 +91,13 @@ class Xp(commands.Cog):
             level += 1
         return level
 
-    async def info_error(self, ctx, error):
+    async def info_error(self,  ctx: context.Context, error):
         if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
                 or isinstance(error, commands.NoPrivateMessage)):
-            await self.bot.send_error(ctx, error)
+            await ctx.send_error(error)
         else:
             traceback.print_exc()
 

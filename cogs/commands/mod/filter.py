@@ -1,6 +1,8 @@
 import traceback
 
 import discord
+import cogs.utils.permission_checks as permissions
+import cogs.utils.context as context
 from data.filterword import FilterWord
 from discord.ext import commands
 from discord.ext import menus
@@ -42,8 +44,9 @@ class Filters(commands.Cog):
         self.bot = bot
 
     @commands.guild_only()
+    @permissions.mod_and_up()
     @commands.command(name="offlineping")
-    async def offlineping(self, ctx, val: bool):
+    async def offlineping(self, ctx: context.Context, val: bool):
         """Bot will ping for reports when offline (mod only)
 
         Example usage:
@@ -57,12 +60,7 @@ class Filters(commands.Cog):
 
         """
 
-        # must be at least a mod
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
-            raise commands.BadArgument(
-                "You need to be a moderator or higher to use that command.")
-
-        cur = await self.bot.settings.user(ctx.author.id)
+        cur = await ctx.settings.user(ctx.author.id)
         cur.offline_report_ping = val
         cur.save()
 
@@ -72,8 +70,9 @@ class Filters(commands.Cog):
             await ctx.send("You won't be pinged for reports when offline")
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="filter")
-    async def filteradd(self, ctx, notify: bool, bypass: int, *, phrase: str) -> None:
+    async def filteradd(self, ctx: context.Context, notify: bool, bypass: int, *, phrase: str) -> None:
         """Add a word to filter (admin only)
 
         Example usage:
@@ -90,18 +89,12 @@ class Filters(commands.Cog):
             Phrase to filter
         """
 
-        # must be at least admin
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            await ctx.message.delete()
-            raise commands.BadArgument(
-                "You need to be an Administrator or higher to use that command.")
-
         fw = FilterWord()
         fw.bypass = bypass
         fw.notify = notify
         fw.word = phrase
 
-        await self.bot.settings.add_filtered_word(fw)
+        await ctx.settings.add_filtered_word(fw)
 
         phrase = discord.utils.escape_markdown(phrase)
         phrase = discord.utils.escape_mentions(phrase)
@@ -109,18 +102,14 @@ class Filters(commands.Cog):
         await ctx.message.reply(f"Added new word to filter! This filter {'will' if notify else 'will not'} ping for reports, level {bypass} can bypass it, and the phrase is {phrase}")
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="filterlist")
-    async def filterlist(self, ctx):
+    async def filterlist(self, ctx: context.Context):
         """List filtered words (admin only)
 
         """
 
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            await ctx.message.delete()
-            raise commands.BadArgument(
-                "You need to be an Administrator or higher to use that command.")
-
-        filters = self.bot.settings.guild().filter_words
+        filters = ctx.settings.guild().filter_words
         if len(filters) == 0:
             raise commands.BadArgument("The filterlist is currently empty. Please add a word using `!filter`.")
         
@@ -132,8 +121,9 @@ class Filters(commands.Cog):
         await menus.start(ctx)
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="piracy")
-    async def piracy(self, ctx, *, word: str):
+    async def piracy(self, ctx: context.Context, *, word: str):
         """Mark a word as piracy, will be ignored in #dev (admin only)
 
         Example usage:
@@ -146,20 +136,15 @@ class Filters(commands.Cog):
             Word to mark as piracy
 
         """
-        # must be at least admin
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            await ctx.message.delete()
-            raise commands.BadArgument(
-                "You need to be an Administrator or higher to use that command.")
 
         word = word.lower()
 
-        words = self.bot.settings.guild().filter_words
+        words = ctx.settings.guild().filter_words
         words = list(filter(lambda w: w.word.lower() == word.lower(), words))
         
         if len(words) > 0:
             words[0].piracy = True
-            await self.bot.settings.update_filtered_word(words[0])
+            await ctx.settings.update_filtered_word(words[0])
 
             await ctx.message.reply("Marked as a piracy word!", delete_after=5)
         else:
@@ -167,8 +152,9 @@ class Filters(commands.Cog):
         await ctx.message.delete(delay=5)
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="filterremove")
-    async def filterremove(self, ctx, *, word: str):
+    async def filterremove(self, ctx: context.Context, *, word: str):
         """Remove word from filter (admin only)
 
         Example usage:
@@ -181,27 +167,23 @@ class Filters(commands.Cog):
             Word to remove
 
         """
-        # must be at least admin
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            await ctx.message.delete()
-            raise commands.BadArgument(
-                "You need to be an Administrator or higher to use that command.")
 
         word = word.lower()
 
-        words = self.bot.settings.guild().filter_words
+        words = ctx.settings.guild().filter_words
         words = list(filter(lambda w: w.word.lower() == word.lower(), words))
         
         if len(words) > 0:
-            await self.bot.settings.remove_filtered_word(words[0].word)
+            await ctx.settings.remove_filtered_word(words[0].word)
             await ctx.message.reply("Deleted!", delete_after=5)
         else:
             await ctx.message.reply("That word is not filtered.", delete_after=5)            
         await ctx.message.delete(delay=5)
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="whitelist")
-    async def whitelist(self, ctx, id: int):
+    async def whitelist(self, ctx: context.Context, id: int):
         """Whitelist a guild from invite filter (admin only)
 
         Example usage:
@@ -215,21 +197,16 @@ class Filters(commands.Cog):
 
         """
 
-        # must be at least admin
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            await ctx.message.delete()
-            raise commands.BadArgument(
-                "You need to be an Administrator or higher to use that command.")
-
-        if await self.bot.settings.add_whitelisted_guild(id):
+        if await ctx.settings.add_whitelisted_guild(id):
             await ctx.message.reply("Whitelisted.", delete_after=10)
         else:
             await ctx.message.reply("That server is already whitelisted.", delete_after=10)
         await ctx.message.delete(delay=10)
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="ignorechannel")
-    async def ignorechannel(self, ctx, channel: discord.TextChannel) -> None:
+    async def ignorechannel(self, ctx: context.Context, channel: discord.TextChannel) -> None:
         """Ignore channel in filter (admin only)
 
         Example usage:
@@ -243,21 +220,16 @@ class Filters(commands.Cog):
 
         """
 
-        # must be at least admin
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            await ctx.message.delete()
-            raise commands.BadArgument(
-                "You need to be an Administrator or higher to use that command.")
-
-        if await self.bot.settings.add_ignored_channel(channel.id):
+        if await ctx.settings.add_ignored_channel(channel.id):
             await ctx.message.reply("Ignored.", delete_after=10)
         else:
             await ctx.message.reply("That channel is already ignored.", delete_after=10)
         await ctx.message.delete(delay=10)
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="unignorechannel")
-    async def unignorechannel(self, ctx, channel: discord.TextChannel) -> None:
+    async def unignorechannel(self, ctx: context.Context, channel: discord.TextChannel) -> None:
         """Unignore channel in filter (admin only)
 
         Example usage:
@@ -270,13 +242,7 @@ class Filters(commands.Cog):
             Channel to unignore
         """
 
-        # must be at least admin
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            await ctx.message.delete()
-            raise commands.BadArgument(
-                "You need to be an Administrator or higher to use that command.")
-
-        if await self.bot.settings.remove_ignored_channel(channel.id):
+        if await ctx.settings.remove_ignored_channel(channel.id):
             await ctx.message.reply("Unignored.", delete_after=10)
         else:
             await ctx.message.reply("That channel is not already ignored.", delete_after=10)
@@ -284,8 +250,9 @@ class Filters(commands.Cog):
 
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="blacklist")
-    async def blacklist(self, ctx, id: int):
+    async def blacklist(self, ctx: context.Context, id: int):
         """Blacklist a guild from invite filter (admin only)
 
         Example usage:
@@ -299,21 +266,16 @@ class Filters(commands.Cog):
 
         """
 
-        # must be at least admin
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            await ctx.message.delete()
-            raise commands.BadArgument(
-                "You need to be an Administrator or higher to use that command.")
-
-        if await self.bot.settings.remove_whitelisted_guild(id):
+        if await ctx.settings.remove_whitelisted_guild(id):
             await ctx.message.reply("Blacklisted.", delete_after=10)
         else:
             await ctx.message.reply("That server is already blacklisted.", delete_after=10)
         await ctx.message.delete(delay=10)
 
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.command(name="falsepositive")
-    async def falsepositive(self, ctx, *, word: str):
+    async def falsepositive(self, ctx: context.Context, *, word: str):
         """Disabling enhanced filter checks on a word (admin only)
 
         Example usage:
@@ -326,19 +288,15 @@ class Filters(commands.Cog):
             Word to mark as false positive
 
         """
-        # must be at least admin
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument(
-                "You need to be an administator or higher to use that command.")
 
         word = word.lower()
 
-        words = self.bot.settings.guild().filter_words
+        words = ctx.settings.guild().filter_words
         words = list(filter(lambda w: w.word.lower() == word.lower(), words))
         
         if len(words) > 0:
             words[0].false_positive=True
-            if await self.bot.settings.update_filtered_word(words[0]):
+            if await ctx.settings.update_filtered_word(words[0]):
                 await ctx.message.reply("Marked as potential false positive, we won't perform the enhanced checks on it!")
             else:
                 raise commands.BadArgument("Unexpected error occured trying to mark as false positive!")
@@ -355,15 +313,17 @@ class Filters(commands.Cog):
     @offlineping.error
     @ignorechannel.error
     @unignorechannel.error
-    async def info_error(self, ctx, error):
+    async def info_error(self, ctx: context.Context,error):
+        await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
                 or isinstance(error, commands.NoPrivateMessage)):
-            await self.bot.send_error(ctx, error)
+            await ctx.send_error(error)
         else:
-            await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
+            await ctx.send_error("A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
 
 

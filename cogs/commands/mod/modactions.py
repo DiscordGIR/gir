@@ -1,10 +1,9 @@
 import datetime
 import traceback
-import typing
-
-from discord.ext.commands.core import command
 
 import cogs.utils.logs as logging
+import cogs.utils.permission_checks as permissions
+import cogs.utils.context as context
 import discord
 import humanize
 import pytimeparse
@@ -27,29 +26,11 @@ class ModActions(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def check_permissions(self, ctx, user: typing.Union[discord.Member, int] = None):
-        if isinstance(user, discord.Member):
-            if user.id == ctx.author.id:
-                await ctx.message.add_reaction("🤔")
-                raise commands.BadArgument("You can't call that on yourself.")
-            if user.id == self.bot.user.id:
-                await ctx.message.add_reaction("🤔")
-                raise commands.BadArgument("You can't call that on me :(")
-
-        # must be at least a mod
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
-        if user:
-            if isinstance(user, discord.Member):
-                if user.top_role >= ctx.author.top_role:
-                    raise commands.BadArgument(
-                        message=f"{user.mention}'s top role is the same or higher than yours!")
-
     @commands.guild_only()
     @commands.bot_has_guild_permissions(kick_members=True, ban_members=True)
+    @permissions.mod_and_up()
     @commands.command(name="warn")
-    async def warn(self, ctx: commands.Context, user: typing.Union[discord.Member, int], points: int, *, reason: str = "No reason.") -> None:
+    async def warn(self, ctx: context.Context, user: permissions.ModsAndAboveExternal, points: int, *, reason: str = "No reason.") -> None:
         """Warn a user (mod only)
 
         Example usage:
@@ -66,21 +47,11 @@ class ModActions(commands.Cog):
             Reason for warning, by default "No reason."
 
         """
-
-        await self.check_permissions(ctx, user)
-
+        print(ctx.settings.guild())
         if points < 1:  # can't warn for negative/0 points
             raise commands.BadArgument(message="Points can't be lower than 1.")
 
-        # if the ID given is of a user who isn't in the guild, try to fetch the profile
-        if isinstance(user, int):
-            try:
-                user = await self.bot.fetch_user(user)
-            except discord.NotFound:
-                raise commands.BadArgument(
-                    f"Couldn't find user with ID {user}")
-
-        guild = self.bot.settings.guild()
+        guild = ctx.settings.guild()
 
         reason = discord.utils.escape_markdown(reason)
         reason = discord.utils.escape_mentions(reason)
@@ -96,14 +67,14 @@ class ModActions(commands.Cog):
         )
 
         # increment case ID in database for next available case ID
-        await self.bot.settings.inc_caseid()
+        await ctx.settings.inc_caseid()
         # add new case to DB
-        await self.bot.settings.add_case(user.id, case)
+        await ctx.settings.add_case(user.id, case)
         # add warnpoints to the user in DB
-        await self.bot.settings.inc_points(user.id, points)
+        await ctx.settings.inc_points(user.id, points)
 
         # fetch latest document about user from DB
-        results = await self.bot.settings.user(user.id)
+        results = await ctx.settings.user(user.id)
         cur_points = results.warn_points
 
         # prepare log embed, send to #public-mod-logs, user, channel where invoked
@@ -125,7 +96,7 @@ class ModActions(commands.Cog):
 
         elif cur_points >= 400 and not results.was_warn_kicked and isinstance(user, discord.Member):
             # kick user if >= 400 points and wasn't previously kicked
-            await self.bot.settings.set_warn_kicked(user.id)
+            await ctx.settings.set_warn_kicked(user.id)
 
             try:
                 await user.send(f"You were kicked from {ctx.guild.name} for reaching 400 or more points. Please note that you will be banned at 600 points.", embed=log)
@@ -147,7 +118,7 @@ class ModActions(commands.Cog):
         await ctx.message.delete(delay=10)
 
         public_chan = ctx.guild.get_channel(
-            self.bot.settings.guild().channel_public)
+            ctx.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
@@ -159,8 +130,9 @@ class ModActions(commands.Cog):
                 await public_chan.send(embed=log_kickban)
 
     @commands.guild_only()
+    @permissions.mod_and_up()
     @commands.command(name="liftwarn")
-    async def liftwarn(self, ctx: commands.Context, user: discord.Member, case_id: int, *, reason: str = "No reason.") -> None:
+    async def liftwarn(self, ctx: context.Context, user: permissions.ModsAndAboveMember, case_id: int, *, reason: str = "No reason.") -> None:
         """Mark a warn as lifted and remove points. (mod only)
 
         Example usage:
@@ -178,10 +150,8 @@ class ModActions(commands.Cog):
 
         """
 
-        await self.check_permissions(ctx, user)
-
         # retrieve user's case with given ID
-        cases = await self.bot.settings.get_case(user.id, case_id)
+        cases = await ctx.settings.get_case(user.id, case_id)
         case = cases.cases.filter(_id=case_id).first()
 
         reason = discord.utils.escape_markdown(reason)
@@ -198,7 +168,7 @@ class ModActions(commands.Cog):
             raise commands.BadArgument(
                 message=f"Case with ID {case_id} already lifted.")
 
-        u = await self.bot.settings.user(id=user.id)
+        u = await ctx.settings.user(id=user.id)
         if u.warn_points - int(case.punishment) < 0:
             raise commands.BadArgument(
                 message=f"Can't lift Case #{case_id} because it would make {user.mention}'s points negative.")
@@ -212,7 +182,7 @@ class ModActions(commands.Cog):
         cases.save()
 
         # remove the warn points from the user in DB
-        await self.bot.settings.inc_points(user.id, -1 * int(case.punishment))
+        await ctx.settings.inc_points(user.id, -1 * int(case.punishment))
         dmed = True
         # prepare log embed, send to #public-mod-logs, user, channel where invoked
         log = await logging.prepare_liftwarn_log(ctx.author, user, case)
@@ -225,15 +195,16 @@ class ModActions(commands.Cog):
         await ctx.message.delete(delay=10)
 
         public_chan = ctx.guild.get_channel(
-            self.bot.settings.guild().channel_public)
+            ctx.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
             await public_chan.send(user.mention if not dmed else "", embed=log)
 
     @commands.guild_only()
+    @permissions.mod_and_up()
     @commands.command(name="editreason")
-    async def editreason(self, ctx: commands.Context, user: typing.Union[discord.Member, int], case_id: int, *, new_reason: str) -> None:
+    async def editreason(self, ctx: context.Context, user: permissions.ModsAndAboveExternal, case_id: int, *, new_reason: str) -> None:
         """Edit case reason and the embed in #public-mod-logs. (mod only)
 
         Example usage:
@@ -251,17 +222,8 @@ class ModActions(commands.Cog):
 
         """
 
-        await self.check_permissions(ctx, user)
-
-        if isinstance(user, int):
-            try:
-                user = await self.bot.fetch_user(user)
-            except discord.NotFound:
-                raise commands.BadArgument(
-                    f"Couldn't find user with ID {user}")
-
         # retrieve user's case with given ID
-        cases = await self.bot.settings.get_case(user.id, case_id)
+        cases = await ctx.settings.get_case(user.id, case_id)
         case = cases.cases.filter(_id=case_id).first()
 
         new_reason = discord.utils.escape_markdown(new_reason)
@@ -286,7 +248,7 @@ class ModActions(commands.Cog):
                 dmed = False
 
         public_chan = ctx.guild.get_channel(
-            self.bot.settings.guild().channel_public)
+            ctx.settings.guild().channel_public)
             
         found = False
         async with ctx.typing():
@@ -320,8 +282,9 @@ class ModActions(commands.Cog):
           
             
     @commands.guild_only()
+    @permissions.mod_and_up()
     @commands.command(name="removepoints")
-    async def removepoints(self, ctx: commands.Context, user: discord.Member, points: int, *, reason: str = "No reason.") -> None:
+    async def removepoints(self, ctx: context.Context, user: permissions.ModsAndAboveMember, points: int, *, reason: str = "No reason.") -> None:
         """Remove warnpoints from a user. (mod only)
 
         Example usage:
@@ -339,25 +302,23 @@ class ModActions(commands.Cog):
 
         """
 
-        await self.check_permissions(ctx, user)
-
         reason = discord.utils.escape_markdown(reason)
         reason = discord.utils.escape_mentions(reason)
 
         if points < 1:
             raise commands.BadArgument("Points can't be lower than 1.")
 
-        u = await self.bot.settings.user(id=user.id)
+        u = await ctx.settings.user(id=user.id)
         if u.warn_points - points < 0:
             raise commands.BadArgument(
                 message=f"Can't remove {points} points because it would make {user.mention}'s points negative.")
 
         # passed sanity checks, so update the case in DB
         # remove the warn points from the user in DB
-        await self.bot.settings.inc_points(user.id, -1 * points)
+        await ctx.settings.inc_points(user.id, -1 * points)
 
         case = Case(
-            _id=self.bot.settings.guild().case_id,
+            _id=ctx.settings.guild().case_id,
             _type="REMOVEPOINTS",
             mod_id=ctx.author.id,
             mod_tag=str(ctx.author),
@@ -366,9 +327,9 @@ class ModActions(commands.Cog):
         )
 
         # increment DB's max case ID for next case
-        await self.bot.settings.inc_caseid()
+        await ctx.settings.inc_caseid()
         # add case to db
-        await self.bot.settings.add_case(user.id, case)
+        await ctx.settings.add_case(user.id, case)
 
         # prepare log embed, send to #public-mod-logs, user, channel where invoked
         log = await logging.prepare_removepoints_log(ctx.author, user, case)
@@ -382,7 +343,7 @@ class ModActions(commands.Cog):
         await ctx.message.delete(delay=10)
 
         public_chan = ctx.guild.get_channel(
-            self.bot.settings.guild().channel_public)
+            ctx.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
@@ -390,8 +351,9 @@ class ModActions(commands.Cog):
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(kick_members=True)
+    @permissions.mod_and_up()
     @commands.command(name="roblox")
-    async def roblox(self, ctx: commands.Context, user: discord.Member) -> None:
+    async def roblox(self, ctx: context.Context, user: permissions.ModsAndAboveMember) -> None:
         """Kick a Roblox user and tell them where to go (mod only)
 
         Example usage:
@@ -404,7 +366,6 @@ class ModActions(commands.Cog):
             User to kick
         """
         
-        await self.check_permissions(ctx, user)
         reason = "This Discord server is for iOS jailbreaking, not Roblox. Please join https://discord.gg/jailbreak instead, thank you!"
         log = await self.add_kick_case(ctx, user, reason)
 
@@ -419,7 +380,7 @@ class ModActions(commands.Cog):
         await ctx.message.delete(delay=10)
 
         public_chan = ctx.guild.get_channel(
-            self.bot.settings.guild().channel_public)
+            ctx.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
@@ -427,8 +388,9 @@ class ModActions(commands.Cog):
             
     @commands.guild_only()
     @commands.bot_has_guild_permissions(kick_members=True)
+    @permissions.mod_and_up()
     @commands.command(name="kick")
-    async def kick(self, ctx: commands.Context, user: discord.Member, *, reason: str = "No reason.") -> None:
+    async def kick(self, ctx: context.Context, user: permissions.ModsAndAboveMember, *, reason: str = "No reason.") -> None:
         """Kick a user (mod only)
 
         Example usage:
@@ -444,8 +406,6 @@ class ModActions(commands.Cog):
 
         """
 
-        await self.check_permissions(ctx, user)
-
         reason = discord.utils.escape_markdown(reason)
         reason = discord.utils.escape_mentions(reason)
 
@@ -462,16 +422,16 @@ class ModActions(commands.Cog):
         await ctx.message.delete(delay=10)
 
         public_chan = ctx.guild.get_channel(
-            self.bot.settings.guild().channel_public)
+            ctx.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
             await public_chan.send(embed=log)
 
-    async def add_kick_case(self, ctx, user, reason):
+    async def add_kick_case(self,  ctx: context.Context, user, reason):
         # prepare case for DB
         case = Case(
-            _id=self.bot.settings.guild().case_id,
+            _id=ctx.settings.guild().case_id,
             _type="KICK",
             mod_id=ctx.author.id,
             mod_tag=str(ctx.author),
@@ -479,16 +439,17 @@ class ModActions(commands.Cog):
         )
 
         # increment max case ID for next case
-        await self.bot.settings.inc_caseid()
+        await ctx.settings.inc_caseid()
         # add new case to DB
-        await self.bot.settings.add_case(user.id, case)
+        await ctx.settings.add_case(user.id, case)
 
         return await logging.prepare_kick_log(ctx.author, user, case)
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(ban_members=True)
+    @permissions.mod_and_up()
     @commands.command(name="ban")
-    async def ban(self, ctx: commands.Context, user: typing.Union[discord.Member, int], *, reason: str = "No reason."):
+    async def ban(self, ctx: context.Context, user: permissions.ModsAndAboveExternal, *, reason: str = "No reason."):
         """Ban a user (mod only)
 
         Example usage:
@@ -504,22 +465,14 @@ class ModActions(commands.Cog):
 
         """
 
-        await self.check_permissions(ctx, user)
-
         reason = discord.utils.escape_markdown(reason)
         reason = discord.utils.escape_mentions(reason)
 
         # if the ID given is of a user who isn't in the guild, try to fetch the profile
-        if isinstance(user, int):
-            try:
-                user = await self.bot.fetch_user(user)
-                
-                previous_bans = [user for _, user in await ctx.guild.bans()]
-                if user in previous_bans:
-                    raise commands.BadArgument("That user is already banned!")
-            except discord.NotFound:
-                raise commands.BadArgument(
-                    f"Couldn't find user with ID {user}")
+        if ctx.guild.get_member(user.id) is None:
+            previous_bans = [user for _, user in await ctx.guild.bans()]
+            if user in previous_bans:
+                raise commands.BadArgument("That user is already banned!")
 
         log = await self.add_ban_case(ctx, user, reason)
 
@@ -538,16 +491,16 @@ class ModActions(commands.Cog):
         await ctx.message.delete(delay=10)
 
         public_chan = ctx.guild.get_channel(
-            self.bot.settings.guild().channel_public)
+            ctx.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
             await public_chan.send(embed=log)
 
-    async def add_ban_case(self, ctx, user, reason):
+    async def add_ban_case(self,  ctx: context.Context, user, reason):
         # prepare the case to store in DB
         case = Case(
-            _id=self.bot.settings.guild().case_id,
+            _id=ctx.settings.guild().case_id,
             _type="BAN",
             mod_id=ctx.author.id,
             mod_tag=str(ctx.author),
@@ -556,16 +509,17 @@ class ModActions(commands.Cog):
         )
 
         # increment DB's max case ID for next case
-        await self.bot.settings.inc_caseid()
+        await ctx.settings.inc_caseid()
         # add case to db
-        await self.bot.settings.add_case(user.id, case)
+        await ctx.settings.add_case(user.id, case)
         # prepare log embed to send to #public-mod-logs, user and context
         return await logging.prepare_ban_log(ctx.author, user, case)
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(ban_members=True)
+    @permissions.mod_and_up()
     @commands.command(name="unban")
-    async def unban(self, ctx: commands.Context, user: int, *, reason: str = "No reason.") -> None:
+    async def unban(self, ctx: context.Context, user: permissions.ModsAndAboveExternal, *, reason: str = "No reason.") -> None:
         """Unban a user (must use ID) (mod only)
 
         Example usage:
@@ -581,19 +535,12 @@ class ModActions(commands.Cog):
 
         """
 
-        await self.check_permissions(ctx)
-
         reason = discord.utils.escape_markdown(reason)
         reason = discord.utils.escape_mentions(reason)
 
-        try:
-            user = await self.bot.fetch_user(user)
-            previous_bans = [user for _, user in await ctx.guild.bans()]
-            if user not in previous_bans:
-                raise commands.BadArgument("That user isn't banned!")
-                
-        except discord.NotFound:
-            raise commands.BadArgument(f"Couldn't find user with ID {user}")
+        previous_bans = [user for _, user in await ctx.guild.bans()]
+        if user not in previous_bans:
+            raise commands.BadArgument("That user isn't banned!")
 
         try:
             await ctx.guild.unban(discord.Object(id=user.id), reason=reason)
@@ -601,21 +548,21 @@ class ModActions(commands.Cog):
             raise commands.BadArgument(f"{user} is not banned.")
 
         case = Case(
-            _id=self.bot.settings.guild().case_id,
+            _id=ctx.settings.guild().case_id,
             _type="UNBAN",
             mod_id=ctx.author.id,
             mod_tag=str(ctx.author),
             reason=reason,
         )
-        await self.bot.settings.inc_caseid()
-        await self.bot.settings.add_case(user.id, case)
+        await ctx.settings.inc_caseid()
+        await ctx.settings.add_case(user.id, case)
 
         log = await logging.prepare_unban_log(ctx.author, user, case)
         await ctx.message.reply(embed=log, delete_after=10)
         await ctx.message.delete(delay=10)
 
         public_chan = ctx.guild.get_channel(
-            self.bot.settings.guild().channel_public)
+            ctx.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
@@ -623,8 +570,9 @@ class ModActions(commands.Cog):
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_messages=True)
+    @permissions.mod_and_up()
     @commands.command(name="purge")
-    async def purge(self, ctx: commands.Context, limit: int = 0) -> None:
+    async def purge(self, ctx: context.Context, limit: int = 0) -> None:
         """Purge messages from current channel (mod only)
 
         Example usage:
@@ -638,11 +586,11 @@ class ModActions(commands.Cog):
 
         """
 
-        await self.check_permissions(ctx)
-
         if limit <= 0:
             raise commands.BadArgument(
                 "Number of messages to purge must be greater than 0")
+        elif limit >= 100:
+            limit = 100
 
         msgs = await ctx.channel.history(limit=limit+1).flatten()
 
@@ -651,8 +599,9 @@ class ModActions(commands.Cog):
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_roles=True)
+    @permissions.mod_and_up()
     @commands.command(name="mute")
-    async def mute(self, ctx: commands.Context, user: discord.Member, dur: str = "", *, reason: str = "No reason.") -> None:
+    async def mute(self, ctx: context.Context, user: permissions.ModsAndAboveMember, dur: str = "", *, reason: str = "No reason.") -> None:
         """Mute a user (mod only)
 
         Example usage:
@@ -669,7 +618,6 @@ class ModActions(commands.Cog):
             Reason for mute, by default "No reason."
 
         """
-        await self.check_permissions(ctx, user)
 
         reason = discord.utils.escape_markdown(reason)
         reason = discord.utils.escape_mentions(reason)
@@ -685,14 +633,14 @@ class ModActions(commands.Cog):
             else:
                 reason = f"{dur} {reason}"
 
-        mute_role = self.bot.settings.guild().role_mute
+        mute_role = ctx.settings.guild().role_mute
         mute_role = ctx.guild.get_role(mute_role)
 
         if mute_role in user.roles:
             raise commands.BadArgument("This user is already muted.")
 
         case = Case(
-            _id=self.bot.settings.guild().case_id,
+            _id=ctx.settings.guild().case_id,
             _type="MUTE",
             date=now,
             mod_id=ctx.author.id,
@@ -706,16 +654,16 @@ class ModActions(commands.Cog):
                 case.until = time
                 case.punishment = humanize.naturaldelta(
                     time - now, minimum_unit="seconds")
-                self.bot.settings.tasks.schedule_unmute(user.id, time)
+                ctx.tasks.schedule_unmute(user.id, time)
             except Exception:
                 raise commands.BadArgument(
                     "An error occured, this user is probably already muted")
         else:
             case.punishment = "PERMANENT"
 
-        await self.bot.settings.inc_caseid()
-        await self.bot.settings.add_case(user.id, case)
-        u = await self.bot.settings.user(id=user.id)
+        await ctx.settings.inc_caseid()
+        await ctx.settings.add_case(user.id, case)
+        u = await ctx.settings.user(id=user.id)
         u.is_muted = True
         u.save()
 
@@ -734,15 +682,16 @@ class ModActions(commands.Cog):
             dmed = False
 
         public_chan = ctx.guild.get_channel(
-            self.bot.settings.guild().channel_public)
+            ctx.settings.guild().channel_public)
         if public_chan:
             await public_chan.send(user.mention if not dmed else "", embed=log)
 
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_roles=True)
+    @permissions.mod_and_up()
     @commands.command(name="unmute")
-    async def unmute(self, ctx: commands.Context, user: discord.Member, *, reason: str = "No reason.") -> None:
+    async def unmute(self, ctx: context.Context, user: permissions.ModsAndAboveMember, *, reason: str = "No reason.") -> None:
         """Unmute a user (mod only)
 
         Example usage:
@@ -758,30 +707,28 @@ class ModActions(commands.Cog):
 
         """
 
-        await self.check_permissions(ctx, user)
-
-        mute_role = self.bot.settings.guild().role_mute
+        mute_role = ctx.settings.guild().role_mute
         mute_role = ctx.guild.get_role(mute_role)
         await user.remove_roles(mute_role)
 
-        u = await self.bot.settings.user(id=user.id)
+        u = await ctx.settings.user(id=user.id)
         u.is_muted = False
         u.save()
 
         try:
-            self.bot.settings.tasks.cancel_unmute(user.id)
+            ctx.tasks.cancel_unmute(user.id)
         except Exception:
             pass
 
         case = Case(
-            _id=self.bot.settings.guild().case_id,
+            _id=ctx.settings.guild().case_id,
             _type="UNMUTE",
             mod_id=ctx.author.id,
             mod_tag=str(ctx.author),
             reason=reason,
         )
-        await self.bot.settings.inc_caseid()
-        await self.bot.settings.add_case(user.id, case)
+        await ctx.settings.inc_caseid()
+        await ctx.settings.add_case(user.id, case)
 
         log = await logging.prepare_unmute_log(ctx.author, user, case)
 
@@ -795,7 +742,7 @@ class ModActions(commands.Cog):
             dmed = False
 
         public_chan = ctx.guild.get_channel(
-            self.bot.settings.guild().channel_public)
+            ctx.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
             log.set_thumbnail(url=user.avatar_url)
@@ -804,7 +751,8 @@ class ModActions(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_channels=True)
     @commands.command(name="lock")
-    async def lock(self, ctx, channel: discord.TextChannel = None):
+    @permissions.admin_and_up()
+    async def lock(self,  ctx: context.Context, channel: discord.TextChannel = None):
         """Lock a channel (admin only)
 
         Example usage
@@ -816,23 +764,21 @@ class ModActions(commands.Cog):
         channel : discord.TextChannel, optional
             Channel to lock
         """
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
 
         if channel is None:
             channel = ctx.channel
             
         if await self.lock_unlock_channel(ctx, channel, True) is not None:
-            await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description=f"Locked {channel.mention}!"), delete_after=5)
+            await ctx.send_success(f"Locked {channel.mention}!", delete_after=5)
             await ctx.message.delete(delay=5)
         else:
             raise commands.BadArgument(f"{channel.mention} already locked or my permissions are wrong.")
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_channels=True)
+    @permissions.admin_and_up()
     @commands.command(name="unlock")
-    async def unlock(self, ctx, channel: discord.TextChannel = None):
+    async def unlock(self,  ctx: context.Context, channel: discord.TextChannel = None):
         """Unlock a channel (admin only)
 
         Example usage
@@ -844,52 +790,44 @@ class ModActions(commands.Cog):
         channel : discord.TextChannel, optional
             Channel to unlock
         """
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
 
         if channel is None:
             channel = ctx.channel
             
         if await self.lock_unlock_channel(ctx, channel) is not None:
-            await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description=f"Unocked {channel.mention}!"), delete_after=5)
+            await ctx.send_success(f"Unocked {channel.mention}!", delete_after=5)
             await ctx.message.delete(delay=5)
         else:
             raise commands.BadArgument(f"{channel.mention} already unlocked or my permissions are wrong.")
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_channels=True)
+    @permissions.admin_and_up()
     @commands.command(name="freezeable")
     @commands.max_concurrency(1, per=commands.BucketType.guild)
-    async def freezeable(self, ctx, channel: discord.TextChannel=None):
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
-
+    async def freezeable(self,  ctx: context.Context, channel: discord.TextChannel=None):
         channel = channel or ctx.channel
-        if channel.id in await self.bot.settings.get_locked_channels():
+        if channel.id in await ctx.settings.get_locked_channels():
             raise commands.BadArgument("That channel is already lockable.")
         
-        await self.bot.settings.add_locked_channels(channel.id)
-        await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description=f"Added {channel.mention} as lockable channel!"))
+        await ctx.settings.add_locked_channels(channel.id)
+        await ctx.send_success(f"Added {channel.mention} as lockable channel!")
 
     @commands.bot_has_guild_permissions(manage_channels=True)
     @commands.command(name="unfreezeable")
+    @permissions.admin_and_up()
     @commands.max_concurrency(1, per=commands.BucketType.guild)
-    async def unfreezeable(self, ctx, channel: discord.TextChannel=None):
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
-
+    async def unfreezeable(self,  ctx: context.Context, channel: discord.TextChannel=None):
         channel = channel or ctx.channel
-        if channel.id not in await self.bot.settings.get_locked_channels():
+        if channel.id not in await ctx.settings.get_locked_channels():
             raise commands.BadArgument("That channel isn't already lockable.")
         
-        await self.bot.settings.remove_locked_channels(channel.id)
-        await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description=f"Removed {channel.mention} as lockable channel!"))
+        await ctx.settings.remove_locked_channels(channel.id)
+        await ctx.send_success(f"Removed {channel.mention} as lockable channel!")
             
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_channels=True)
+    @permissions.admin_and_up()
     @commands.command(name="freeze")
     @commands.max_concurrency(1, per=commands.BucketType.guild)
     async def freeze(self, ctx):
@@ -900,11 +838,7 @@ class ModActions(commands.Cog):
         !freeze
         """
         
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
-
-        channels = await self.bot.settings.get_locked_channels()
+        channels = await ctx.settings.get_locked_channels()
         if not channels:
             raise commands.BadArgument("No freezeable channels! Set some using `!freezeable`.")
         
@@ -917,7 +851,7 @@ class ModActions(commands.Cog):
                         locked.append(channel)
         
         if locked:              
-            await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description=f"Locked {len(locked)} channels!"), delete_after=5)
+            await ctx.send_success(f"Locked {len(locked)} channels!", delete_after=5)
             await ctx.message.delete(delay=5)
         else:
             raise commands.BadArgument("Server is already locked or my permissions are wrong.")
@@ -925,6 +859,7 @@ class ModActions(commands.Cog):
     
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_channels=True)
+    @permissions.admin_and_up()
     @commands.command(name="unfreeze")
     @commands.max_concurrency(1, per=commands.BucketType.guild)
     async def unfreeze(self, ctx):
@@ -934,12 +869,8 @@ class ModActions(commands.Cog):
         --------------
         !unfreeze
         """
-        
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
 
-        channels = await self.bot.settings.get_locked_channels()
+        channels = await ctx.settings.get_locked_channels()
         if not channels:
             raise commands.BadArgument("No unfreezeable channels! Set some using `!freezeable`.")
         
@@ -952,13 +883,13 @@ class ModActions(commands.Cog):
                         unlocked.append(channel)
         
         if unlocked:              
-            await ctx.message.reply(embed=discord.Embed(color=discord.Color.blurple(), description=f"Unlocked {len(unlocked)} channels!"), delete_after=5)
+            await ctx.send_success(f"Unlocked {len(unlocked)} channels!", delete_after=5)
             await ctx.message.delete(delay=5)
         else:
             raise commands.BadArgument("Server is already unlocked or my permissions are wrong.")
 
-    async def lock_unlock_channel(self, ctx, channel, lock=None):
-        settings = self.bot.settings.guild()
+    async def lock_unlock_channel(self,  ctx: context.Context, channel, lock=None):
+        settings = ctx.settings.guild()
         
         default_role = ctx.guild.default_role
         member_plus = ctx.guild.get_role(settings.role_memberplus)   
@@ -999,18 +930,19 @@ class ModActions(commands.Cog):
     @roblox.error
     @editreason.error
     @removepoints.error
-    async def info_error(self, ctx, error):
+    async def info_error(self,  ctx: context.Context, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.BotMissingPermissions)
             or isinstance(error, commands.MissingPermissions)
             or isinstance(error, commands.MaxConcurrencyReached)
                 or isinstance(error, commands.NoPrivateMessage)):
-            await self.bot.send_error(ctx, error)
+            await ctx.send_error(error)
         else:
-            await self.bot.send_error(ctx, error)
+            await ctx.send_error(error)
             traceback.print_exc()
 
 

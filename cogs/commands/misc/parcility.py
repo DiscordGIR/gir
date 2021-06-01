@@ -6,6 +6,8 @@ import json
 import aiohttp
 import urllib
 from datetime import datetime
+import cogs.utils.permission_checks as permissions
+import cogs.utils.context as context
 from discord.ext import commands, menus
 from yarl import URL
 
@@ -111,20 +113,19 @@ class Parcility(commands.Cog):
             response = await search_request(search_term)
         
         if response is None:
-            await self.bot.send_error(ctx, "An error occurred while searching for that tweak.")
+            await ctx.send_error("An error occurred while searching for that tweak.")
             return
         elif len(response) == 0:
-            await self.bot.send_error(ctx, "Sorry, I couldn't find any tweaks with that name.")
+            await ctx.send_error("Sorry, I couldn't find any tweaks with that name.")
             return
        
         menu = MenuPages(source=TweakMenu(aiter(response), len(response)), clear_reactions_after=True)
         await menu.start(ctx)
     
     @commands.command(name="repo")
+    @permissions.bot_channel_only_unless_mod()
     @commands.guild_only()
-    async def repo(self, ctx, *, repo):
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id == self.bot.settings.guild().channel_general:
-            raise commands.BadArgument("This command cannot be used here.")
+    async def repo(self,  ctx: context.Context, *, repo):
         
         data = await self.repo_request(repo)
         repourl = data.get('repo')
@@ -172,18 +173,19 @@ class Parcility(commands.Cog):
                 
                 
     @repo.error
-    async def info_error(self, ctx, error):
+    async def info_error(self,  ctx: context.Context, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
             or isinstance(error, commands.BotMissingPermissions)
             or isinstance(error, commands.MaxConcurrencyReached)
                 or isinstance(error, commands.NoPrivateMessage)):
-            await self.bot.send_error(ctx, error)
+            await ctx.send_error(error)
         else:
-            await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
+            await ctx.send_error("A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
 
 

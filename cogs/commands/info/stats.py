@@ -8,6 +8,8 @@ import discord
 import humanize
 import psutil
 from asyncio import sleep
+import cogs.utils.context as context
+import cogs.utils.permission_checks as permissions
 from discord.ext import commands
 
 
@@ -18,7 +20,8 @@ class Stats(commands.Cog):
 
     @commands.guild_only()
     @commands.command(name="roleinfo")
-    async def roleinfo(self, ctx: commands.Context, role: discord.Role) -> None:
+    @permissions.bot_channel_only_unless_mod()
+    async def roleinfo(self, ctx: context.Context, role: discord.Role) -> None:
         """Get number of users of a role
 
         Example usage
@@ -32,11 +35,6 @@ class Stats(commands.Cog):
 
         """
 
-        bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(
-                f"Command only allowed in <#{bot_chan}>")
-
         embed = discord.Embed(title="Role Statistics")
         embed.description = f"{len(role.members)} members have role {role.mention}"
         embed.color = role.color
@@ -45,18 +43,15 @@ class Stats(commands.Cog):
         await ctx.message.reply(embed=embed)
 
     @commands.guild_only()
+    @permissions.bot_channel_only_unless_mod()
     @commands.command(name="ping")
-    async def ping(self, ctx: commands.Context) -> None:
+    async def ping(self, ctx: context.Context) -> None:
         """Pong
 
         Example usage:
         `!ping`
 
         """
-        bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(
-                f"Command only allowed in <#{bot_chan}>")
 
         b = datetime.datetime.utcnow()
         embed = discord.Embed(
@@ -71,19 +66,15 @@ class Stats(commands.Cog):
         await m.edit(embed=embed)
 
     @commands.guild_only()
+    @permissions.bot_channel_only_unless_mod()
     @commands.command(name="stats")
-    async def stats(self, ctx: commands.Context) -> None:
+    async def stats(self, ctx: context.Context) -> None:
         """Statistics about the bot
 
         Example usage:
         `!stats`
 
         """
-
-        bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(
-                f"Command only allowed in <#{bot_chan}>")
 
         process = psutil.Process(os.getpid())
         diff = datetime.datetime.now() - self.start_time
@@ -101,21 +92,17 @@ class Stats(commands.Cog):
         await ctx.message.reply(embed=embed)
 
     @commands.guild_only()
+    @permissions.bot_channel_only_unless_mod()
     @commands.command(name="serverinfo")
-    async def serverinfo(self, ctx: commands.Context) -> None:
+    async def serverinfo(self, ctx: context.Context) -> None:
         """Displays info about the server
 
         Example usage:
         `!serverinfo`
 
         """
-        bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(
-                f"Command only allowed in <#{bot_chan}>")
 
         guild = ctx.guild
-
         embed = discord.Embed(title="Server Information")
         embed.color = discord.Color.blurple()
         embed.set_thumbnail(url=guild.icon_url)
@@ -137,16 +124,17 @@ class Stats(commands.Cog):
     @roleinfo.error
     @stats.error
     @ping.error
-    async def info_error(self, ctx, error):
+    async def info_error(self,  ctx: context.Context, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
                 or isinstance(error, commands.NoPrivateMessage)):
-            await self.bot.send_error(ctx, error)
+            await ctx.send_error(error)
         else:
-            await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
+            await ctx.send_error("A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
 
 

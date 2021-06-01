@@ -2,6 +2,8 @@ import traceback
 
 import datetime
 import asyncio
+import cogs.utils.permission_checks as permissions
+import cogs.utils.context as context
 import discord
 from discord.ext import commands
 
@@ -12,8 +14,9 @@ class Genius(commands.Cog):
 
     @commands.command(name="commonissue")
     @commands.guild_only()
+    @permissions.genius_and_up()
     @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
-    async def commonissue(self, ctx, *, title: str):
+    async def commonissue(self, ctx: context.Context, *, title: str):
         """Submit a new common issue (Geniuses only)
 
         Example use:
@@ -27,13 +30,10 @@ class Genius(commands.Cog):
 
         """
 
-        if not ctx.guild.id == self.bot.settings.guild_id:
+        if not ctx.guild.id == ctx.settings.guild_id:
             return
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
 
-        channel = ctx.guild.get_channel(self.bot.settings.guild().channel_common_issues)
+        channel = ctx.guild.get_channel(ctx.settings.guild().channel_common_issues)
         if not channel:
             return
 
@@ -64,8 +64,9 @@ class Genius(commands.Cog):
         
     @commands.command(name="postembed")
     @commands.guild_only()
+    @permissions.genius_and_up()
     @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
-    async def postembed(self, ctx, *, title: str):
+    async def postembed(self, ctx: context.Context, *, title: str):
         """Post an embed in the current channel (Geniuses only)
 
         Example use:
@@ -79,11 +80,8 @@ class Genius(commands.Cog):
         
         """
 
-        if not ctx.guild.id == self.bot.settings.guild_id:
+        if not ctx.guild.id == ctx.settings.guild_id:
             return
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
 
         channel = ctx.channel
         description = None
@@ -124,18 +122,19 @@ class Genius(commands.Cog):
 
     @postembed.error
     @commonissue.error
-    async def info_error(self, ctx, error):
+    async def info_error(self, ctx: context.Context, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
             or isinstance(error, commands.BotMissingPermissions)
             or isinstance(error, commands.MaxConcurrencyReached)
                 or isinstance(error, commands.NoPrivateMessage)):
-            await self.bot.send_error(ctx, error)
+            await ctx.send_error(error)
         else:
-            await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
+            await ctx.send_error("A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
 
 

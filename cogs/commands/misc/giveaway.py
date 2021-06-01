@@ -3,6 +3,8 @@ import datetime
 import random
 import traceback
 
+import cogs.utils.permission_checks as permissions
+import cogs.utils.context as context
 import discord
 import humanize
 import pytimeparse
@@ -20,52 +22,20 @@ class Giveaway(commands.Cog):
     def cog_unload(self):
         self.time_updater_loop.cancel()
 
-    async def prompt(self, ctx, data, _type):
-        question = data['prompt']
-        convertor = data['convertor']
-
-        def wait_check(m):
-            return m.author == ctx.author and m.channel == ctx.channel
-        ret = None
-        prompt = await ctx.send(embed=discord.Embed(description=question, color=discord.Color.blurple()))
-        try:
-            response = await self.bot.wait_for('message', check=wait_check, timeout=120)
-        except asyncio.TimeoutError:
-            await prompt.delete()
-            return
-        else:
-            await response.delete()
-            await prompt.delete()
-            if response.content.lower() == "cancel":
-                return
-            elif response.content is not None and response.content != "":
-                if _type in ['name', 'winners', 'time']:
-                    ret = convertor(response.content)
-                    if _type == 'winners' and ret < 1:
-                        raise commands.BadArgument("Can't have less than 1 winner")
-                    if ret is None:
-                        raise commands.BadArgument(f"Improper value given for {_type}")
-                else:
-                    ret = await convertor(ctx, response.content)
-        return ret
-
     @commands.guild_only()
+    @permissions.admin_and_up()
     @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
     @commands.group()
-    async def giveaway(self, ctx):
+    async def giveaway(self, ctx: context.Context):
         """
         Manage giveaways using !giveaway <action>, choosing from below...
         """
-
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6):
-            raise commands.BadArgument(
-                "You need to be an Administrator or higher to use that command.")
 
         if ctx.invoked_subcommand is None:
             raise commands.BadArgument("Invalid giveaway subcommand passed. Options: `start`, `reroll`, `end`")
 
     @giveaway.command()
-    async def start(self, ctx, sponsor: discord.Member = None, time: str = None, winners: int = -1, channel: discord.TextChannel = None):
+    async def start(self, ctx: context.Context, sponsor: discord.Member = None, time: str = None, winners: int = -1, channel: discord.TextChannel = None):
         """Start a giveaway. Use `!giveaway start` and follow the prompts, or see the example.
 
         Example Use:
@@ -118,9 +88,13 @@ class Giveaway(commands.Cog):
 
         for response in responses:
             if responses[response] is None:
-                res = await self.prompt(ctx=ctx, data=prompts[response], _type=response)
+                res = await ctx.prompt(value=response, data=prompts[response])
                 if res is None:
                     raise commands.BadArgument("Command cancelled.")
+                
+                if response == 'winners' and res < 1:
+                    raise commands.BadArgument("Can't have less than 1 winner")
+
                 responses[response] = res
 
         now = datetime.datetime.now()
@@ -145,7 +119,7 @@ class Giveaway(commands.Cog):
         if ctx.channel.id != responses['channel'].id:
             await ctx.send(f"Giveaway started!", embed=embed, delete_after=10)
 
-        self.bot.settings.tasks.schedule_end_giveaway(channel_id=responses['channel'].id, message_id=message.id, date=end_time, winners=responses['winners'])
+        ctx.tasks.schedule_end_giveaway(channel_id=responses['channel'].id, message_id=message.id, date=end_time, winners=responses['winners'])
 
     @tasks.loop(seconds=360)
     async def time_updater_loop(self):
@@ -199,7 +173,7 @@ class Giveaway(commands.Cog):
         await message.edit(embed=embed)
 
     @giveaway.command()
-    async def reroll(self, ctx, message_id: int):
+    async def reroll(self, ctx: context.Context, message_id: int):
         """Pick a new winner of an already ended giveaway.
 
         Example usage
@@ -212,7 +186,7 @@ class Giveaway(commands.Cog):
             ID of the giveaway message
         """
 
-        g = await self.bot.settings.get_giveaway(_id=message_id)
+        g = await ctx.settings.get_giveaway(_id=message_id)
 
         if g is None:
             raise commands.BadArgument("Couldn't find an ended giveaway by the provided ID.")
@@ -238,10 +212,10 @@ class Giveaway(commands.Cog):
         channel = ctx.guild.get_channel(g.channel)
 
         await channel.send(f"**Reroll**\nThe new winner of the giveaway of **{g.name}** is {the_winner.mention}! Congratulations!")
-        await ctx.send(embed=discord.Embed(description="Rerolled!", color=discord.Color.blurple()), delete_after=5)
+        await ctx.send_success("Rerolled!", delete_after=5)
 
     @giveaway.command()
-    async def end(self, ctx, message_id: int):
+    async def end(self, ctx: context.Context, message_id: int):
         """End a giveaway early
 
         Example usage
@@ -254,26 +228,27 @@ class Giveaway(commands.Cog):
             ID of the giveaway message
         """
 
-        giveaway = await self.bot.settings.get_giveaway(_id=message_id)
+        giveaway = await ctx.settings.get_giveaway(_id=message_id)
         if giveaway is None:
             raise commands.BadArgument("A giveaway with that ID was not found.")
         elif giveaway.is_ended:
             raise commands.BadArgument("That giveaway has already ended.")
 
         await ctx.message.delete()
-        self.bot.settings.tasks.tasks.remove_job(str(message_id + 2), 'default')
+        ctx.tasks.tasks.remove_job(str(message_id + 2), 'default')
         await end_giveaway(giveaway.channel, message_id, giveaway.winners)
 
-        await ctx.send(embed=discord.Embed(description="Giveaway ended!", color=discord.Color.blurple()), delete_after=5)
+        await ctx.send_success("Giveaway ended!", delete_after=5)
 
     @time_updater_loop.error
     @giveaway.error
     @start.error
     @end.error
     @reroll.error
-    async def info_error(self, ctx, error):
+    async def info_error(self, ctx: context.Context, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
@@ -282,9 +257,9 @@ class Giveaway(commands.Cog):
             or isinstance(error, commands.BotMissingPermissions)
             or isinstance(error, commands.MaxConcurrencyReached)
                 or isinstance(error, commands.NoPrivateMessage)):
-            await self.bot.send_error(ctx, error)
+            await ctx.send_error(error)
         else:
-            await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
+            await ctx.send_error("A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
 
 

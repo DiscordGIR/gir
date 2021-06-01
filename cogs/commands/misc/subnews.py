@@ -2,6 +2,8 @@ import traceback
 
 import discord
 from discord.ext import commands
+import cogs.utils.context as context
+import cogs.utils.permission_checks as permissions
 
 
 class SubNews(commands.Cog):
@@ -10,7 +12,8 @@ class SubNews(commands.Cog):
 
     @commands.command(name="subnews")
     @commands.guild_only()
-    async def subnews(self, ctx, *, description: str):
+    @permissions.submod_or_admin_and_up()
+    async def subnews(self, ctx: context.Context, *, description: str):
         """Post a new subreddit news post (subreddit mods only).
 
         Example usage
@@ -23,17 +26,11 @@ class SubNews(commands.Cog):
             Body of the news post
         """
 
-        if not ctx.guild.id == self.bot.settings.guild_id:
+        if not ctx.guild.id == ctx.settings.guild_id:
             return
 
-        db = self.bot.settings.guild()
+        db = ctx.settings.guild()
         submod = ctx.guild.get_role(db.role_sub_mod)
-        if not submod:
-            return
-
-        if not (self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6) or submod in ctx.author.roles):
-            raise commands.BadArgument(
-                "You do not have permission to use this command.")
 
         channel = ctx.guild.get_channel(db.channel_subnews)
         if not channel:
@@ -54,18 +51,19 @@ class SubNews(commands.Cog):
         await ctx.send("Done!", delete_after=5)
 
     @subnews.error
-    async def info_error(self, ctx, error):
+    async def info_error(self, ctx: context.Context, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
             or isinstance(error, commands.BotMissingPermissions)
             or isinstance(error, commands.MaxConcurrencyReached)
                 or isinstance(error, commands.NoPrivateMessage)):
-            await self.bot.send_error(ctx, error)
+            await ctx.send_error(error)
         else:
-            await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
+            await ctx.send_error("A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
 
 

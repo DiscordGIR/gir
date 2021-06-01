@@ -2,6 +2,8 @@ import traceback
 
 import discord
 from discord.ext import commands
+import cogs.utils.permission_checks as permissions
+import cogs.utils.context as context
 
 
 class Utilities(commands.Cog):
@@ -9,13 +11,13 @@ class Utilities(commands.Cog):
         self.bot = bot
         self.left_col_length = 17
         self.right_col_length = 80
-        self.mod_only = ["ModActions", "ModUtils", "Filters", "BoosterEmojis", "ReactionRoles", "Giveaway", "Admin", "RaidPhrase"]
+        self.mod_only = ["ModActions", "ModUtils", "Filters", "BoosterEmojis", "ReactionRoles", "Giveaway", "Admin", "AntiRaid"]
         self.genius_only = ["Genius"]
 
     @commands.command(name="help", hidden=True)
     @commands.guild_only()
     @commands.has_permissions(add_reactions=True, embed_links=True)
-    async def help_comm(self, ctx: commands.Context, *, command_arg: str = None):
+    async def help_comm(self, ctx: context.Context, *, command_arg: str = None):
         """Gets all cogs and commands of mine."""
 
         await ctx.message.delete(delay=5)
@@ -26,10 +28,10 @@ class Utilities(commands.Cog):
             string = ""
             for cog_name in self.bot.cogs:
                 cog = self.bot.cogs[cog_name]
-                is_admin = self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 6)
-                is_mod = self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5)
-                is_genius = self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4)
-                submod = ctx.guild.get_role(self.bot.settings.guild().role_sub_mod)
+                is_admin = ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 6)
+                is_mod = ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5)
+                is_genius = ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 4)
+                submod = ctx.guild.get_role(ctx.settings.guild().role_sub_mod)
                 
                 if not cog.get_commands() or (cog_name in self.mod_only and not is_mod):
                     continue
@@ -84,9 +86,9 @@ class Utilities(commands.Cog):
             command = self.bot.get_command(command_arg.lower())
             if command:
                 # print(str(command.cog))
-                if command.cog.qualified_name in self.mod_only and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+                if command.cog.qualified_name in self.mod_only and not ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
                     raise commands.BadArgument("You don't have permission to view that command.")
-                elif command.cog.qualified_name in self.genius_only and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
+                elif command.cog.qualified_name in self.genius_only and not ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
                     raise commands.BadArgument("You don't have permission to view that command.")
                 else:
                     await ctx.message.add_reaction("📬")
@@ -100,8 +102,9 @@ class Utilities(commands.Cog):
 
     @commands.command(name="usage", hidden=True)
     @commands.guild_only()
+    @permissions.bot_channel_only_unless_mod()
     @commands.has_permissions(add_reactions=True, embed_links=True)
-    async def usage(self, ctx: commands.Context, *, command_arg: str):
+    async def usage(self, ctx: context.Context, *, command_arg: str):
         """Show usage of one command
 
         Parameters
@@ -110,11 +113,6 @@ class Utilities(commands.Cog):
             Name of command
         """
         
-        bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(
-                f"Command only allowed in <#{bot_chan}>")
-
         await ctx.message.delete(delay=5)
         command = self.bot.get_command(command_arg.lower())
         if command:
@@ -123,10 +121,10 @@ class Utilities(commands.Cog):
         else:
             await ctx.send("Command not found.", delete_after=5)
 
-    async def get_usage_embed(self, ctx, command):
-        if command.cog.qualified_name in self.mod_only and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+    async def get_usage_embed(self,  ctx: context.Context, command):
+        if command.cog.qualified_name in self.mod_only and not ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
             raise commands.BadArgument("You don't have permission to view that command.")
-        elif command.cog.qualified_name in self.genius_only and not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
+        elif command.cog.qualified_name in self.genius_only and not ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 4):
             raise commands.BadArgument("You don't have permission to view that command.")
         else:
             args = ""
@@ -148,13 +146,14 @@ class Utilities(commands.Cog):
 
     @usage.error
     @help_comm.error
-    async def info_error(self, ctx, error):
+    async def info_error(self,  ctx: context.Context, error):
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
                 or isinstance(error, commands.NoPrivateMessage)):
-            await self.bot.send_error(ctx, error)
+            await ctx.send_error(error)
         else:
             traceback.print_exc()
 

@@ -1,14 +1,15 @@
-import re
-import os
-
 import asyncio
-import discord
-import lavalink
-import humanize
 import datetime
+import os
+import re
 import traceback
-from discord.ext import commands, tasks
+
+import cogs.utils.context as context
+import discord
+import humanize
+import lavalink
 import spotipy
+from discord.ext import commands, tasks
 from spotipy.oauth2 import SpotifyClientCredentials
 
 url_rx = re.compile(r'https?://(?:www\.)?.+')
@@ -53,11 +54,11 @@ class Music(commands.Cog):
             return False
 
         await ctx.message.delete()
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != self.channel.id:
+        if not ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != self.channel.id:
             raise commands.BadArgument(
                 f"Command only allowed in <#{self.channel.id}>")
 
-        if (await self.bot.settings.user(ctx.author.id)).is_music_banned:
+        if (await ctx.settings.user(ctx.author.id)).is_music_banned:
             raise commands.BadArgument(f"{ctx.author.mention}, you are banned from using Music commands.")
 
         await self.ensure_voice(ctx)
@@ -97,17 +98,17 @@ class Music(commands.Cog):
             # if the user is mod, join regardless of what channel they're in
             # else, tell them to use the Music channel.
             # only mods can move the bot
-            if self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+            if ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
                 await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
             else:
-                if ctx.author.voice.channel.id != self.bot.settings.guild().channel_music:
+                if ctx.author.voice.channel.id != ctx.settings.guild().channel_music:
                     raise commands.BadArgument("Please join the Music voice channel.")
                 else:
                     await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
         else:  # the bot is connected to a vc
             # the bot should join the user's vc if they are a mod, else tell them to join the same vc
             if int(player.channel_id) != ctx.author.voice.channel.id:
-                if self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
+                if ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
                     await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
                 else:
                     if int(player.channel_id) == self.channel.id:
@@ -360,7 +361,7 @@ class Music(commands.Cog):
 
     @commands.command(aliases=['p'])
     @commands.cooldown(2, 10, commands.BucketType.member)
-    async def play(self, ctx, *, query: str):
+    async def play(self,  ctx: context.Context, *, query: str):
         """Plays song/playlist from YouTube/Spotify URL, URI or search term.
 
         Example usage
@@ -476,7 +477,7 @@ class Music(commands.Cog):
 
     @commands.guild_only()
     @commands.command(name='volume', aliases=['vol'])
-    async def change_volume(self, ctx, *, vol: int):
+    async def change_volume(self,  ctx: context.Context, *, vol: int):
         """Change the player volume.
 
         Example usage
@@ -555,7 +556,7 @@ class Music(commands.Cog):
     @queue_info.error
     @skip_.error
     @play.error
-    async def info_error(self, ctx, error):
+    async def info_error(self,  ctx: context.Context, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, commands.BadArgument)
@@ -566,9 +567,9 @@ class Music(commands.Cog):
             or isinstance(error, commands.BotMissingPermissions)
             or isinstance(error, commands.MaxConcurrencyReached)
                 or isinstance(error, commands.NoPrivateMessage)):
-            await self.bot.send_error(ctx, error)
+            await ctx.send_error(error)
         else:
-            await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
+            await ctx.send_error("A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
 
 def setup(bot):

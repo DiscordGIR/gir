@@ -10,6 +10,8 @@ import aiohttp
 import discord
 import humanize
 import pytimeparse
+import cogs.utils.permission_checks as permissions
+import cogs.utils.context as context
 from discord.ext import commands
 from twemoji_parser import emoji_to_url
 
@@ -25,7 +27,8 @@ class Misc(commands.Cog):
         
     @commands.command(name="remindme")
     @commands.guild_only()
-    async def remindme(self, ctx, dur: str, *, reminder: str):
+    @permissions.bot_channel_only_unless_mod()
+    async def remindme(self, ctx: context.Context, dur: str, *, reminder: str):
         """Send yourself a reminder after a given time gap
 
         Example usage
@@ -39,10 +42,6 @@ class Misc(commands.Cog):
         reminder : str
             What to remind you of
         """
-         
-        bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(f"Command only allowed in <#{bot_chan}>.")
         
         now = datetime.datetime.now()
         delta = pytimeparse.parse(dur)
@@ -54,7 +53,7 @@ class Misc(commands.Cog):
             raise commands.BadArgument("Time has to be in the future >:(")
         reminder = discord.utils.escape_markdown(reminder)
         
-        self.bot.settings.tasks.schedule_reminder(ctx.author.id, reminder, time)        
+        ctx.tasks.schedule_reminder(ctx.author.id, reminder, time)        
         natural_time =  humanize.naturaldelta(
                     delta, minimum_unit="seconds")
         embed = discord.Embed(title="Reminder set", color=discord.Color.random(), description=f"We'll remind you in {natural_time} ")
@@ -62,8 +61,9 @@ class Misc(commands.Cog):
         await ctx.message.reply(embed=embed, delete_after=10)
         
     @commands.command(name="jumbo")
+    @permissions.bot_channel_only_unless_mod()
     @commands.guild_only()
-    async def jumbo(self, ctx, emoji: typing.Union[discord.Emoji, discord.PartialEmoji, str]):
+    async def jumbo(self, ctx: context.Context, emoji: typing.Union[discord.Emoji, discord.PartialEmoji, str]):
         """Post large version of a given emoji
 
         Example usage
@@ -75,11 +75,6 @@ class Misc(commands.Cog):
         emoji : typing.Union[discord.Emoji, discord.PartialEmoji]
             Emoji to post
         """
-        
-        bot_chan = self.bot.settings.guild().channel_botspam
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            if await self.ratelimit(ctx.message):
-                raise commands.BadArgument("This command is on cooldown.")
 
         if isinstance(emoji, str):
             emoji_url = await emoji_to_url(emoji)
@@ -113,9 +108,10 @@ class Misc(commands.Cog):
         bucket = self.spam_cooldown.get_bucket(message)
         return bucket.update_rate_limit()
 
-    @commands.command(name="avatar")
+    @commands.command(name="avatar", aliases=["pfp"])
     @commands.guild_only()
-    async def avatar(self, ctx, member: discord.Member = None):
+    @permissions.bot_channel_only_unless_mod()
+    async def avatar(self, ctx: context.Context, member: discord.Member = None):
         """Post large version of a given user's avatar
 
         Parameters
@@ -127,12 +123,6 @@ class Misc(commands.Cog):
         if member is None:
             member = ctx.author
 
-        bot_chan = self.bot.settings.guild().channel_botspam
-
-        if not self.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(
-                f"Command only allowed in <#{bot_chan}>")
-
         await ctx.message.delete()
         embed = discord.Embed(title=f"{member}'s avatar")
         embed.set_image(url=member.avatar_url)
@@ -143,7 +133,7 @@ class Misc(commands.Cog):
     @commands.command(name="cij", aliases=['jelbrek'])
     @commands.cooldown(2, 10, commands.BucketType.member)
     @commands.guild_only()
-    async def cij(self, ctx, version: str, *, device: str):
+    async def cij(self, ctx: context.Context, version: str, *, device: str):
         """Check if your device is jailbreakable
 
         Example usage
@@ -219,18 +209,19 @@ class Misc(commands.Cog):
     @jumbo.error
     @remindme.error
     @avatar.error
-    async def info_error(self, ctx, error):
+    async def info_error(self, ctx: context.Context, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, permissions.PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
             or isinstance(error, commands.BotMissingPermissions)
             or isinstance(error, commands.MaxConcurrencyReached)
                 or isinstance(error, commands.NoPrivateMessage)):
-            await self.bot.send_error(ctx, error)
+            await ctx.send_error(error)
         else:
-            await self.bot.send_error(ctx, "A fatal error occured. Tell <@109705860275539968> about this.")
+            await ctx.send_error("A fatal error occured. Tell <@109705860275539968> about this.")
             traceback.print_exc()
 
 

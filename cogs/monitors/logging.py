@@ -5,6 +5,7 @@ from io import BytesIO
 import discord
 from discord.ext import commands
 from collections import defaultdict
+import cogs.utils.context as context
 from fold_to_ascii import fold
 from typing import List
 
@@ -203,7 +204,7 @@ class Logging(commands.Cog):
         await channel.send(embed=embed)
 
     @commands.Cog.listener()
-    async def on_command_error(self, ctx: commands.Context, error):
+    async def on_command_error(self, ctx: context.Context, error):
         if isinstance(error, commands.CommandNotFound):
             return
 
