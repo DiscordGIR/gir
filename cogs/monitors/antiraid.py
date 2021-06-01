@@ -147,7 +147,7 @@ class AntiRaidMonitor(commands.Cog):
         return False
     
     async def message_spam(self, message):
-        if self.bot.settings.permissions.hasAtLeast(message.guild, message.author, 5):
+        if self.bot.settings.permissions.hasAtLeast(message.guild, message.author, 1):
             return False
                 
         bucket = self.message_spam_detection_threshold.get_bucket(message)
