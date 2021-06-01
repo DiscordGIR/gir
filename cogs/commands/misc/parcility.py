@@ -108,7 +108,7 @@ class Parcility(commands.Cog):
         if not search_term:
             return
 
-        ctx = await self.bot.get_context(message)
+        ctx = await self.bot.get_context(message, cls=context.Context)
         async with ctx.typing():
             response = await search_request(search_term)
         
