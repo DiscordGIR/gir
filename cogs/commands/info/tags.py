@@ -145,7 +145,7 @@ class Tags(commands.Cog):
         return embed
 
     @commands.guild_only()
-    @permissions.genius_or_submod_and_up()
+    @permissions.bot_channel_only_unless_mod()
     @commands.command(name="taglist", aliases=['tlist'])
     async def taglist(self, ctx: context.Context):
         """List all tags
