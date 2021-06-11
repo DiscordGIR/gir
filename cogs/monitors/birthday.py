@@ -42,7 +42,7 @@ class Birthday(commands.Cog):
 
             try:
                 time = now + timedelta(days=1-h-m)
-                self.bot.tasks.schedule_remove_bday(user.id, time)
+                self.bot.settings.tasks.schedule_remove_bday(user.id, time)
             except Exception as e:
                 print(e)
                 continue
