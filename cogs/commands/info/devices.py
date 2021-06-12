@@ -4,6 +4,7 @@ import traceback
 
 import aiohttp
 import asyncio
+from attr.setters import convert
 import discord
 import cogs.utils.permission_checks as permissions
 import cogs.utils.context as context
@@ -77,9 +78,6 @@ class Devices(commands.Cog):
         # is this a supported device type for nicknames?
 
         # firmware stuff for nickname
-        def check(m):
-            return m.author == ctx.author and m.channel == ctx.channel
-
         firmwares = None
         # retrieve list of available firmwares for the given device
         async with aiohttp.ClientSession() as session:
@@ -92,38 +90,37 @@ class Devices(commands.Cog):
 
         found = False
         firmware = None
-        prompt = await ctx.message.reply(f"Please enter a version number ('or 'cancel' to cancel).\nHere are the 5 most recent...\n{', '.join(firmware['version'] for firmware in firmwares[0:5])}")
+        
+        # prompt user to input an iOS version they want to put in their nickname
+        prompt = context.PromptData(
+            value_name="firmware",
+            title="Please enter a version number.",
+            description="Here are the 5 most recent...\n" + '\n'.join(firmware['version'] for firmware in firmwares[0:5]),
+            convertor=str
+        )
+
+        firmware = await ctx.prompt(prompt)        
         while True:
-            # prompt user to input an iOS version they want to put in their nickname
-
-            try:
-                msg = await self.bot.wait_for('message', check=check)
-            except asyncio.TimeoutError:
+            if firmware is None:
+                await ctx.message.delete(delay=5)
+                await ctx.send_success("Cancelled.", delete_after=5)
                 return
-
-            if msg.content.lower() == "cancel":
-                await ctx.message.delete()
-                await msg.delete()
-                await prompt.delete()
-                return
-
+            
             # is this a valid version for this device?
             for f in firmwares:
-                if f["version"] == msg.content:
+                if f["version"] == firmware:
                     found = True
                     firmware = f["version"]
                     break
 
-            await prompt.delete()
-            await msg.delete()
-
             if found:
                 break
             else:
-                prompt = await ctx.message.reply(f"That version wasn't found. Please enter a version number ('or 'cancel' to cancel).\nHere are the 10 most recent...\n{', '.join(firmware['version'] for firmware in firmwares[0:10])}")
+                prompt.reprompt = True
+                firmware = await ctx.prompt(prompt)
 
         # change the user's nickname!
-        if found and firmware:
+        if found and firmware is not None:
             name = the_device["name"]
             name = name.replace(' Plus', '+')
             name = name.replace('Pro Max', 'PM')
@@ -135,8 +132,6 @@ class Devices(commands.Cog):
             await ctx.author.edit(nick=new_nick)
             await ctx.message.reply("Changed your nickname!", delete_after=5)
             await ctx.message.delete(delay=5)
-        else:
-            raise commands.BadArgument("An error occured :(")
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(change_nickname=True)
