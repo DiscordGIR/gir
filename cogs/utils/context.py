@@ -33,15 +33,15 @@ class Context(commands.Context):
             color=discord.Color.blurple())
         embed.set_footer(text="Send 'cancel' to cancel.")
         
-        prompt = await self.send(embed=embed)
+        prompt_msg = await self.send(embed=embed)
         try:
             response = await self.bot.wait_for('message', check=wait_check, timeout=120)
         except asyncio.TimeoutError:
-            await prompt.delete()
+            await prompt_msg.delete()
             return
         else:
             await response.delete()
-            await prompt.delete()
+            await prompt_msg.delete()
             if response.content.lower() == "cancel":
                 return
             elif response.content is not None and response.content != "":
@@ -52,7 +52,8 @@ class Context(commands.Context):
                         ret = None
                     
                     if ret is None:
-                        raise commands.BadArgument(f"Could not parse value for \"{info.value_name}\".")
+                        info.reprompt = True
+                        return await self.prompt(info)
 
                     if info.convertor is pytimeparse.parse:
                         now = datetime.now()
