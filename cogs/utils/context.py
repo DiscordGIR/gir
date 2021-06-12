@@ -11,6 +11,9 @@ class PromptData:
         self.convertor = convertor
         self.title = title
         self.reprompt = reprompt
+        
+    def __copy__(self):
+        return PromptData(self.value_name, self.description, self.convertor, self.title, self.reprompt)
 
 class Context(commands.Context):
     def __init__(self, **kwargs):
@@ -18,9 +21,6 @@ class Context(commands.Context):
         self.settings = self.bot.settings
         self.permissions = self.bot.settings.permissions
         self.tasks = self.bot.settings.tasks
-        
-    async def send_success(self, description: str, delete_after: int = None):
-        return await self.reply(embed=discord.Embed(description=description, color=discord.Color.blurple()), delete_after=delete_after)
     
     async def prompt(self, info: PromptData):
         def wait_check(m):
@@ -30,7 +30,7 @@ class Context(commands.Context):
         embed = discord.Embed(
             title=info.title if not info.reprompt else f"That wasn't a valid {info.value_name}. {info.title if info.title is not None else ''}",
             description=info.description,
-            color=discord.Color.blurple())
+            color=discord.Color.blurple() if not info.reprompt else discord.Color.orange())
         embed.set_footer(text="Send 'cancel' to cancel.")
         
         prompt_msg = await self.send(embed=embed)
@@ -44,7 +44,10 @@ class Context(commands.Context):
             await prompt_msg.delete()
             if response.content.lower() == "cancel":
                 return
-            elif response.content is not None and response.content != "":
+            elif not response.content:
+                info.reprompt = True
+                return await self.prompt(info)
+            else:
                 if info.convertor in [str, int, pytimeparse.parse]:
                     try:
                         ret = info.convertor(response.content)
@@ -66,6 +69,11 @@ class Context(commands.Context):
                     
         return ret
 
+    async def send_warning(self, description: str, delete_after: int = None):
+        return await self.reply(embed=discord.Embed(description=description, color=discord.Color.orange()), delete_after=delete_after)
+
+    async def send_success(self, description: str, delete_after: int = None):
+        return await self.reply(embed=discord.Embed(description=description, color=discord.Color.dark_green()), delete_after=delete_after)
         
     async def send_error(self, error):
         embed = discord.Embed(title=":(\nYour command ran into a problem")

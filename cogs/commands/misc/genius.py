@@ -37,29 +37,20 @@ class Genius(commands.Cog):
         if not channel:
             return
 
-        description = None
-
-        def check(m):
-            return m.author == ctx.author and m.channel == ctx.channel
-
-        while True:
-            prompt = await ctx.message.reply(f"Please enter a description for this common issue (or cancel to cancel)")
-            try:
-                desc = await self.bot.wait_for('message', check=check, timeout=120)
-            except asyncio.TimeoutError:
-                return
-            else:
-                await desc.delete()
-                await prompt.delete()
-                if desc.content.lower() == "cancel":
-                    return
-                elif desc.content is not None and desc.content != "":
-                    description = desc.content
-                    break
-
+        prompt = context.PromptData(
+            value_name="description",
+            description="Please enter a description for this common issue.",
+            convertor=str)
+        description = await ctx.prompt(prompt)
+        
+        if description is None:
+            await ctx.message.delete(delay=5)
+            await ctx.send_warning("Cancelled new common issue.", delete_after=5)
+            return
+        
         embed, f = await self.prepare_issues_embed(title, description, ctx.message)
         await channel.send(embed=embed, file=f)
-        await ctx.message.reply("Done!", delete_after=5)
+        await ctx.send_success("Common issue posted!", delete_after=5)
         await ctx.message.delete(delay=5)
         
     @commands.command(name="postembed")
@@ -84,25 +75,17 @@ class Genius(commands.Cog):
             return
 
         channel = ctx.channel
-        description = None
-
-        def check(m):
-            return m.author == ctx.author and m.channel == ctx.channel
-
-        while True:
-            prompt = await ctx.message.reply(f"Please enter a description for this embed (or cancel to cancel)")
-            try:
-                desc = await self.bot.wait_for('message', check=check, timeout=120)
-            except asyncio.TimeoutError:
-                return
-            else:
-                await desc.delete()
-                await prompt.delete()
-                if desc.content.lower() == "cancel":
-                    return
-                elif desc.content is not None and desc.content != "":
-                    description = desc.content
-                    break
+        
+        prompt = context.PromptData(
+            value_name="description",
+            description="Please enter a description for this embed.",
+            convertor=str)
+        description = await ctx.prompt(prompt)
+        
+        if description is None:
+            await ctx.message.delete(delay=5)
+            await ctx.send_warning("Cancelled embed post.", delete_after=5)
+            return
 
         embed, f = await self.prepare_issues_embed(title, description, ctx.message)
         await channel.send(embed=embed, file=f)
