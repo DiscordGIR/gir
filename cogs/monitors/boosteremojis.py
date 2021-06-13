@@ -52,37 +52,26 @@ class BoosterEmojis(commands.Cog):
             await msg.remove_reaction(payload.emoji, payload.member)
             return
 
-        # if len(msg.guild.emojis) > msg.guild.emoji_limit:
-        #     await msg.channel.send("Reached max emoji limit!", delete_after=5)
-        #     return
-
         if name is None:
-            def check(m):
-                return m.author == payload.member
-
-            while True:
-                prompt = await channel.send("Enter name for emoji (alphanumeric and underscores) or 'cancel' to cancel.")
-                try:
-                    temp = await self.bot.wait_for('message', check=check, timeout=30)
-                except asyncio.TimeoutError:
-                    await prompt.delete()
-                    await msg.remove_reaction(payload.emoji, payload.member)
-                    return
-                else:
-                    if temp.content.lower() == 'cancel':
-                        await prompt.delete()
-                        await temp.delete()
-                        await msg.remove_reaction(payload.emoji, payload.member)
-                        return
-                    
-                    name = temp.content
-                    await prompt.delete()
-                    await temp.delete()
+            prompt = context.PromptData(
+                value_name="name",
+                description="Enter name for emoji (alphanumeric and underscores).",
+                convertor=str
+            )
+            try:
+                ctx = await self.bot.get_context(msg, cls=context.Context)
+                name = await ctx.prompt(prompt)
+                while True:
                     if len(name) > 2 and len(name) < 20 and re.match(r"^[a-zA-Z0-9_]*$", name):
                         break
+                    prompt.reprompt = True
+                    name = await ctx.prompt(prompt)
 
-        emoji = await channel.guild.create_custom_emoji(image=_bytes, name=name)
-        if emoji:
+            except asyncio.TimeoutError:
+                await msg.remove_reaction(payload.emoji, payload.member)
+        
+        if name is not None:
+            emoji = await channel.guild.create_custom_emoji(image=_bytes, name=name)
             await msg.delete()
 
         try:
@@ -108,8 +97,10 @@ class BoosterEmojis(commands.Cog):
             await msg.reply(e, delete_after=5)
             await msg.delete(delay=5)
             return
-
-        await self.add_reactions(good=_bytes is not None, msg=msg)
+        try:
+            await self.add_reactions(good=_bytes is not None, msg=msg)
+        except discord.errors.NotFound:
+            pass
 
     async def get_bytes(self, msg):
         custom_emojis = re.findall(r'<:\d+>|<:.+?:\d+>', msg.content)
