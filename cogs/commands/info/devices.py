@@ -103,7 +103,7 @@ class Devices(commands.Cog):
         while True:
             if firmware is None:
                 await ctx.message.delete(delay=5)
-                await ctx.send_success("Cancelled.", delete_after=5)
+                await ctx.send_warning("Cancelled.", delete_after=5)
                 return
             
             # is this a valid version for this device?
@@ -130,7 +130,7 @@ class Devices(commands.Cog):
                 raise commands.BadArgument("Nickname too long! Aborting.")
 
             await ctx.author.edit(nick=new_nick)
-            await ctx.message.reply("Changed your nickname!", delete_after=5)
+            await ctx.send_success("Changed your nickname!", delete_after=5)
             await ctx.message.delete(delay=5)
 
     @commands.guild_only()
@@ -155,7 +155,7 @@ class Devices(commands.Cog):
 
         await ctx.author.edit(nick=new_nick)
         await ctx.message.delete(delay=5)
-        await ctx.message.reply("Removed device from your nickname!", delete_after=5)
+        await ctx.send_success("Removed device from your nickname!", delete_after=5)
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(change_nickname=True)

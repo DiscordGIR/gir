@@ -48,7 +48,7 @@ class SubNews(commands.Cog):
 
         await channel.send(content=body, file=f, allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=True))
         await ctx.message.delete()
-        await ctx.send("Done!", delete_after=5)
+        await ctx.send_success("Posted subreddit news post!", delete_after=5)
 
     @subnews.error
     async def info_error(self, ctx: context.Context, error):

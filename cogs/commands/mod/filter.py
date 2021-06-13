@@ -65,9 +65,9 @@ class Filters(commands.Cog):
         cur.save()
 
         if val:
-            await ctx.send("You will now be pinged for reports when offline")
+            await ctx.send_success("You will now be pinged for reports when offline")
         else:
-            await ctx.send("You won't be pinged for reports when offline")
+            await ctx.send_warning("You will no longer be pinged for reports when offline")
 
     @commands.guild_only()
     @permissions.admin_and_up()
@@ -99,7 +99,7 @@ class Filters(commands.Cog):
         phrase = discord.utils.escape_markdown(phrase)
         phrase = discord.utils.escape_mentions(phrase)
 
-        await ctx.message.reply(f"Added new word to filter! This filter {'will' if notify else 'will not'} ping for reports, level {bypass} can bypass it, and the phrase is {phrase}")
+        await ctx.send_success(title="Added new word to filter!", description=f"This filter {'will' if notify else 'will not'} ping for reports, level {bypass} can bypass it, and the phrase is `{phrase}`")
 
     @commands.guild_only()
     @permissions.admin_and_up()
@@ -146,9 +146,9 @@ class Filters(commands.Cog):
             words[0].piracy = True
             await ctx.settings.update_filtered_word(words[0])
 
-            await ctx.message.reply("Marked as a piracy word!", delete_after=5)
+            await ctx.send_success("Marked as a piracy word!", delete_after=5)
         else:
-            await ctx.message.reply("You must filter that word before it can be marked as piracy.", delete_after=5)            
+            await ctx.send_warning("You must filter that word before it can be marked as piracy.", delete_after=5)            
         await ctx.message.delete(delay=5)
 
     @commands.guild_only()
@@ -175,9 +175,9 @@ class Filters(commands.Cog):
         
         if len(words) > 0:
             await ctx.settings.remove_filtered_word(words[0].word)
-            await ctx.message.reply("Deleted!", delete_after=5)
+            await ctx.send_success("Deleted!", delete_after=5)
         else:
-            await ctx.message.reply("That word is not filtered.", delete_after=5)            
+            await ctx.send_warning("That word is not filtered.", delete_after=5)            
         await ctx.message.delete(delay=5)
 
     @commands.guild_only()
@@ -198,9 +198,9 @@ class Filters(commands.Cog):
         """
 
         if await ctx.settings.add_whitelisted_guild(id):
-            await ctx.message.reply("Whitelisted.", delete_after=10)
+            await ctx.send_success("Whitelisted.", delete_after=10)
         else:
-            await ctx.message.reply("That server is already whitelisted.", delete_after=10)
+            await ctx.send_warning("That server is already whitelisted.", delete_after=10)
         await ctx.message.delete(delay=10)
 
     @commands.guild_only()
@@ -221,9 +221,9 @@ class Filters(commands.Cog):
         """
 
         if await ctx.settings.add_ignored_channel(channel.id):
-            await ctx.message.reply("Ignored.", delete_after=10)
+            await ctx.send_success(f"The filter will no longer run in {channel.mention}.", delete_after=10)
         else:
-            await ctx.message.reply("That channel is already ignored.", delete_after=10)
+            await ctx.send_warning("That channel is already ignored.", delete_after=10)
         await ctx.message.delete(delay=10)
 
     @commands.guild_only()
@@ -243,9 +243,9 @@ class Filters(commands.Cog):
         """
 
         if await ctx.settings.remove_ignored_channel(channel.id):
-            await ctx.message.reply("Unignored.", delete_after=10)
+            await ctx.send_success(f"Resumed filtering in {channel.mention}.", delete_after=10)
         else:
-            await ctx.message.reply("That channel is not already ignored.", delete_after=10)
+            await ctx.send_warning("That channel is not already ignored.", delete_after=10)
         await ctx.message.delete(delay=10)
 
 
@@ -267,9 +267,9 @@ class Filters(commands.Cog):
         """
 
         if await ctx.settings.remove_whitelisted_guild(id):
-            await ctx.message.reply("Blacklisted.", delete_after=10)
+            await ctx.send_success("Blacklisted.", delete_after=10)
         else:
-            await ctx.message.reply("That server is already blacklisted.", delete_after=10)
+            await ctx.send_warning("That server is already blacklisted.", delete_after=10)
         await ctx.message.delete(delay=10)
 
     @commands.guild_only()
@@ -297,11 +297,11 @@ class Filters(commands.Cog):
         if len(words) > 0:
             words[0].false_positive=True
             if await ctx.settings.update_filtered_word(words[0]):
-                await ctx.message.reply("Marked as potential false positive, we won't perform the enhanced checks on it!")
+                await ctx.send_success("Marked as potential false positive, we won't perform the enhanced checks on it!")
             else:
                 raise commands.BadArgument("Unexpected error occured trying to mark as false positive!")
         else:
-            await ctx.message.reply("That word is not filtered.")  
+            await ctx.send_warning("That word is not filtered.")  
             
     @falsepositive.error
     @piracy.error

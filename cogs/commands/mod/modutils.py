@@ -146,7 +146,7 @@ class ModUtils(commands.Cog):
         results.is_music_banned = True
         results.save()
         
-        await ctx.send("Done", delete_after=5)
+        await ctx.send_success(f"Banned {user.mention} from music.", delete_after=5)
 
     @commands.guild_only()
     @permissions.mod_and_up()

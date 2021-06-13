@@ -69,11 +69,11 @@ class Context(commands.Context):
                     
         return ret
 
-    async def send_warning(self, description: str, delete_after: int = None):
-        return await self.reply(embed=discord.Embed(description=description, color=discord.Color.orange()), delete_after=delete_after)
+    async def send_warning(self, description: str, title=None, delete_after: int = None):
+        return await self.reply(embed=discord.Embed(title=title, description=description, color=discord.Color.orange()), delete_after=delete_after)
 
-    async def send_success(self, description: str, delete_after: int = None):
-        return await self.reply(embed=discord.Embed(description=description, color=discord.Color.dark_green()), delete_after=delete_after)
+    async def send_success(self, description: str, title=None, delete_after: int = None):
+        return await self.reply(embed=discord.Embed(title=title, description=description, color=discord.Color.dark_green()), delete_after=delete_after)
         
     async def send_error(self, error):
         embed = discord.Embed(title=":(\nYour command ran into a problem")

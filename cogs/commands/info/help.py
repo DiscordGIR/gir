@@ -80,7 +80,7 @@ class Utilities(commands.Cog):
                         seen += group_size
                         
             except Exception:
-                await ctx.send("I tried to DM you but couldn't. Make sure your DMs are enabled.")
+                raise commands.BadArgument("I tried to DM you but couldn't. Make sure your DMs are enabled.")
 
         else:
             command = self.bot.get_command(command_arg.lower())
@@ -96,9 +96,9 @@ class Utilities(commands.Cog):
                     try:
                         await ctx.author.send(embed=embed)
                     except Exception:
-                        await ctx.send("I tried to DM you but couldn't. Make sure your DMs are enabled.")
+                        raise commands.BadArgument("I tried to DM you but couldn't. Make sure your DMs are enabled.")
             else:
-                await ctx.send("Command not found.", delete_after=5)
+                raise commands.BadArgument("Command not found.", delete_after=5)
 
     @commands.command(name="usage", hidden=True)
     @commands.guild_only()
@@ -119,7 +119,7 @@ class Utilities(commands.Cog):
             embed = await self.get_usage_embed(ctx, command)
             await ctx.send(embed=embed)
         else:
-            await ctx.send("Command not found.", delete_after=5)
+            raise commands.BadArgument("Command not found.", delete_after=5)
 
     async def get_usage_embed(self,  ctx: context.Context, command):
         if command.cog.qualified_name in self.mod_only and not ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5):

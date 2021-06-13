@@ -159,7 +159,7 @@ async def report_spam(bot, msg, user, title):
                         pass
                     await report_msg.delete()
                 else:
-                    await ctx.send("I wasn't able to unmute them.")
+                    await ctx.send_warning("I wasn't able to unmute them.")
                 return
             
             elif str(reaction.emoji) == '💀':
@@ -173,7 +173,7 @@ async def report_spam(bot, msg, user, title):
                         pass
                     await report_msg.delete()
                 else:
-                    await ctx.send("I wasn't able to ban them.")
+                    await ctx.send_warning("I wasn't able to ban them.")
 
 
 async def report_raid(bot, user, msg=None):

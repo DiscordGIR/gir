@@ -185,7 +185,7 @@ class Tags(commands.Cog):
             raise commands.BadArgument("That tag does not exist.")
 
         await ctx.settings.remove_tag(name)
-        await ctx.message.reply("Deleted.", delete_after=5)
+        await ctx.send_warning("Deleted that tag.", delete_after=5)
         await ctx.message.delete(delay=5)
 
     @commands.guild_only()
