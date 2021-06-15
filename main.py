@@ -294,8 +294,7 @@ if __name__ == '__main__':
         bot.load_extension(extension)
 
 
-@bot.event
-async def on_ready():
+async def run_once_when_ready():
     await bot.wait_until_ready()
 
     print(
@@ -305,4 +304,5 @@ async def on_ready():
     print(f'Successfully logged in and booted...!')
 
 
+bot.loop.create_task(run_once_when_ready())
 bot.run(os.environ.get("BOTTY_TOKEN"), bot=True, reconnect=True)
