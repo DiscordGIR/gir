@@ -1,3 +1,4 @@
+import base64
 import datetime
 import json
 import os
@@ -13,7 +14,7 @@ import pytimeparse
 import cogs.utils.permission_checks as permissions
 import cogs.utils.context as context
 from discord.ext import commands
-from twemoji_parser import emoji_to_url
+from PIL import Image
 
 
 class Misc(commands.Cog):
@@ -24,6 +25,12 @@ class Misc(commands.Cog):
         self.CIJ_KEY = os.environ.get("CIJ_KEY")
         self.cij_baseurl = "https://canijailbreak2.com/v1/pls"
         self.devices_url = "https://api.ipsw.me/v4/devices"
+        
+        try:
+            with open('emojis.json') as f:
+                self.emojis = json.loads(f.read())
+        except IOError:
+            raise Exception("Could not find emojis.json. Make sure to run grab_emojis.py")
         
     @commands.command(name="remindme")
     @commands.guild_only()
@@ -81,32 +88,20 @@ class Misc(commands.Cog):
                 raise commands.BadArgument("This command is on cooldown.")
 
         if isinstance(emoji, str):
-            emoji_url = await emoji_to_url(emoji)
-            if emoji_url == emoji :
-                raise commands.BadArgument("Couldn't find a suitable emoji.")
-            emoji_bytes = await self.get_emoji_bytes(emoji_url)
-            if emoji_bytes is None:
-                raise commands.BadArgument("Couldn't find a suitable emoji.")
+            async with ctx.typing():
+                emoji_url_file = self.emojis.get(emoji)
+                if emoji_url_file is None:
+                    raise commands.BadArgument("Couldn't find a suitable emoji.")
 
-            _file = discord.File(BytesIO(emoji_bytes), filename="image.png")
+            im = Image.open(BytesIO(base64.b64decode(emoji_url_file)))
+            image_container = BytesIO()
+            im.save(image_container, 'png')
+            image_container.seek(0)
+            _file = discord.File(image_container, filename="image.png")
             await ctx.message.reply(file=_file, mention_author=False)
 
         else:
             await ctx.message.reply(emoji.url, mention_author=False)
-
-    async def get_emoji_bytes(self, url):
-        async with aiohttp.ClientSession() as session:
-            async with session.head(url) as resp:
-                if resp.status != 200:
-                    return None
-                elif resp.headers["CONTENT-TYPE"] not in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
-                    return None
-                else:
-                    async with session.get(url) as resp2:
-                        if resp2.status != 200:
-                            return None
-
-                        return await resp2.read()
 
     async def ratelimit(self, message):
         bucket = self.spam_cooldown.get_bucket(message)

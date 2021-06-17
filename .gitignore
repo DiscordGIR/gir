@@ -130,3 +130,4 @@ application.yml
 logs/
 
 .pylintrc
+emojis.json
