@@ -10,6 +10,7 @@ class Guild(mongoengine.Document):
     role_dev                  = mongoengine.IntField()
     role_genius               = mongoengine.IntField()
     role_member               = mongoengine.IntField()
+    role_memberone            = mongoengine.IntField()
     role_memberedition        = mongoengine.IntField()
     role_memberplus           = mongoengine.IntField()
     role_memberpro            = mongoengine.IntField()
