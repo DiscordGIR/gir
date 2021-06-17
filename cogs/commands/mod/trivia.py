@@ -141,7 +141,7 @@ class Giveaway(commands.Cog):
 
         results = enumerate(await ctx.settings.trivia_leaderboard())
         # ctx.user_cache = self.user_cache
-        results = [ (i, m) for (i, m) in results if ctx.guild.get_member(m._id) is not None][0:100]
+        results = [ (i, m) for (i, m) in results if ctx.guild.get_member(m._id) is not None and m.trivia_points != 0][0:100]
         if len(results) == 0:
             raise commands.BadArgument("The leaderboard is currently empty.")
         

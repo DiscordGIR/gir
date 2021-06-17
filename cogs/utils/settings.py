@@ -455,10 +455,10 @@ class Settings(commands.Cog):
         return u.trivia_points
 
     async def reset_trivia_points(self):
-        users = User.objects().only('_id', 'xp')
-        count = users(trivia_points__ne=0).count()
+        users = User.objects(trivia_points__ne=0, trivia_points__exists=True)
+        count = users.count()
         if count > 0:
-            for u in users(trivia_points__ne=0):
+            for u in users:
                 u.trivia_points = 0
                 u.save()
         return count
