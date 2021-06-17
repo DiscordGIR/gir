@@ -52,7 +52,6 @@ class Giveaway(commands.Cog):
         self.time_updater_loop.cancel()
 
     @commands.guild_only()
-    @permissions.admin_and_up()
     @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
     @commands.group()
     async def points(self, ctx: context.Context):
@@ -61,7 +60,7 @@ class Giveaway(commands.Cog):
         """
 
         if ctx.invoked_subcommand is None:
-            raise commands.BadArgument("Invalid giveaway subcommand passed. Options: `start`, `reroll`, `end`")
+            raise commands.BadArgument("Invalid giveaway subcommand passed. Options: `add`, `remove`, `reset`, `leaderboard`")
 
     @points.command()
     @permissions.mod_and_up()
@@ -151,7 +150,7 @@ class Giveaway(commands.Cog):
         
         await menus.start(ctx)
 
-
+    @points.error
     @add.error
     @remove.error
     @reset.error
