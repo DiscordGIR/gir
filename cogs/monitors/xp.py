@@ -66,7 +66,7 @@ class Xp(commands.Cog):
             roles_to_add.append(db.role_memberpro)
         if 50 <= new_level:
             roles_to_add.append(db.role_memberedition)
-        if 50 <= new_level:
+        if 75 <= new_level:
             roles_to_add.append(db.role_memberone)
 
         return roles_to_add
