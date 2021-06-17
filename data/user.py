@@ -10,6 +10,7 @@ class User(mongoengine.Document):
     birthday_excluded   = mongoengine.BooleanField(default=False, required=True)
     
     xp                  = mongoengine.IntField(default=0, required=True)
+    trivia_points       = mongoengine.IntField(default=0, required=True)
     level               = mongoengine.IntField(default=0, required=True)
     warn_points         = mongoengine.IntField(default=0, required=True)
 

@@ -438,7 +438,6 @@ class Settings(commands.Cog):
     async def remove_locked_channels(self, channel):
         Guild.objects(_id=self.guild_id).update_one(pull__locked_channels=channel)
 
-    
     async def add_raid_phrase(self, phrase: str) -> bool:
         existing = self.guild().raid_phrases.filter(word=phrase)
         if(len(existing) > 0):
@@ -449,7 +448,24 @@ class Settings(commands.Cog):
     async def remove_raid_phrase(self, phrase: str):
         Guild.objects(_id=self.guild_id).update_one(pull__raid_phrases__word=FilterWord(word=phrase).word)
 
-        
+    async def inc_trivia_points(self, _id, points):
+        await self.user(_id)
+        User.objects(_id=_id).update_one(inc__trivia_points=points)
+        u = User.objects(_id=_id).first()
+        return u.trivia_points
+
+    async def reset_trivia_points(self):
+        users = User.objects().only('_id', 'xp')
+        count = users(trivia_points__ne=0).count()
+        if count > 0:
+            for u in users(trivia_points__ne=0):
+                u.trivia_points = 0
+                u.save()
+        return count
+
+    async def trivia_leaderboard(self) -> list:
+        return User.objects[0:100].only('_id', 'trivia_points').order_by('-trivia_points', '-_trivia_points').select_related()
+
 class Permissions:
     """A way of calculating a user's permissions.
     Level 0 is everyone.

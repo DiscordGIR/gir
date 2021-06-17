@@ -6,6 +6,11 @@ import cogs.utils.context as context
 import cogs.utils.permission_checks as permissions
 
 
+"""
+Make sure to add the cog to the initial_extensions list
+in main.py
+"""
+
 class CogName(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

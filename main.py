@@ -34,6 +34,7 @@ initial_extensions = [
                     'cogs.commands.mod.modactions',
                     'cogs.commands.mod.modutils',
                     'cogs.commands.mod.antiraid',
+                    'cogs.commands.mod.trivia',
                     'cogs.commands.misc.admin',
                     'cogs.commands.misc.genius',
                     'cogs.commands.misc.misc',
