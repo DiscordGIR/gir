@@ -95,10 +95,12 @@ class Giveaway(commands.Cog):
             if responses[response] is None:
                 res = await ctx.prompt(prompts[response])
                 if res is None:
-                    raise commands.BadArgument("Command cancelled.")
+                    await ctx.send_warning("Giveaway cancelled.")
+                    return
                 
                 if response == 'winners' and res < 1:
-                    raise commands.BadArgument("Can't have less than 1 winner")
+                    await ctx.send_warning("Can't have less than 1 winner!")
+                    return
 
                 responses[response] = res
 
