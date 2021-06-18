@@ -96,6 +96,12 @@ async def report_spam(bot, msg, user, title):
                 
                 await ctx.send_success(title="Done!", description=f"{user.mention} was muted for {humanize.naturaldelta(time - now)}.", delete_after=5)
                 await report_msg.delete()
+                
+                try:
+                    await user.send(embed=discord.Embed(title="Ping spam unmute", description=f"A moderator has reviewed your ping spam report. You will be unmuted in {humanize.naturaldelta(time - now)}.", color=discord.Color.orange()))
+                except Exception:
+                    pass
+                
                 return
             except Exception:
                 return
