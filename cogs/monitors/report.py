@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 from discord.ext import commands
+import pytimeparse
 import cogs.utils.context as context
 
 import discord
@@ -31,10 +32,12 @@ async def report(bot, msg, user, word, invite=None):
                 await report_msg.delete()
             except Exception:
                 pass
+            return
         elif reaction == '🆔':
             await channel.send(user.id)
         elif reaction == '🧹':
             await channel.purge(limit=100)
+            return
 
 
 async def report_spam(bot, msg, user, title):
@@ -42,58 +45,67 @@ async def report_spam(bot, msg, user, title):
     ping_string = await prepare_ping_string(bot, msg)    
     
     embed = await prepare_embed(bot, user, msg, title=title)
-    embed.set_footer(text="✅ to pardon, 💀 to ban.")
+    embed.set_footer(text="✅ to pardon, 💀 to ban, ⚠️ to temp mute.")
     
     report_msg = await channel.send(ping_string, embed=embed)
-    report_reactions = ['✅', '💀']
+    report_reactions = ['✅', '💀', '⚠️']
 
-    for reaction in report_reactions:
-        await report_msg.add_reaction(reaction)
-
-    def check(reaction, reactor):
-        res = (reactor.id != bot.user.id
-               and reaction.message == report_msg
-               and str(reaction.emoji) in report_reactions
-               and bot.settings.permissions.hasAtLeast(reactor.guild, reactor, 5))
-        return res
-
+    ctx = await bot.get_context(report_msg, cls=context.Context)
+    prompt_data = context.PromptDataReaction(report_msg, report_reactions)
+    
     while True:
-        try:
-            reaction, reactor = await bot.wait_for('reaction_add', timeout=300.0, check=check)
-        except asyncio.TimeoutError:
+        reaction, reactor = await ctx.prompt_reaction(prompt_data)
+        if not bot.settings.permissions.hasAtLeast(user.guild, user, 5) or reaction not in report_reactions:
+            await report_msg.remove_reaction(reaction, reactor)
+            
+        if reaction == '✅':
+            ctx.author = ctx.message.author = reactor
+            unmute = bot.get_command("unmute")
+            if unmute is not None:
+                try:
+                    await unmute(ctx=ctx, user=user, reason="Reviewed by a moderator.")
+                except Exception:
+                    pass
+                await report_msg.delete()
+            else:
+                await ctx.send_warning("I wasn't able to unmute them.")
+            return
+        
+        elif reaction == '💀':
+            ctx.author = ctx.message.author = reactor
+            ban = bot.get_command("ban")
+            if ban is not None:
+                try:
+                    await ban(ctx=ctx, user=user, reason="Ping spam")
+                except Exception:
+                    pass
+                await report_msg.delete()
+            else:
+                await ctx.send_warning("I wasn't able to ban them.")
+            return
+        elif reaction == '⚠️':            
+            ctx.author = ctx.message.author = reactor
+            now = datetime.datetime.now()
+            delta = await prompt_time(ctx)
+            if delta is None:
+                continue
+            
             try:
-                await report_msg.clear_reactions()
+                time = now + datetime.timedelta(seconds=delta)
+                ctx.tasks.schedule_unmute(user.id, time)
+                
+                await ctx.send_success(title="Done!", description=f"{user.mention} was muted for {humanize.naturaldelta(time - now)}.", delete_after=5)
+                await report_msg.delete()
                 return
             except Exception:
-                pass
-        else:
-            if str(reaction.emoji) == '✅':
-                ctx = await bot.get_context(report_msg, cls=context.Context)
-                ctx.author = ctx.message.author = reactor
-                unmute = bot.get_command("unmute")
-                if unmute is not None:
-                    try:
-                        await unmute(ctx=ctx, user=user, reason="Reviewed by a moderator.")
-                    except Exception:
-                        pass
-                    await report_msg.delete()
-                else:
-                    await ctx.send_warning("I wasn't able to unmute them.")
                 return
-            
-            elif str(reaction.emoji) == '💀':
-                ctx = await bot.get_context(report_msg, cls=context.Context)
-                ctx.author = ctx.message.author = reactor
-                ban = bot.get_command("ban")
-                if ban is not None:
-                    try:
-                        await ban(ctx=ctx, user=user, reason="Ping spam")
-                    except Exception:
-                        pass
-                    await report_msg.delete()
-                else:
-                    await ctx.send_warning("I wasn't able to ban them.")
 
+async def prompt_time(ctx):
+    prompt_data = context.PromptData(value_name="duration", 
+                                     description="Please enter a duration for the mute (i.e 15m).",
+                                     convertor=pytimeparse.parse,
+                                     )
+    return await ctx.prompt(prompt_data)
 
 async def report_raid(bot, user, msg=None):
     embed = discord.Embed()
@@ -166,10 +178,10 @@ async def prepare_embed(bot, user, msg, word=None, title="Word filter"):
 
 async def prepare_ping_string(bot, msg):
     ping_string = ""    
-    role = msg.guild.get_role(bot.settings.guild().role_moderator)
-    for member in role.members:
-        offline_ping = (await bot.settings.user(member.id)).offline_report_ping
-        if member.status == discord.Status.online or offline_ping:
-            ping_string += f"{member.mention} "
+    # role = msg.guild.get_role(bot.settings.guild().role_moderator)
+    # for member in role.members:
+    #     offline_ping = (await bot.settings.user(member.id)).offline_report_ping
+    #     if member.status == discord.Status.online or offline_ping:
+    #         ping_string += f"{member.mention} "
 
     return ping_string

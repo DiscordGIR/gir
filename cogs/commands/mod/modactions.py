@@ -595,7 +595,7 @@ class ModActions(commands.Cog):
         msgs = await ctx.channel.history(limit=limit+1).flatten()
 
         await ctx.channel.purge(limit=limit+1)
-        await ctx.send_success(f'Purged {len(msgs)} messages.', delete_after=10)
+        await ctx.send(f'Purged {len(msgs)} messages.', delete_after=10)
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(manage_roles=True)
