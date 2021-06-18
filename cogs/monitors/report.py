@@ -5,6 +5,7 @@ import cogs.utils.context as context
 
 import discord
 import humanize
+import traceback
 
 
 async def report(bot, msg, user, word, invite=None):
@@ -25,37 +26,23 @@ async def report(bot, msg, user, word, invite=None):
         report_msg = await channel.send(ping_string, embed=embed)
     report_reactions = ['✅', '🆔', '🧹']
 
-    for reaction in report_reactions:
-        await report_msg.add_reaction(reaction)
-
-    def check(reaction, user):
-        res = (user.id != bot.user.id
-               and reaction.message == report_msg
-               and str(reaction.emoji) in report_reactions
-               and bot.settings.permissions.hasAtLeast(user.guild, user, 5))
-        return res
-
+    ctx = await bot.get_context(report_msg, cls=context.Context)
+    prompt_data = context.PromptDataReaction(report_msg, report_reactions)
+    
     while True:
-        try:
-            reaction, _ = await bot.wait_for('reaction_add', timeout=300.0, check=check)
-        except asyncio.TimeoutError:
+        reaction, reactor = await ctx.prompt_reaction(prompt_data)
+        if not bot.settings.permissions.hasAtLeast(user.guild, user, 5) or reaction not in report_reactions:
+            await report_msg.remove_reaction(reaction, reactor)
+    
+        if reaction == '✅':
             try:
-                await report_msg.clear_reactions()
-                return
+                await report_msg.delete()
             except Exception:
                 pass
-        else:
-            if str(reaction.emoji) == '✅':
-                try:
-                    await report_msg.delete()
-                except Exception:
-                    pass
-                return
-            elif str(reaction.emoji) == '🆔':
-                await channel.send(user.id, delete_after=10)
-            elif str(reaction.emoji) == '🧹':
-                await channel.purge(limit=100)
-            
+        elif reaction == '🆔':
+            await channel.send(user.id)
+        elif reaction == '🧹':
+            await channel.purge(limit=100)
 
 
 async def prepare_embed(bot, user, msg, word=None, title="Word filter"):

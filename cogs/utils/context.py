@@ -15,6 +15,15 @@ class PromptData:
     def __copy__(self):
         return PromptData(self.value_name, self.description, self.convertor, self.title, self.reprompt)
 
+
+class PromptDataReaction:
+    def __init__(self, message, reactions, timeout=None, delete_after=False):
+        self.message = message
+        self.reactions = reactions        
+        self.timeout = timeout
+        self.delete_after = delete_after
+
+
 class Context(commands.Context):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -68,7 +77,31 @@ class Context(commands.Context):
                     ret = await info.convertor(self, response.content)
                     
         return ret
-
+    
+    async def prompt_reaction(self, info: PromptDataReaction):
+        for reaction in info.reactions:
+            await info.message.add_reaction(reaction)
+            
+        def wait_check(reaction, user):
+            res = (user.id != self.bot.user.id
+                and reaction.message == info.message
+                and str(reaction.emoji) in info.reactions)
+            return res
+            
+        try:
+            reaction, reactor = await self.bot.wait_for('reaction_add', timeout=info.timeout, check=wait_check)
+        except asyncio.TimeoutError:
+            try:
+                if info.delete_after:
+                    await info.message.delete()
+                else:
+                    await info.message.clear_reactions()
+                return
+            except Exception:
+                pass
+        else:
+            return str(reaction.emoji), reactor    
+        
     async def send_warning(self, description: str, title=None, delete_after: int = None):
         return await self.reply(embed=discord.Embed(title=title, description=description, color=discord.Color.orange()), delete_after=delete_after)
 
