@@ -184,10 +184,10 @@ async def prepare_embed(bot, user, msg, word=None, title="Word filter"):
 
 async def prepare_ping_string(bot, msg):
     ping_string = ""    
-    # role = msg.guild.get_role(bot.settings.guild().role_moderator)
-    # for member in role.members:
-    #     offline_ping = (await bot.settings.user(member.id)).offline_report_ping
-    #     if member.status == discord.Status.online or offline_ping:
-    #         ping_string += f"{member.mention} "
+    role = msg.guild.get_role(bot.settings.guild().role_moderator)
+    for member in role.members:
+        offline_ping = (await bot.settings.user(member.id)).offline_report_ping
+        if member.status == discord.Status.online or offline_ping:
+            ping_string += f"{member.mention} "
 
     return ping_string
