@@ -31,10 +31,8 @@ class FilterMonitor(commands.Cog):
     @commands.Cog.listener()
     async def on_message_delete(self, message: discord.Member) -> None:
         pending_task = self.bot.report.pending_tasks.get(message.id)
-        print(pending_task)
         if pending_task is not None:
-            self.bot.report.pending_tasks[message.id] = yield from "TERMINATE", None
-            print("CANCELLED TASK")
+            self.bot.report.pending_tasks[message.id] = "TERMINATE"
             
 
     @commands.Cog.listener()
