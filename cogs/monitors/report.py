@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 from discord.ext import commands
+import pytimeparse
 import cogs.utils.context as context
 
 import discord
@@ -8,15 +9,8 @@ import humanize
 
 
 async def report(bot, msg, user, word, invite=None):
-    role = msg.guild.get_role(bot.settings.guild().role_moderator)
     channel = msg.guild.get_channel(bot.settings.guild().channel_reports)
-
-    ping_string = ""
-    for member in role.members:
-        offline_ping = (await bot.settings.user(member.id)).offline_report_ping
-        if member.status == discord.Status.online or offline_ping:
-            ping_string += f"{member.mention} "
-
+    ping_string = await prepare_ping_string(bot, msg)
     embed = await prepare_embed(bot, user, msg, word)
 
     if invite:
@@ -25,37 +19,112 @@ async def report(bot, msg, user, word, invite=None):
         report_msg = await channel.send(ping_string, embed=embed)
     report_reactions = ['✅', '🆔', '🧹']
 
-    for reaction in report_reactions:
-        await report_msg.add_reaction(reaction)
-
-    def check(reaction, user):
-        res = (user.id != bot.user.id
-               and reaction.message == report_msg
-               and str(reaction.emoji) in report_reactions
-               and bot.settings.permissions.hasAtLeast(user.guild, user, 5))
-        return res
-
+    ctx = await bot.get_context(report_msg, cls=context.Context)
+    prompt_data = context.PromptDataReaction(report_msg, report_reactions)
+    
     while True:
-        try:
-            reaction, _ = await bot.wait_for('reaction_add', timeout=300.0, check=check)
-        except asyncio.TimeoutError:
+        reaction, reactor = await ctx.prompt_reaction(prompt_data)
+        if not bot.settings.permissions.hasAtLeast(user.guild, user, 5) or reaction not in report_reactions:
+            await report_msg.remove_reaction(reaction, reactor)
+    
+        if reaction == '✅':
             try:
-                await report_msg.clear_reactions()
-                return
+                await report_msg.delete()
             except Exception:
                 pass
-        else:
-            if str(reaction.emoji) == '✅':
+            return
+        elif reaction == '🆔':
+            await channel.send(user.id)
+        elif reaction == '🧹':
+            await channel.purge(limit=100)
+            return
+
+
+async def report_spam(bot, msg, user, title):
+    channel = msg.guild.get_channel(bot.settings.guild().channel_reports)
+    ping_string = await prepare_ping_string(bot, msg)    
+    
+    embed = await prepare_embed(bot, user, msg, title=title)
+    embed.set_footer(text="✅ to pardon, 💀 to ban, ⚠️ to temp mute.")
+    
+    report_msg = await channel.send(ping_string, embed=embed)
+    report_reactions = ['✅', '💀', '⚠️']
+
+    ctx = await bot.get_context(report_msg, cls=context.Context)
+    prompt_data = context.PromptDataReaction(report_msg, report_reactions)
+    
+    while True:
+        reaction, reactor = await ctx.prompt_reaction(prompt_data)
+        if not bot.settings.permissions.hasAtLeast(user.guild, user, 5) or reaction not in report_reactions:
+            await report_msg.remove_reaction(reaction, reactor)
+            
+        if reaction == '✅':
+            ctx.author = ctx.message.author = reactor
+            unmute = bot.get_command("unmute")
+            if unmute is not None:
                 try:
-                    await report_msg.delete()
+                    await unmute(ctx=ctx, user=user, reason="Reviewed by a moderator.")
                 except Exception:
                     pass
-                return
-            elif str(reaction.emoji) == '🆔':
-                await channel.send(user.id, delete_after=10)
-            elif str(reaction.emoji) == '🧹':
-                await channel.purge(limit=100)
+                await report_msg.delete()
+            else:
+                await ctx.send_warning("I wasn't able to unmute them.")
+            return
+        
+        elif reaction == '💀':
+            ctx.author = ctx.message.author = reactor
+            ban = bot.get_command("ban")
+            if ban is not None:
+                try:
+                    await ban(ctx=ctx, user=user, reason="Ping spam")
+                except Exception:
+                    pass
+                await report_msg.delete()
+            else:
+                await ctx.send_warning("I wasn't able to ban them.")
+            return
+        elif reaction == '⚠️':            
+            ctx.author = ctx.message.author = reactor
+            now = datetime.datetime.now()
+            delta = await prompt_time(ctx)
+            if delta is None:
+                continue
             
+            try:
+                time = now + datetime.timedelta(seconds=delta)
+                ctx.tasks.schedule_unmute(user.id, time)
+                
+                await ctx.send_success(title="Done!", description=f"{user.mention} was muted for {humanize.naturaldelta(time - now)}.", delete_after=5)
+                await report_msg.delete()
+                
+                try:
+                    await user.send(embed=discord.Embed(title="Ping spam unmute", description=f"A moderator has reviewed your ping spam report. You will be unmuted in {humanize.naturaldelta(time - now)}.", color=discord.Color.orange()))
+                except Exception:
+                    pass
+                
+                return
+            except Exception:
+                return
+
+async def prompt_time(ctx):
+    prompt_data = context.PromptData(value_name="duration", 
+                                     description="Please enter a duration for the mute (i.e 15m).",
+                                     convertor=pytimeparse.parse,
+                                     )
+    return await ctx.prompt(prompt_data)
+
+async def report_raid(bot, user, msg=None):
+    embed = discord.Embed()
+    embed.title = "Possible raid occurring"
+    embed.description = "The raid filter has been triggered 5 or more times in the past 10 seconds. I am automatically locking all the channels. Use `!unfreeze` when you're done."
+    embed.color = discord.Color.red()
+    embed.set_thumbnail(url=user.avatar_url)
+    embed.add_field(name="Member", value=f"{user} ({user.mention})")
+    if msg is not None:
+        embed.add_field(name="Message", value=msg.content, inline=False)
+
+    reports_channel = user.guild.get_channel(bot.settings.guild().channel_reports)
+    await reports_channel.send(f"<@&{bot.settings.guild().role_moderator}>", embed=embed, allowed_mentions=discord.AllowedMentions(roles=True))
 
 
 async def prepare_embed(bot, user, msg, word=None, title="Word filter"):
@@ -112,80 +181,13 @@ async def prepare_embed(bot, user, msg, word=None, title="Word filter"):
     embed.set_footer(text="React with ✅ to dismiss.")
     return embed
 
-async def report_spam(bot, msg, user, title):
-    role = msg.guild.get_role(bot.settings.guild().role_moderator)
-    channel = msg.guild.get_channel(bot.settings.guild().channel_reports)
 
-    ping_string = ""
+async def prepare_ping_string(bot, msg):
+    ping_string = ""    
+    role = msg.guild.get_role(bot.settings.guild().role_moderator)
     for member in role.members:
         offline_ping = (await bot.settings.user(member.id)).offline_report_ping
         if member.status == discord.Status.online or offline_ping:
             ping_string += f"{member.mention} "
 
-    embed = await prepare_embed(bot, user, msg, title=title)
-    embed.set_footer(text="✅ to pardon, 💀 to ban.")
-    
-    report_msg = await channel.send("", embed=embed)
-    report_reactions = ['✅', '💀']
-
-    for reaction in report_reactions:
-        await report_msg.add_reaction(reaction)
-
-    def check(reaction, reactor):
-        res = (reactor.id != bot.user.id
-               and reaction.message == report_msg
-               and str(reaction.emoji) in report_reactions
-               and bot.settings.permissions.hasAtLeast(reactor.guild, reactor, 5))
-        return res
-
-    while True:
-        try:
-            reaction, reactor = await bot.wait_for('reaction_add', timeout=300.0, check=check)
-        except asyncio.TimeoutError:
-            try:
-                await report_msg.clear_reactions()
-                return
-            except Exception:
-                pass
-        else:
-            if str(reaction.emoji) == '✅':
-                ctx = await bot.get_context(report_msg, cls=context.Context)
-                ctx.author = ctx.message.author = reactor
-                unmute = bot.get_command("unmute")
-                if unmute is not None:
-                    try:
-                        await unmute(ctx=ctx, user=user, reason="Reviewed by a moderator.")
-                    except Exception:
-                        pass
-                    await report_msg.delete()
-                else:
-                    await ctx.send_warning("I wasn't able to unmute them.")
-                return
-            
-            elif str(reaction.emoji) == '💀':
-                ctx = await bot.get_context(report_msg, cls=context.Context)
-                ctx.author = ctx.message.author = reactor
-                ban = bot.get_command("ban")
-                if ban is not None:
-                    try:
-                        await ban(ctx=ctx, user=user, reason="Ping spam")
-                    except Exception:
-                        pass
-                    await report_msg.delete()
-                else:
-                    await ctx.send_warning("I wasn't able to ban them.")
-
-
-async def report_raid(bot, user, msg=None):
-    embed = discord.Embed()
-    embed.title = "Possible raid occurring"
-    embed.description = "The raid filter has been triggered 5 or more times in the past 10 seconds. I am automatically locking all the channels. Use `!unfreeze` when you're done."
-    embed.color = discord.Color.red()
-    embed.set_thumbnail(url=user.avatar_url)
-    embed.add_field(name="Member", value=f"{user} ({user.mention})")
-    if msg is not None:
-        embed.add_field(name="Message", value=msg.content, inline=False)
-
-    reports_channel = user.guild.get_channel(bot.settings.guild().channel_reports)
-    await reports_channel.send(f"<@&{bot.settings.guild().role_moderator}>", embed=embed, allowed_mentions=discord.AllowedMentions(roles=True))
-    # await reports_channel.send(f"", embed=embed, allowed_mentions=discord.AllowedMentions(roles=True))
+    return ping_string
