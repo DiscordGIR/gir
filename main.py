@@ -14,7 +14,7 @@ from discord.ext import commands
 from dotenv import find_dotenv, load_dotenv
 from fold_to_ascii import fold
 
-from cogs.monitors.report import report
+from cogs.monitors.report import Report
 
 logging.basicConfig(level=logging.INFO)
 
@@ -37,7 +37,7 @@ initial_extensions = [
                     'cogs.commands.mod.trivia',
                     'cogs.commands.misc.admin',
                     'cogs.commands.misc.genius',
-                    'cogs.commands.misc.misc',
+                    # 'cogs.commands.misc.misc',
                     'cogs.commands.misc.subnews',
                     'cogs.commands.misc.giveaway',
                     'cogs.commands.misc.parcility',
@@ -135,7 +135,7 @@ class Bot(commands.Bot):
                                 await self.ratelimit(message)
                                 reported = True
                             if word.notify:
-                                await report(self, message, message.author, word.word)
+                                await self.report.report(message, message.author, word.word)
                                 return True
         return word_found
     
@@ -164,13 +164,13 @@ class Bot(commands.Bot):
                             if id not in whitelist:
                                 await self.delete(message)
                                 await self.ratelimit(message)
-                                await report(self, message, message.author, invite, invite=invite)
+                                await self.report.report(message, message.author, invite, invite=invite)
                                 return True
 
                         except discord.errors.NotFound:
                             await self.delete(message)
                             await self.ratelimit(message)
-                            await report(self, message, message.author, invite, invite=invite)
+                            await self.report.report(message, message.author, invite, invite=invite)
                             return True
         return False
     
@@ -291,6 +291,7 @@ bot.max_messages = 10000
 if __name__ == '__main__':
     bot.owner_id = int(os.environ.get("BOTTY_OWNER"))
     bot.remove_command("help")
+    bot.report = Report(bot)
     for extension in initial_extensions:
         bot.load_extension(extension)
 
@@ -300,7 +301,7 @@ async def run_once_when_ready():
 
     print(
         f'\n\nLogged in as: {bot.user.name} - {bot.user.id}\nVersion: {discord.__version__}\n')
-    bot.load_extension('cogs.commands.misc.music')
+    # bot.load_extension('cogs.commands.misc.music')
     await bot.settings.load_tasks()
     print(f'Successfully logged in and booted...!')
 

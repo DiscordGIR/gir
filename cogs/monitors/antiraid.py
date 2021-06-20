@@ -6,7 +6,6 @@ from re import U
 import cogs.utils.logs as logger
 import cogs.utils.context as context
 import discord
-from cogs.monitors.report import report_spam, report_raid
 from data.case import Case
 from discord.ext import commands
 from expiringdict import ExpiringDict
@@ -61,7 +60,7 @@ class AntiRaidMonitor(commands.Cog):
                 
             raid_alert_bucket = self.raid_alert_cooldown.get_bucket(user)
             if not raid_alert_bucket.update_rate_limit(current):
-                await report_raid(self.bot, user)
+                await self.bot.report.report_raid(user)
                 await self.freeze_server(member.guild)
                 
     @commands.Cog.listener()
@@ -98,7 +97,7 @@ class AntiRaidMonitor(commands.Cog):
             # yes! notify the mods and lock the server.
             raid_alert_bucket = self.raid_alert_cooldown.get_bucket(message)
             if not raid_alert_bucket.update_rate_limit(current):
-                await report_raid(self.bot, user, message)
+                await self.bot.report.report_raid(user, message)
                 do_freeze = True
 
 
@@ -112,7 +111,7 @@ class AntiRaidMonitor(commands.Cog):
                     title = "Ping spam detected"
                 else:
                     title = "Message spam detected"
-                await report_spam(self.bot, message, user, title=title)
+                await self.bot.report.report_spam(message, user, title=title)
             else:
                 users = list(self.spam_user_mapping.keys())
                 for user in users:

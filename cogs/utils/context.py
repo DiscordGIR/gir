@@ -88,19 +88,29 @@ class Context(commands.Context):
                 and str(reaction.emoji) in info.reactions)
             return res
             
-        try:
-            reaction, reactor = await self.bot.wait_for('reaction_add', timeout=info.timeout, check=wait_check)
-        except asyncio.TimeoutError:
-            try:
-                if info.delete_after:
-                    await info.message.delete()
+        if info.timeout is None:
+            while True:
+                try:
+                    reaction, reactor = await self.bot.wait_for('reaction_add', timeout=10.0, check=wait_check)
+                except asyncio.TimeoutError:
+                    if self.bot.report.pending_tasks.get(info.message.id) == "TERMINATE":
+                        return "TERMINATE", None
                 else:
-                    await info.message.clear_reactions()
-                return
-            except Exception:
-                pass
+                    return str(reaction.emoji), reactor    
         else:
-            return str(reaction.emoji), reactor    
+            try:
+                reaction, reactor = await self.bot.wait_for('reaction_add', timeout=info.timeout, check=wait_check)
+            except asyncio.TimeoutError:
+                try:
+                    if info.delete_after:
+                        await info.message.delete()
+                    else:
+                        await info.message.clear_reactions()
+                    return
+                except Exception:
+                    pass
+            else:
+                return str(reaction.emoji), reactor    
         
     async def send_warning(self, description: str, title=None, delete_after: int = None):
         return await self.reply(embed=discord.Embed(title=title, description=description, color=discord.Color.orange()), delete_after=delete_after)

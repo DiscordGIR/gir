@@ -29,6 +29,13 @@ class FilterMonitor(commands.Cog):
         await self.nick_filter(after)
 
     @commands.Cog.listener()
+    async def on_message_delete(self, message: discord.Member) -> None:
+        pending_task = self.bot.report.pending_tasks.get(message.id)
+        if pending_task is not None:
+            self.bot.report.pending_tasks[message.id] = "TERMINATE"
+            
+
+    @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member) -> None:
         if member.guild.id != self.bot.settings.guild_id:
             return
