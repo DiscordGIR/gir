@@ -152,7 +152,8 @@ class Parcility(commands.Cog):
             embed.add_field(name="Add Repo", value=f'[Click Here](https://stkc.win/addrepo/?repo={data.get("url")})', inline=True)
         embed.add_field(name="More Info", value=f'[View on Parcility](https://parcility.co/{data.get("id")})', inline=False)
         embed.set_thumbnail(url=data.get('Icon'))
-        embed.set_footer(text=data.get('Version'))
+        if data.get('isDefault') == True:
+            embed.set_footer(text='Default Repo')
         embed.timestamp = datetime.now()
 
         await ctx.send(embed=embed)
