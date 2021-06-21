@@ -57,10 +57,10 @@ class TweakMenu(menus.AsyncIteratorPageSource):
         embed.add_field(name="Author", value= discord.utils.escape_markdown(entry.get('Author') or "No author"), inline=True)
         embed.add_field(name="Version", value= discord.utils.escape_markdown(entry.get('Version') or "No version"), inline=True)
         embed.add_field(name="Price", value=entry.get("Price") or "Free")
-        embed.add_field(name="Repo", value=f"[{entry.get('repo').get('label')}]({entry.get('repo').get('url')})" or "No repo", inline=False)
+        embed.add_field(name="Repo", value=f"[{entry.get('repo').get('label')}]({entry.get('repo').get('url')})" or "No repo", inline=True)
         if entry.get('repo').get('isDefault') is False:
-            embed.add_field(name="Add Repo", value=f"[Click Here](https://cydia.saurik.com/api/share#?source={entry.get('repo').get('url')})" or "No repo", inline=True)
-        embed.add_field(name="More Info", value=f"[View on Parcility](https://parcility.co/package/{entry.get('Package')}/{entry.get('repo').get('slug')})", inline=True)
+            embed.add_field(name="Add Repo", value=f"[Click Here](https://stkc.win/addrepo/?repo={entry.get('repo').get('url')})" or "No repo", inline=True)
+        embed.add_field(name="More Info", value=f"[View on Parcility](https://parcility.co/package/{entry.get('Package')}/{entry.get('repo').get('slug')})", inline=False)
         pattern = re.compile(r"((http|https)\:\/\/)[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*")
         if (pattern.match(entry.get('Icon'))):
             embed.set_thumbnail(url=entry.get('Icon'))
@@ -149,8 +149,8 @@ class Parcility(commands.Cog):
         embed.add_field(name="Sections", value=data.get('section_count'), inline=True)
         embed.add_field(name="URL", value=data.get('repo'), inline=False)
         if data.get('isDefault') is False:
-            embed.add_field(name="Add Repo", value=f'[Click Here](https://cydia.saurik.com/api/share#?source={data.get("repo")})', inline=True)
-        embed.add_field(name="More Info", value=f'[View on Parcility](https://parcility.co/{data.get("repo")})', inline=True)
+            embed.add_field(name="Add Repo", value=f'[Click Here](https://stkc.win/addrepo/?repo={data.get("repo")})', inline=True)
+        embed.add_field(name="More Info", value=f'[View on Parcility](https://parcility.co/{data.get("repo")})', inline=False)
         embed.set_thumbnail(url=data.get('Icon'))
         embed.set_footer(text=data.get('Version'))
         embed.timestamp = datetime.now()
