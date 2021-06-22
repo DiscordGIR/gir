@@ -33,7 +33,7 @@ CIJ_KEY = "CIJ TOKEN"
 ```
 
 6. Download the latest version of the Lavalink jar file from [here](https://github.com/Frederikam/Lavalink/releases/), and put it in the root of the project
-7. Set up the `application.yml` as shown in the example [here](https://github.com/Frederikam/Lavalink/blob/master/LavalinkServer/application.yml.example/), also in the root of the project. Use the same password as in the `.env` file. You need not change anything else.
+7. Set up the `application.yml` as shown in the example [here](https://github.com/freyacodes/Lavalink/blob/master/LavalinkServer/application.yml.example ), also in the root of the project. Use the same password as in the `.env` file. You need not change anything else.
 8. Run Lavalink with `java -jar Lavalink.jar`
 9. Set up mongodb on your system (and see *First time use* to populate the database with initial data)
 10. Run `python scrape_emojis.py`. This will pull emoji data needed for `!jumbo`. You only need to do this once (or any time you want to update the list of emojis).
