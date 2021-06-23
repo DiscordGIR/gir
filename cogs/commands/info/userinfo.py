@@ -223,7 +223,7 @@ class UserInfo(commands.Cog):
 
     @commands.guild_only()
     @permissions.bot_channel_only_unless_mod()
-    @commands.command(name="warnpoints", aliases=["wp"])
+    @commands.command(name="warnpoints", aliases=["wp", "wap"])
     async def warnpoints(self, ctx: context.Context, user: discord.Member = None):
         """Show a user's warnpoints (mod only)
 
