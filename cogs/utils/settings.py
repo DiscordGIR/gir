@@ -1,3 +1,4 @@
+from data.filtercategory import FilterCategory
 import os
 
 import discord
@@ -184,6 +185,18 @@ class Settings(commands.Cog):
 
     async def update_filtered_word(self, word: FilterWord):
         return Guild.objects(_id=self.guild_id, filter_words__word=word.word).update_one(set__filter_words__S=word)
+
+    async def add_filtered_category(self, fc: FilterCategory) -> None:
+        Guild.objects(_id=self.guild_id).update_one(push__filter_categories=fc)
+    
+    async def get_filtered_category(self, name: str):
+        return Guild.objects(_id=self.guild_id).filter(filter_categories__name=name).first()
+
+    async def remove_filtered_category(self, name: str):
+        return Guild.objects(_id=self.guild_id).update_one(pull__filter_categories__name=FilterWord(name=name).name)
+
+    async def update_filtered_category(self, category: FilterCategory):
+        return Guild.objects(_id=self.guild_id, filter_categories__word=category.name).update_one(set__filter_categories__S=category)
     
     async def add_tag(self, tag: Tag) -> None:
         Guild.objects(_id=self.guild_id).update_one(push__tags=tag)

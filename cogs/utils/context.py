@@ -79,6 +79,9 @@ class Context(commands.Context):
         return ret
     
     async def prompt_reaction(self, info: PromptDataReaction):
+        if isinstance(info.message, str):
+            info.message = await self.send_generic_embed(info.message)
+        
         for reaction in info.reactions:
             await info.message.add_reaction(reaction)
             
@@ -96,6 +99,8 @@ class Context(commands.Context):
                     if self.bot.report.pending_tasks.get(info.message.id) == "TERMINATE":
                         return "TERMINATE", None
                 else:
+                    if info.delete_after:
+                        await info.message.delete()
                     return str(reaction.emoji), reactor    
         else:
             try:
@@ -110,6 +115,8 @@ class Context(commands.Context):
                 except Exception:
                     pass
             else:
+                if info.delete_after:
+                    await info.message.delete()
                 return str(reaction.emoji), reactor    
         
     async def send_warning(self, description: str, title=None, delete_after: int = None):
@@ -117,6 +124,13 @@ class Context(commands.Context):
 
     async def send_success(self, description: str, title=None, delete_after: int = None):
         return await self.reply(embed=discord.Embed(title=title, description=description, color=discord.Color.dark_green()), delete_after=delete_after)
+        
+    async def send_generic_embed(self, message):
+        embed = discord.Embed(
+            description=message,
+            color=discord.Color.blurple())
+        return await self.reply(embed=embed)
+
         
     async def send_error(self, error):
         embed = discord.Embed(title=":(\nYour command ran into a problem")
