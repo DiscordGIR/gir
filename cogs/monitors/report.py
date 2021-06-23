@@ -194,10 +194,10 @@ class Report:
 
     async def prepare_ping_string(self, msg):
         ping_string = ""    
-        # role = msg.guild.get_role(self.bot.settings.guild().role_moderator)
-        # for member in role.members:
-        #     offline_ping = (await self.bot.settings.user(member.id)).offline_report_ping
-        #     if member.status == discord.Status.online or offline_ping:
-        #         ping_string += f"{member.mention} "
+        role = msg.guild.get_role(self.bot.settings.guild().role_moderator)
+        for member in role.members:
+            offline_ping = (await self.bot.settings.user(member.id)).offline_report_ping
+            if member.status == discord.Status.online or offline_ping:
+                ping_string += f"{member.mention} "
 
         return ping_string
