@@ -59,7 +59,7 @@ class TweakMenu(menus.AsyncIteratorPageSource):
         embed.add_field(name="Price", value=entry.get("Price") or "Free")
         embed.add_field(name="Repo", value=f"[{entry.get('repo').get('label')}]({entry.get('repo').get('url')})" or "No repo", inline=True)
         if entry.get('repo').get('isDefault') is False:
-            embed.add_field(name="Add Repo", value=f"[Click Here](https://stkc.win/addrepo/?repo={entry.get('repo').get('url')})" or "No repo", inline=True)
+            embed.add_field(name="Add Repo", value=f"[Click Here](https://sharerepo.stkc.win/?repo={entry.get('repo').get('url')})" or "No repo", inline=True)
         embed.add_field(name="More Info", value=f"[View on Parcility](https://parcility.co/package/{entry.get('Package')}/{entry.get('repo').get('slug')})", inline=False)
         pattern = re.compile(r"((http|https)\:\/\/)[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*")
         if (pattern.match(entry.get('Icon'))):
@@ -123,7 +123,7 @@ class Parcility(commands.Cog):
         await menu.start(ctx)
     
     @commands.command(name="repo")
-    @permissions.bot_channel_only_unless_mod()
+    @permissions.no_general_unless_mod()
     @commands.guild_only()
     async def repo(self,  ctx: context.Context, *, repo):
         
@@ -149,7 +149,7 @@ class Parcility(commands.Cog):
         embed.add_field(name="Sections", value=data.get('section_count'), inline=True)
         embed.add_field(name="URL", value=data.get('url'), inline=False)
         if data.get('isDefault') is False:
-            embed.add_field(name="Add Repo", value=f'[Click Here](https://stkc.win/addrepo/?repo={data.get("url")})', inline=True)
+            embed.add_field(name="Add Repo", value=f'[Click Here](https://sharerepo.stkc.win/?repo={data.get("url")})', inline=True)
         embed.add_field(name="More Info", value=f'[View on Parcility](https://parcility.co/{data.get("id")})', inline=False)
         embed.set_thumbnail(url=data.get('Icon'))
         if data.get('isDefault') == True:
