@@ -78,8 +78,14 @@ class Bot(commands.Bot):
         
         if message.guild is not None and message.guild.id == self.settings.guild_id:
             if not self.settings.permissions.hasAtLeast(message.guild, message.author, 6):
-                if await self.filter(message):
-                    return
+                role_submod = message.guild.get_role(self.settings.guild().role_sub_mod)
+                if role_submod is not None:
+                    if role_submod not in message.author.roles:
+                        if await self.filter(message):
+                            return
+                else:
+                    if await self.filter(message):
+                        return
                                 
         await self.process_commands(message)
 
