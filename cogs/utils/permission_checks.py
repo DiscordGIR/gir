@@ -61,6 +61,15 @@ def bot_channel_only_unless_mod():
         return True
     return commands.check(predicate)
 
+def no_general_unless_mod():
+    async def predicate(ctx):
+        gen_chan = ctx.bot.settings.guild().channel_general
+        if not ctx.bot.settings.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id == gen_chan:
+            raise PermissionsFailure(f"Command not allowed in <#{gen_chan}>.")
+        
+        return True
+    return commands.check(predicate)
+
 ####################
 # Member Roles
 ####################
