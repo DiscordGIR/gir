@@ -91,12 +91,12 @@ class Context(commands.Context):
         if info.timeout is None:
             while True:
                 try:
-                    reaction, reactor = await self.bot.wait_for('reaction_add', timeout=10.0, check=wait_check)
+                    reaction, reactor = await self.bot.wait_for('reaction_add', timeout=1.0, check=wait_check)
+                    if reaction is not None:
+                        return str(reaction.emoji), reactor    
                 except asyncio.TimeoutError:
                     if self.bot.report.pending_tasks.get(info.message.id) == "TERMINATE":
                         return "TERMINATE", None
-                else:
-                    return str(reaction.emoji), reactor    
         else:
             try:
                 reaction, reactor = await self.bot.wait_for('reaction_add', timeout=info.timeout, check=wait_check)
