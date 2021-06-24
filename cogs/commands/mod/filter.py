@@ -302,6 +302,40 @@ class Filters(commands.Cog):
         await ctx.settings.add_filtered_category(category)
         await ctx.send_success(f"Added category {name}!", delete_after=10)
 
+    @category.command()
+    async def set(self, ctx: context.Context, word: str, category_name: str):
+        word, category_name = word.lower(), category_name.lower()
+        word = await ctx.settings.get_filtered_word(word)
+        
+        if category_name == "default":
+            category = None
+        else:
+            category = await ctx.settings.get_filtered_category(category_name)
+            if category is None:
+                raise commands.BadArgument("That category doesn't exist!")
+
+        if word is None:
+            raise commands.BadArgument("That word is not filtered!")
+        
+        word.category = category
+        await ctx.settings.update_filtered_word(word)
+        
+        await ctx.send_success(f"Word `{word.word}` now belongs to category `{category.name if category is not None else 'default'}`")
+
+    @category.command()
+    async def edit(self, ctx: context.Context, category_name: str, *, description: str):
+        category_name = category_name.lower()
+        if category_name == "default":
+            raise commands.BadArgument("That category is not editable.")
+        
+        category = await ctx.settings.get_filtered_category(category_name)
+        if category is None:
+            raise commands.BadArgument("That category doesn't exist!")
+        
+        category.description = description
+        await ctx.settings.update_filtered_category(category)
+        await ctx.send_success(f"Updated category {category.name}!", delete_after=10)
+
     @commands.guild_only()
     @permissions.admin_and_up()
     @commands.command(name="unignorechannel")
@@ -391,6 +425,8 @@ class Filters(commands.Cog):
     @unignorechannel.error
     @category.error
     @add.error
+    @edit.error
+    @set.error
     async def info_error(self, ctx: context.Context,error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)

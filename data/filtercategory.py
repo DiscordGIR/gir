@@ -1,6 +1,6 @@
 import mongoengine
 
-class FilterCategory(mongoengine.EmbeddedDocument):
+class FilterCategory(mongoengine.Document):
     name                    = mongoengine.StringField(required=True)
     description             = mongoengine.StringField(required=True)
     color                   = mongoengine.StringField(required=True)
