@@ -1,6 +1,5 @@
 import mongoengine
 from data.filterword import FilterWord
-from data.filtercategory import FilterCategory
 from data.tag import Tag
 
 class Guild(mongoengine.Document):
@@ -38,7 +37,6 @@ class Guild(mongoengine.Document):
     locked_channels           = mongoengine.ListField(default=[])
     filter_excluded_channels  = mongoengine.ListField(default=[])
     filter_excluded_guilds    = mongoengine.ListField(default=[349243932447604736])
-    filter_categories         = mongoengine.EmbeddedDocumentListField(FilterCategory, default=[])
     filter_words              = mongoengine.EmbeddedDocumentListField(FilterWord, default=[])
     raid_phrases              = mongoengine.EmbeddedDocumentListField(FilterWord, default=[])
     logging_excluded_channels = mongoengine.ListField(default=[])

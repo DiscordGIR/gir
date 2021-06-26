@@ -1,11 +1,9 @@
-from data.filtercategory import FilterCategory
 import traceback
 
 import discord
 import cogs.utils.permission_checks as permissions
 import cogs.utils.context as context
 from data.filterword import FilterWord
-from data.filtercategory import FilterCategory
 from discord.ext import commands
 from discord.ext import menus
 
@@ -229,112 +227,23 @@ class Filters(commands.Cog):
         await ctx.message.delete(delay=10)
         
     @commands.guild_only()
+    @commands.command(name="category")
     @permissions.admin_and_up()
-    @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
-    @commands.group()
-    async def category(self, ctx: context.Context):
-        """
-        Manage filter categories !category, choosing from below...
-        """
-
-        if ctx.invoked_subcommand is None:
-            raise commands.BadArgument("Invalid category subcommand passed. Options: `add`, `remove`, update`")
-
-    @category.command()
-    async def add(self, ctx: context.Context, name: str):
-        """Add a new filter category
-        """
-
-        name = name.lower()
-        if name == "default" or await ctx.settings.get_filtered_category(name) is not None:
-            raise commands.BadArgument("This category already exists!")
-        
-        prompts = {
-            "description": context.PromptData(
-                value_name="description",
-                description="Enter a description for the category.",
-                convertor=str
-            ),
-            "post_in_public": context.PromptDataReaction(
-                message="Should the filter alert be posted in public?",
-                timeout=30.0,
-                delete_after=True,
-                reactions=['✅', '❌']
-            ),
-            "delete_original_message": context.PromptDataReaction(
-                message="Should the original message be deleted?",
-                timeout=30.0,
-                delete_after=True,
-                reactions=['✅', '❌']
-            ),
-            "color": context.PromptDataReaction(
-                message="What color for the embed?",
-                timeout=30.0,
-                delete_after=True,
-                reactions=['🟠', '🟡', '🔴']
-            ),
-        }
-        
-        for prompt in prompts:
-            info = prompts[prompt]
-            if isinstance(info, context.PromptData):
-                value = await ctx.prompt(info)
-            else:
-                value, _ = await ctx.prompt_reaction(info)
-                if value == '✅':
-                    value = True
-                elif value == '❌':
-                    value = False
-            if value is None:
-                await ctx.send_warning("Cancelled adding category.")
-                return
-            else:
-                prompts[prompt] = value
-
-        category = FilterCategory(
-            name=name,
-            description=prompts["description"],
-            delete_original_message=prompts["delete_original_message"],
-            post_in_public=prompts["post_in_public"],
-            color=prompts["color"]
-        )
-        
-        await ctx.settings.add_filtered_category(category)
-        await ctx.send_success(f"Added category {name}!", delete_after=10)
-
-    @category.command()
-    async def set(self, ctx: context.Context, word: str, category_name: str):
+    async def category(self, ctx: context.Context, word: str, category_name: str):
         word, category_name = word.lower(), category_name.lower()
         word = await ctx.settings.get_filtered_word(word)
         
-        if category_name == "default":
-            category = None
-        else:
-            category = await ctx.settings.get_filtered_category(category_name)
-            if category is None:
-                raise commands.BadArgument("That category doesn't exist!")
+        category = self.bot.filters.get(category_name)
+        if category is None:
+            raise commands.BadArgument("That category is not found. Please use `!categories` to list all categories.")
 
         if word is None:
             raise commands.BadArgument("That word is not filtered!")
         
-        word.category = category
+        word.category = category._id
         await ctx.settings.update_filtered_word(word)
         
-        await ctx.send_success(f"Word `{word.word}` now belongs to category `{category.name if category is not None else 'default'}`")
-
-    @category.command()
-    async def edit(self, ctx: context.Context, category_name: str, *, description: str):
-        category_name = category_name.lower()
-        if category_name == "default":
-            raise commands.BadArgument("That category is not editable.")
-        
-        category = await ctx.settings.get_filtered_category(category_name)
-        if category is None:
-            raise commands.BadArgument("That category doesn't exist!")
-        
-        category.description = description
-        await ctx.settings.update_filtered_category(category)
-        await ctx.send_success(f"Updated category {category.name}!", delete_after=10)
+        await ctx.send_success(f"Word `{word.word}` now belongs to category `{category.name}.`")
 
     @commands.guild_only()
     @permissions.admin_and_up()
@@ -424,9 +333,6 @@ class Filters(commands.Cog):
     @ignorechannel.error
     @unignorechannel.error
     @category.error
-    @add.error
-    @edit.error
-    @set.error
     async def info_error(self, ctx: context.Context,error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)

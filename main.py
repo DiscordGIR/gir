@@ -8,6 +8,7 @@ import discord
 import humanize
 import pytimeparse
 from data.case import Case
+from cogs.utils.filtercategories import FilterCategories
 import cogs.utils.logs as logger
 import cogs.utils.context as context
 from discord.ext import commands
@@ -71,6 +72,8 @@ class Bot(commands.Bot):
         self.spoiler_filter = r'\|\|(.*?)\|\|'
         self.invite_filter = r'(?:https?://)?discord(?:(?:app)?\.com/invite|\.gg)\/{1,}[a-zA-Z0-9]+/?'
         self.spam_cooldown = commands.CooldownMapping.from_cooldown(2, 10.0, commands.BucketType.user)
+        
+        self.filters = FilterCategories()
     
     async def on_message(self, message):
         if message.author.bot:
