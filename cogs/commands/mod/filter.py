@@ -240,7 +240,7 @@ class Filters(commands.Cog):
         if word is None:
             raise commands.BadArgument("That word is not filtered!")
         
-        word.category = category._id
+        word.category = category.name
         await ctx.settings.update_filtered_word(word)
         
         await ctx.send_success(f"Word `{word.word}` now belongs to category `{category.name}.`")

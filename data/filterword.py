@@ -6,4 +6,4 @@ class FilterWord(mongoengine.EmbeddedDocument):
     bypass               = mongoengine.IntField(required=True)
     word                 = mongoengine.StringField(required=True)
     false_positive       = mongoengine.BooleanField(default=False)
-    category             = mongoengine.IntField(default=0)
+    category             = mongoengine.StringField(default="default")

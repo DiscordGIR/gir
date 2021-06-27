@@ -16,17 +16,15 @@ from fold_to_ascii import fold
 class FilterCategories:
     def __init__(self):
         self.categories = {
-            0: FilterCategory(
+            "default": FilterCategory(
                     name = "default",
-                    _id = 0,
                     color = None,
                     description = "asdf",
                     delete_after = True,
                     dm_only = True
                 ),
-            1: FilterCategory(
+            "piracy": FilterCategory(
                     name = "piracy",
-                    _id = 1,
                     color = None,
                     description = "asdf",
                     delete_after = True,
@@ -35,12 +33,7 @@ class FilterCategories:
         }
         
     def get(self, name: str):
-        for category in self.categories:
-            category = self.categories[category]
-            if category.name == name:
-                return category
-            
-        return None
+        return self.categories.get(name)
 
 
 class FilterMonitor(commands.Cog):
@@ -331,9 +324,8 @@ class FilterMonitor(commands.Cog):
 
 
 class FilterCategory:
-    def __init__(self, name, _id, color, description, delete_after, dm_only):
+    def __init__(self, name, color, description, delete_after, dm_only):
         self.name = name
-        self._id = _id
         self.color = color
         self.description = description
         self.delete_after = delete_after
