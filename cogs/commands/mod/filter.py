@@ -229,11 +229,11 @@ class Filters(commands.Cog):
     @commands.guild_only()
     @commands.command(name="category")
     @permissions.admin_and_up()
-    async def category(self, ctx: context.Context, word: str, category_name: str):
+    async def category(self, ctx: context.Context, word: str, *, category_name: str):
         word, category_name = word.lower(), category_name.lower()
         word = await ctx.settings.get_filtered_word(word)
         
-        category = self.bot.filters.get(category_name)
+        category = self.bot.filters.filter_categories.get(category_name)
         if category is None:
             raise commands.BadArgument("That category is not found. Please use `!categories` to list all categories.")
 

@@ -60,7 +60,7 @@ class AntiRaidMonitor(commands.Cog):
                 
             raid_alert_bucket = self.raid_alert_cooldown.get_bucket(user)
             if not raid_alert_bucket.update_rate_limit(current):
-                await self.bot.report.report_raid(user)
+                await self.bot.reports.report_raid(user)
                 await self.freeze_server(member.guild)
                 
     @commands.Cog.listener()
@@ -97,7 +97,7 @@ class AntiRaidMonitor(commands.Cog):
             # yes! notify the mods and lock the server.
             raid_alert_bucket = self.raid_alert_cooldown.get_bucket(message)
             if not raid_alert_bucket.update_rate_limit(current):
-                await self.bot.report.report_raid(user, message)
+                await self.bot.reports.report_raid(user, message)
                 do_freeze = True
 
 
@@ -111,7 +111,7 @@ class AntiRaidMonitor(commands.Cog):
                     title = "Ping spam detected"
                 else:
                     title = "Message spam detected"
-                await self.bot.report.report_spam(message, user, title=title)
+                await self.bot.reports.report_spam(message, user, title=title)
             else:
                 users = list(self.spam_user_mapping.keys())
                 for user in users:

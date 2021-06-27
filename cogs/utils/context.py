@@ -96,7 +96,7 @@ class Context(commands.Context):
                 try:
                     reaction, reactor = await self.bot.wait_for('reaction_add', timeout=10.0, check=wait_check)
                 except asyncio.TimeoutError:
-                    if self.bot.report.pending_tasks.get(info.message.id) == "TERMINATE":
+                    if self.bot.reports.pending_tasks.get(info.message.id) == "TERMINATE":
                         return "TERMINATE", None
                 else:
                     if info.delete_after:

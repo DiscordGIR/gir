@@ -11,9 +11,10 @@ class FilterMonitor(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+
     @commands.Cog.listener()
     async def on_message_edit(self, _: discord.Message, after: discord.Message):
-        await self.bot.filter(after)
+        await self.bot.filters.filter(after)
 
     @commands.Cog.listener()
     async def on_member_update(self, before: discord.Member, after: discord.Member):
@@ -30,9 +31,9 @@ class FilterMonitor(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, message: discord.Member) -> None:
-        pending_task = self.bot.report.pending_tasks.get(message.id)
+        pending_task = self.bot.reports.pending_tasks.get(message.id)
         if pending_task is not None:
-            self.bot.report.pending_tasks[message.id] = "TERMINATE"
+            self.bot.reports.pending_tasks[message.id] = "TERMINATE"
             
 
     @commands.Cog.listener()
