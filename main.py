@@ -2,12 +2,9 @@ import logging
 import os
 
 import discord
-from cogs.utils.filter import Filter
 import cogs.utils.context as context
 from discord.ext import commands
 from dotenv import find_dotenv, load_dotenv
-
-from cogs.monitors.report import Report
 
 logging.basicConfig(level=logging.INFO)
 
@@ -44,7 +41,6 @@ initial_extensions = [
                     'cogs.monitors.applenews',
                     'cogs.monitors.birthday',
                     'cogs.monitors.boosteremojis',
-                    'cogs.monitors.filter',
                     'cogs.monitors.logging',
                     'cogs.monitors.reactionroles',
                     'cogs.monitors.xp',
@@ -61,25 +57,15 @@ class Bot(commands.Bot):
         super().__init__(*args, **kwargs)
         self.load_extension('cogs.utils.settings')
         self.settings = self.get_cog("Settings")
-        self.reports = Report(self)
-        self.filters = Filter(self)
+        self.load_extension('cogs.monitors.filter')
+        self.filters = self.get_cog("FilterMonitor")
     
     async def on_message(self, message):
         if message.author.bot:
             return
-        
-        if message.guild is not None and message.guild.id == self.settings.guild_id:
-            if not self.settings.permissions.hasAtLeast(message.guild, message.author, 6):
-                role_submod = message.guild.get_role(self.settings.guild().role_sub_mod)
-                if role_submod is not None:
-                    if role_submod not in message.author.roles:
-                        if await self.filters.filter(message):
-                            return
-                else:
-                    if await self.filters.filter(message):
-                        return
-                                
-        await self.process_commands(message)
+
+        if not (await self.filters.do_filtering(message)):
+            await self.process_commands(message)
 
     async def process_commands(self, message):
         ctx = await self.get_context(message, cls=context.Context)
