@@ -18,17 +18,31 @@ class FilterCategories:
         self.categories = {
             "default": FilterCategory(
                     name = "default",
-                    color = None,
+                    color = discord.Color.dark_orange(),
                     description = "asdf",
                     delete_after = True,
                     dm_only = True
                 ),
             "piracy": FilterCategory(
                     name = "piracy",
-                    color = None,
+                    color = discord.Color.red(),
                     description = "asdf",
                     delete_after = True,
                     dm_only = True
+                ),
+            "slur": FilterCategory(
+                    name = "slur",
+                    color = discord.Color.red(),
+                    description = "asdf",
+                    delete_after = True,
+                    dm_only = True
+                ),
+            "signing service": FilterCategory(
+                    name = "signing service",
+                    color = discord.Color.orange(),
+                    description = "asdf",
+                    delete_after = True,
+                    dm_only = False
                 ),
         }
         
@@ -98,17 +112,17 @@ class FilterMonitor(commands.Cog):
                             continue
                         
                         dev_role = message.guild.get_role(self.bot.settings.guild().role_dev)
-                        # if not (word.piracy and message.channel.id == self.bot.settings.guild().channel_development and dev_role in message.author.roles):
-                        if not (message.channel.id == self.bot.settings.guild().channel_development and dev_role in message.author.roles):
+                        if not (word.category == "piracy" and message.channel.id == self.bot.settings.guild().channel_development and dev_role in message.author.roles):
                             # ignore if this is a piracy word and the channel is #development and the user has dev role
                             word_found = True
                             await self.delete(message)
                             if not reported:
-                                await self.do_filter_notify(message.author, message.channel, word.word)
+                                category = self.filter_categories.get(word.category)
+                                await self.do_filter_notify(message.author, message.channel, word.word, category=category)
                                 await self.ratelimit(message)
                                 reported = True
                             if word.notify:
-                                await self.reports.report(message, message.author, word.word)
+                                await self.reports.report(message, message.author, word.word, category=word.category)
                                 return True
         return word_found
     
@@ -180,15 +194,21 @@ class FilterMonitor(commands.Cog):
         except Exception:
             pass
 
-    async def do_filter_notify(self, member, channel, word):
-        message = f"Your message contained a word you aren't allowed to say in {member.guild.name}. This could be either hate speech or the name of a piracy tool/source. Please refrain from saying it!"
+    async def do_filter_notify(self, member, channel, word, category=None):
+        if category is None or category.name == "default":
+            message = f"Your message contained a word you aren't allowed to say in {member.guild.name}. This could be either hate speech or the name of a piracy tool/source. Please refrain from saying it!"
+            color = discord.Color.orange()
+        else:
+            message = f"Your message contained a word you aren't allowed to say in {member.guild.name}. {category.description}"
+            color = category.color
+
         footer = "Repeatedly triggering the filter will automatically result in a mute."
         try:
-            embed = discord.Embed(description=f"{message}\n\nFiltered word found: **{word}**", color=discord.Color.orange())
+            embed = discord.Embed(description=f"{message}\n\nFiltered word found: **{word}**", color=color)
             embed.set_footer(text=footer)
             await member.send(embed=embed)
         except Exception:
-            embed = discord.Embed(description=message, color=discord.Color.orange())
+            embed = discord.Embed(description=message, color=color)
             embed.set_footer(text=footer)
             await channel.send(member.mention, embed=embed, delete_after=10)
 
@@ -311,10 +331,10 @@ class FilterMonitor(commands.Cog):
                         if word.false_positive and word.word.lower() not in folded_message.split():
                             continue
                         await member.edit(nick="change name pls", reason=f"filter triggered ({nick})")
-                        await self.do_filter_notify(member, word.word)
+                        await self.do_filter_nick_notify(member, word.word)
                         return
     
-    async def do_filter_notify(self, member, word):
+    async def do_filter_nick_notify(self, member, word):
         message = f"Your nickname contained a word you aren't allowed to say in {member.guild.name}. This could be either hate speech or the name of a piracy tool/source. We've automatically changed your name."
         try:
             embed = discord.Embed(description=f"{message}\n\nFiltered word found: **{word}**", color=discord.Color.orange())

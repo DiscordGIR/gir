@@ -10,10 +10,12 @@ class Report:
         self.bot = bot
         self.pending_tasks = {}
     
-    async def report(self, msg, user, word, invite=None):
+    async def report(self, msg, user, word, invite=None, category=None):
         channel = msg.guild.get_channel(self.bot.settings.guild().channel_reports)
         ping_string = await self.prepare_ping_string(msg)
         embed = await self.prepare_embed(user, msg, word)
+        if category is not None:
+            embed.title = f"{category.capitalize()} filter triggered"
 
         if invite:
             report_msg = await channel.send(f"{ping_string}\nMessage contained invite: {invite}", embed=embed)
