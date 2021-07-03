@@ -58,7 +58,8 @@ class Talkboard(commands.Cog):
 
         top_role_color = top_role_color or 0xffffff
 
-        em = discord.Embed(title=f"Question from {ctx.author}", description=message, color = top_role_color)
+        em = discord.Embed(description=message, color = top_role_color)
+        em.set_author(name=f"Question from {ctx.author}", icon_url=ctx.author.avatar_url)
         await question_channel.send(embed=em)
         await ctx.send_success(description=f"Your question has been submitted to {question_channel.mention}!", delete_after=5)
 
