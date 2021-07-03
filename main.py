@@ -38,6 +38,7 @@ initial_extensions = [
                     'cogs.commands.misc.admin',
                     'cogs.commands.misc.genius',
                     'cogs.commands.misc.misc',
+                    'cogs.commands.misc.talkboard',
                     'cogs.commands.misc.subnews',
                     'cogs.commands.misc.giveaway',
                     'cogs.commands.misc.parcility',
