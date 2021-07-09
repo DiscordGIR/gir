@@ -470,9 +470,10 @@ class ModActions(commands.Cog):
 
         # if the ID given is of a user who isn't in the guild, try to fetch the profile
         if ctx.guild.get_member(user.id) is None:
-            previous_bans = [user for _, user in await ctx.guild.bans()]
-            if user in previous_bans:
-                raise commands.BadArgument("That user is already banned!")
+            async with ctx.typing():
+                previous_bans = [user for _, user in await ctx.guild.bans()]
+                if user in previous_bans:
+                    raise commands.BadArgument("That user is already banned!")
 
         log = await self.add_ban_case(ctx, user, reason)
 

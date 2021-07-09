@@ -130,14 +130,12 @@ class UserInfo(commands.Cog):
 
         roles = ""
 
-        if isinstance(user, discord.Member):
+        if isinstance(user, discord.Member) and user.joined_at is not None:
             reversed_roles = user.roles
             reversed_roles.reverse()
 
-            for role in reversed_roles:
-                if role != ctx.guild.default_role:
-                    roles += role.mention + " "
-
+            for role in reversed_roles[:-1]:
+                roles += role.mention + " "
             joined = user.joined_at.strftime("%B %d, %Y, %I:%M %p") + " UTC"
         else:
             roles = "No roles."
