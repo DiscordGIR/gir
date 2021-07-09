@@ -10,7 +10,7 @@ from data.case import Case
 from discord.ext import commands
 from expiringdict import ExpiringDict
 from fold_to_ascii import fold
-from threading import Lock
+from asyncio import Lock
 
 class RaidType:
     PingSpam = 1
@@ -111,7 +111,7 @@ class AntiRaidMonitor(commands.Cog):
         timestamp = member.created_at.strftime(
             "%B %d, %Y")
         
-        with self.join_overtime_lock:
+        async with self.join_overtime_lock:
             if self.join_overtime_mapping.get(timestamp) is None:
                 self.join_overtime_mapping[timestamp] = [member]
             else:
@@ -262,7 +262,7 @@ class AntiRaidMonitor(commands.Cog):
         return False
             
     async def raid_ban(self, user: discord.Member, reason="Raid phrase detected", dm_user=False):
-        with self.banning_lock:
+        async with self.banning_lock:
             if self.ban_user_mapping.get(user.id) is not None:
                 return
             else:
