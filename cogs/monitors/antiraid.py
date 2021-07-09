@@ -128,7 +128,7 @@ class AntiRaidMonitor(commands.Cog):
                         continue
                     
                     try:
-                        await self.raid_ban(user, reason="Join spam detected.")
+                        await self.raid_ban(user, reason="Join spam over time detected.")
                     except Exception:
                         pass
 
