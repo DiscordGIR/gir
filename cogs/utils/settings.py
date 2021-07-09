@@ -466,6 +466,10 @@ class Settings(commands.Cog):
     async def trivia_leaderboard(self) -> list:
         return User.objects[0:100].only('_id', 'trivia_points').order_by('-trivia_points', '-_trivia_points').select_related()
 
+    async def set_spam_mode(self, mode) -> None:
+        Guild.objects(_id=self.guild_id).update_one(set__ban_today_spam_accounts=mode)
+
+
 class Permissions:
     """A way of calculating a user's permissions.
     Level 0 is everyone.

@@ -59,7 +59,31 @@ class AntiRaid(commands.Cog):
             await ctx.send_success("Deleted!", delete_after=5)
         else:
             raise commands.BadArgument("That word is not a raid phrase.")            
+
+    @commands.guild_only()
+    @permissions.admin_and_up()
+    @commands.command(name="spammode")
+    async def spammode(self, ctx: context.Context, mode: bool = None) -> None:
+        """Toggle banning of *today's* new accounts in join spam detector.
+
+        Example Usage:
+        --------------
+        `!spammode true`
+
+        Parameters
+        ----------
+        phrase : str
+            Phrase to remove
+        """
+        
+        if mode is None:
+            mode = not ctx.settings.guild().ban_today_spam_accounts
+        
+        await ctx.settings.set_spam_mode(mode)
+        await ctx.send_success(description=f"We {'**will ban**' if mode else 'will **not ban**'} accounts created today in join spam filter.", delete_after=10)
+        await ctx.message.delete(delay=5)
     
+    @spammode.error
     @removeraid.error
     @raid.error
     async def info_error(self, ctx: context.Context,error):

@@ -106,6 +106,14 @@ class AntiRaidMonitor(commands.Cog):
         if member.created_at < datetime.strptime("01/05/21 00:00:00", '%d/%m/%y %H:%M:%S'):
             return # skip if not a very new account
         
+        if not self.bot.setings.guild().ban_today_spam_accounts:
+            now = datetime.today()
+            now = [now.year, now.month, now.day]
+            member_now = [ member.created_at.year, member.created_at.month, member.created_at.day]
+            
+            if now == member_now:
+                return
+        
         timestamp_ = member.created_at.strftime(
             "%B %d, %Y, %I %p")
         timestamp = member.created_at.strftime(
@@ -132,7 +140,7 @@ class AntiRaidMonitor(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if not message.guild:
+        if message.guild is None:
             return
         if message.author.bot:
             return
