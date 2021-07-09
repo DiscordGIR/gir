@@ -130,7 +130,7 @@ class AntiRaidMonitor(commands.Cog):
                         continue
                     
                     try:
-                        await self.raid_ban(user, reason="Join spam over time detected.", dm_user=True)
+                        await self.raid_ban(user, reason=f"Join spam over time detected (bucket `timestamp`)", dm_user=True)
                     except Exception:
                         pass
 
