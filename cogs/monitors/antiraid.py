@@ -111,6 +111,13 @@ class AntiRaidMonitor(commands.Cog):
         timestamp = member.created_at.strftime(
             "%B %d, %Y")
         
+        now = datetime.today()
+        now = [now.year, now.month, now.day]
+        member_now = [ member.created_at.year, member.created_at.month, member.created_at.day]
+        
+        if now == member_now:
+            return
+        
         async with self.join_overtime_lock:
             if self.join_overtime_mapping.get(timestamp) is None:
                 self.join_overtime_mapping[timestamp] = [member]
@@ -132,7 +139,7 @@ class AntiRaidMonitor(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if not message.guild:
+        if message.guild is None:
             return
         if message.author.bot:
             return
