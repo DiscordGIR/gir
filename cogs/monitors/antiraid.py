@@ -58,7 +58,7 @@ class AntiRaidMonitor(commands.Cog):
         self.join_raid_detection_threshold = commands.CooldownMapping.from_cooldown(10, 8, commands.BucketType.guild)
         self.raid_detection_threshold = commands.CooldownMapping.from_cooldown(4, 15.0, commands.BucketType.guild)
         self.message_spam_detection_threshold = commands.CooldownMapping.from_cooldown(7, 5.0, commands.BucketType.member)
-        self.join_overtime_raid_detection_threshold = CustomCooldownMapping.from_cooldown(4, 1800, CustomBucketType.custom)
+        self.join_overtime_raid_detection_threshold = CustomCooldownMapping.from_cooldown(4, 2700, CustomBucketType.custom)
 
         # self.message_spam_detection_threshold = MessageCooldownMapping.from_cooldown(4, 8, BucketType.message)
 
@@ -67,7 +67,7 @@ class AntiRaidMonitor(commands.Cog):
         self.spam_user_mapping = ExpiringDict(max_len=100, max_age_seconds=10)
         self.join_user_mapping = ExpiringDict(max_len=100, max_age_seconds=10)
         self.ban_user_mapping = ExpiringDict(max_len=100, max_age_seconds=120)
-        self.join_overtime_mapping = ExpiringDict(max_len=100, max_age_seconds=1800)
+        self.join_overtime_mapping = ExpiringDict(max_len=100, max_age_seconds=2700)
         
         self.join_overtime_lock = Lock()
 
@@ -104,7 +104,9 @@ class AntiRaidMonitor(commands.Cog):
             if not raid_alert_bucket.update_rate_limit(current):
                 await self.bot.report.report_raid(member)
                 await self.freeze_server(member.guild)
-
+        
+        if member.created_at < datetime.strptime("01/05/21 00:00:00", '%d/%m/%y %H:%M:%S'):
+            return # skip if not a very new account
         
         timestamp = member.created_at.strftime(
             "%B %d, %Y, %I %p")
@@ -128,7 +130,7 @@ class AntiRaidMonitor(commands.Cog):
                         continue
                     
                     try:
-                        await self.raid_ban(user, reason="Join spam over time detected.")
+                        await self.raid_ban(user, reason="Join spam over time detected.", dm_user=True)
                     except Exception:
                         pass
 
@@ -266,7 +268,7 @@ class AntiRaidMonitor(commands.Cog):
                         return True
         return False
             
-    async def raid_ban(self, user: discord.Member, reason="Raid phrase detected"):
+    async def raid_ban(self, user: discord.Member, reason="Raid phrase detected", dm_user=False):
         case = Case(
             _id=self.bot.settings.guild().case_id,
             _type="BAN",
@@ -289,10 +291,17 @@ class AntiRaidMonitor(commands.Cog):
         if not continue_:
             return
         
+        log = await logger.prepare_ban_log(self.bot.user, user, case)
+        
+        if dm_user:
+            try:
+                await user.send(f"You were banned from {user.guild.name}.\n\nThis action was performed automatically. If you think this was a mistake, please send a message here: https://www.reddit.com/message/compose?to=%2Fr%2FJailbreak", embed=log)
+            except Exception:
+                pass
+        
         self.ban_user_mapping[user.id] = 1
         await user.guild.ban(discord.Object(id=user.id), reason="Raid")
-
-        log = await logger.prepare_ban_log(self.bot.user, user, case)
+        
         public_logs = user.guild.get_channel(self.bot.settings.guild().channel_public)
         if public_logs:
             log.remove_author()
