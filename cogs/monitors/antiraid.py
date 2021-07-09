@@ -106,8 +106,10 @@ class AntiRaidMonitor(commands.Cog):
         if member.created_at < datetime.strptime("01/05/21 00:00:00", '%d/%m/%y %H:%M:%S'):
             return # skip if not a very new account
         
-        timestamp = member.created_at.strftime(
+        timestamp_ = member.created_at.strftime(
             "%B %d, %Y, %I %p")
+        timestamp = member.created_at.strftime(
+            "%B %d, %Y")
         
         with self.join_overtime_lock:
             if self.join_overtime_mapping.get(timestamp) is None:
@@ -123,7 +125,8 @@ class AntiRaidMonitor(commands.Cog):
         if bucket.update_rate_limit(current):
             for user in self.join_overtime_mapping.get(timestamp):
                 try:
-                    await self.raid_ban(user, reason=f"Join spam over time detected (bucket `{timestamp}`)", dm_user=True)
+                    await self.raid_ban(user, reason=f"Join spam over time detected (bucket `{timestamp_}`)", dm_user=True)
+                    self.join_overtime_mapping[timestamp].remove(user)
                 except Exception:
                     pass
 
@@ -260,10 +263,9 @@ class AntiRaidMonitor(commands.Cog):
             
     async def raid_ban(self, user: discord.Member, reason="Raid phrase detected", dm_user=False):
         with self.banning_lock:
-            try:
-                _ = self.ban_user_mapping[user.id]
+            if self.ban_user_mapping.get(user.id) is not None:
                 return
-            except KeyError:
+            else:
                 self.ban_user_mapping[user.id] = 1
 
             case = Case(
