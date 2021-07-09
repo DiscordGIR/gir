@@ -70,6 +70,7 @@ class AntiRaidMonitor(commands.Cog):
         self.join_overtime_mapping = ExpiringDict(max_len=100, max_age_seconds=2700)
         
         self.join_overtime_lock = Lock()
+        self.banning_lock = Lock()
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -90,9 +91,6 @@ class AntiRaidMonitor(commands.Cog):
                 try:
                     user = self.join_user_mapping[user]
                 except KeyError:
-                    continue
-                
-                if user in self.ban_user_mapping:
                     continue
                 
                 try:
@@ -122,17 +120,12 @@ class AntiRaidMonitor(commands.Cog):
                 
         bucket = self.join_overtime_raid_detection_threshold.get_bucket(timestamp)
         current = member.joined_at.replace(tzinfo=timezone.utc).timestamp()
-        
         if bucket.update_rate_limit(current):
             for user in self.join_overtime_mapping.get(timestamp):
-                with self.join_overtime_lock:
-                    if user in self.ban_user_mapping:
-                        continue
-                    
-                    try:
-                        await self.raid_ban(user, reason=f"Join spam over time detected (bucket `timestamp`)", dm_user=True)
-                    except Exception:
-                        pass
+                try:
+                    await self.raid_ban(user, reason=f"Join spam over time detected (bucket `{timestamp}`)", dm_user=True)
+                except Exception:
+                    pass
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -190,10 +183,7 @@ class AntiRaidMonitor(commands.Cog):
                         _ = self.spam_user_mapping[user]
                     except KeyError:
                         continue
-                    
-                    if user in self.ban_user_mapping:
-                        continue
-                    
+                                        
                     user = message.guild.get_member(user)
                     if user is None:
                         continue
@@ -269,44 +259,41 @@ class AntiRaidMonitor(commands.Cog):
         return False
             
     async def raid_ban(self, user: discord.Member, reason="Raid phrase detected", dm_user=False):
-        case = Case(
-            _id=self.bot.settings.guild().case_id,
-            _type="BAN",
-            date=datetime.now(),
-            mod_id=self.bot.user.id,
-            mod_tag=str(self.bot),
-            punishment="PERMANENT",
-            reason=reason
-        )
-
-        await self.bot.settings.inc_caseid()
-        await self.bot.settings.add_case(user.id, case)
-        
-        continue_ = False
-        try:
-            _ = self.ban_user_mapping[user.id]
-        except KeyError:
-            continue_ = True
-            
-        if not continue_:
-            return
-        
-        log = await logger.prepare_ban_log(self.bot.user, user, case)
-        
-        if dm_user:
+        with self.banning_lock:
             try:
-                await user.send(f"You were banned from {user.guild.name}.\n\nThis action was performed automatically. If you think this was a mistake, please send a message here: https://www.reddit.com/message/compose?to=%2Fr%2FJailbreak", embed=log)
-            except Exception:
-                pass
-        
-        self.ban_user_mapping[user.id] = 1
-        await user.guild.ban(discord.Object(id=user.id), reason="Raid")
-        
-        public_logs = user.guild.get_channel(self.bot.settings.guild().channel_public)
-        if public_logs:
-            log.remove_author()
-            log.set_thumbnail(url=user.avatar_url)
-            await public_logs.send(embed=log)
+                _ = self.ban_user_mapping[user.id]
+                return
+            except KeyError:
+                self.ban_user_mapping[user.id] = 1
+
+            case = Case(
+                _id=self.bot.settings.guild().case_id,
+                _type="BAN",
+                date=datetime.now(),
+                mod_id=self.bot.user.id,
+                mod_tag=str(self.bot),
+                punishment="PERMANENT",
+                reason=reason
+            )
+
+            await self.bot.settings.inc_caseid()
+            await self.bot.settings.add_case(user.id, case)
+            
+            log = await logger.prepare_ban_log(self.bot.user, user, case)
+            
+            if dm_user:
+                try:
+                    await user.send(f"You were banned from {user.guild.name}.\n\nThis action was performed automatically. If you think this was a mistake, please send a message here: https://www.reddit.com/message/compose?to=%2Fr%2FJailbreak", embed=log)
+                except Exception:
+                    pass
+            
+            await user.guild.ban(discord.Object(id=user.id), reason="Raid")
+            
+            public_logs = user.guild.get_channel(self.bot.settings.guild().channel_public)
+            if public_logs:
+                log.remove_author()
+                log.set_thumbnail(url=user.avatar_url)
+                await public_logs.send(embed=log)
 
     async def freeze_server(self, guild):
         settings = self.bot.settings.guild()
