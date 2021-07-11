@@ -208,12 +208,11 @@ class Tags(commands.Cog):
         
         if tag is None:
             raise commands.BadArgument("That tag does not exist.")
-        if not (ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5) or ctx.guild.get_role(ctx.settings.guild().role_sub_mod) in ctx.author.roles):
-            bucket = self.tag_cooldown.get_bucket(tag.name)
-            current = ctx.message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
-
-            if bucket.update_rate_limit(current):
-                raise commands.BadArgument("That tag is on cooldown.")
+        bucket = self.tag_cooldown.get_bucket(tag.name)
+        current = ctx.message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
+        
+        if bucket.update_rate_limit(current) and not (ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5) or ctx.guild.get_role(ctx.settings.guild().role_sub_mod) in ctx.author.roles):
+            raise commands.BadArgument("That tag is on cooldown.")
 
         file = tag.image.read()
         if file is not None:
