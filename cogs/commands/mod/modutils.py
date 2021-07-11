@@ -266,10 +266,8 @@ class ModUtils(commands.Cog):
             birthday_role = ctx.guild.get_role(ctx.settings.guild().role_birthday)
             if birthday_role is None:
                 return
-            print("here")
             if birthday_role in user.roles:
                 return
-            print("here2")
             now = datetime.datetime.now(eastern)
             h = now.hour / 24
             m = now.minute / 60 / 24
@@ -278,7 +276,6 @@ class ModUtils(commands.Cog):
                 time = now + datetime.timedelta(days=1-h-m)
                 ctx.settings.tasks.schedule_remove_bday(user.id, time)
             except Exception as e:
-                print(e)
                 return
             await user.add_roles(birthday_role)
             await user.send(f"According to my calculations, today is your birthday! We've given you the {birthday_role} role for 24 hours.")

@@ -44,7 +44,6 @@ class Birthday(commands.Cog):
                 time = now + timedelta(days=1-h-m)
                 self.bot.settings.tasks.schedule_remove_bday(user.id, time)
             except Exception as e:
-                print(e)
                 continue
             await user.add_roles(birthday_role)
             try:

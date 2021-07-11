@@ -131,7 +131,8 @@ class AntiRaidMonitor(commands.Cog):
         bucket = self.join_overtime_raid_detection_threshold.get_bucket(timestamp)
         current = member.joined_at.replace(tzinfo=timezone.utc).timestamp()
         if bucket.update_rate_limit(current):
-            for user in self.join_overtime_mapping.get(timestamp):
+            users = [ m for m in self.join_overtime_mapping.get(timestamp) ] # why isnt this working
+            for user in users:
                 try:
                     await self.raid_ban(user, reason=f"Join spam over time detected (bucket `{timestamp_}`)", dm_user=True)
                     self.join_overtime_mapping[timestamp].remove(user)
@@ -297,8 +298,11 @@ class AntiRaidMonitor(commands.Cog):
                 except Exception:
                     pass
             
-            await user.guild.ban(discord.Object(id=user.id), reason="Raid")
-            
+            if user.guild.get_member(user.id) is not None:
+                await user.ban(reason="Raid")
+            else:
+                await user.guild.ban(discord.Object(id=user.id), reason="Raid")
+                
             public_logs = user.guild.get_channel(self.bot.settings.guild().channel_public)
             if public_logs:
                 log.remove_author()

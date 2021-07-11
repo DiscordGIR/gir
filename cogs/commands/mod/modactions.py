@@ -47,7 +47,6 @@ class ModActions(commands.Cog):
             Reason for warning, by default "No reason."
 
         """
-        print(ctx.settings.guild())
         if points < 1:  # can't warn for negative/0 points
             raise commands.BadArgument(message="Points can't be lower than 1.")
 
