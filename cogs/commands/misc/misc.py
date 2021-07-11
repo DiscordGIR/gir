@@ -123,7 +123,7 @@ class Misc(commands.Cog):
             member = ctx.author
 
         await ctx.message.delete()
-        embed = discord.Embed(title=f"{member}'s avatar")
+        embed = discord.Embed(title=f"{member}'s avatar", description=member.avatar_url)
         embed.set_image(url=member.avatar_url)
         embed.color = discord.Color.random()
         embed.set_footer(text=f"Requested by {ctx.author}")
