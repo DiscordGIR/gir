@@ -25,13 +25,13 @@ class Misc(commands.Cog):
         self.CIJ_KEY = os.environ.get("CIJ_KEY")
         self.cij_baseurl = "https://canijailbreak2.com/v1/pls"
         self.devices_url = "https://api.ipsw.me/v4/devices"
-        
+
         try:
             with open('emojis.json') as f:
                 self.emojis = json.loads(f.read())
         except IOError:
             raise Exception("Could not find emojis.json. Make sure to run grab_emojis.py")
-        
+
     @commands.command(name="remindme")
     @commands.guild_only()
     @permissions.bot_channel_only_unless_mod()
@@ -49,24 +49,24 @@ class Misc(commands.Cog):
         reminder : str
             What to remind you of
         """
-        
+
         now = datetime.datetime.now()
         delta = pytimeparse.parse(dur)
         if delta is None:
             raise commands.BadArgument("Please give a valid time to remind you! (i.e 1h, 30m)")
-        
+
         time = now + datetime.timedelta(seconds=delta)
         if time < now:
             raise commands.BadArgument("Time has to be in the future >:(")
         reminder = discord.utils.escape_markdown(reminder)
-        
-        ctx.tasks.schedule_reminder(ctx.author.id, reminder, time)        
+
+        ctx.tasks.schedule_reminder(ctx.author.id, reminder, time)
         natural_time =  humanize.naturaldelta(
                     delta, minimum_unit="seconds")
         embed = discord.Embed(title="Reminder set", color=discord.Color.random(), description=f"We'll remind you in {natural_time} ")
         await ctx.message.delete(delay=5)
         await ctx.message.reply(embed=embed, delete_after=10)
-        
+
     @commands.command(name="jumbo")
     @commands.guild_only()
     async def jumbo(self, ctx: context.Context, emoji: typing.Union[discord.Emoji, discord.PartialEmoji, str]):
@@ -123,8 +123,18 @@ class Misc(commands.Cog):
             member = ctx.author
 
         await ctx.message.delete()
-        embed = discord.Embed(title=f"{member}'s avatar", description=member.avatar_url)
-        embed.set_image(url=member.avatar_url)
+        embed = discord.Embed(title=f"{member}'s avatar")
+        animated = ["gif", "png", "jpeg", "webp"]
+        not_animated = ["png", "jpeg", "webp"]
+        def fmt(format_):
+            return f"[{format_}]({member.avatar_url_as(format=format_, size=4096)})"
+        
+        if member.is_avatar_animated():
+            embed.description = f"View As\n {'  '.join([fmt(format_) for format_ in animated])}"
+        else:
+            embed.description = f"View As\n {'  '.join([fmt(format_) for format_ in not_animated])}"
+        
+        embed.set_image(url=str(member.avatar_url_as(size=4096)))
         embed.color = discord.Color.random()
         embed.set_footer(text=f"Requested by {ctx.author}")
         await ctx.send(embed=embed)
@@ -147,12 +157,12 @@ class Misc(commands.Cog):
         device : str
             Name of the device
         """
-        
+
         device = await self.device_name(device)
 
         if device is None:
             raise commands.BadArgument("Invalid device provided.\nReminder: the usage is `!cij <iOS> <device>`")
-        
+
         async with aiohttp.ClientSession(headers={"Authorization": self.CIJ_KEY}) as session:
             async with session.get(f"{self.cij_baseurl}/{device}/{version}") as resp:
                 if resp.status == 200:
@@ -172,21 +182,21 @@ class Misc(commands.Cog):
                         raise commands.BadArgument("API error: device not found!")
                 else:
                     raise commands.BadArgument("Catastrophic API error!")
-        
+
     async def prepare_jailbreak_embed(self, jailbreaks, device, ios):
         embed = discord.Embed(title="Good news! Your device is jailbreakable!")
         embed.description = f"{device} on iOS {ios}"
         embed.color = discord.Color.green()
         for jailbreak in jailbreaks:
             embed.add_field(name=jailbreak['name'], value=f"*{jailbreak['type']}*\n[Link for more info]({jailbreak['url']})\nSupported on iOS versions {jailbreak['minIOS']}-{jailbreak['maxIOS']}")
-        
+
         embed.set_footer(text="Powered by https://canijailbreak2.com from mass1ve-err0r")
         return embed
-    
+
     async def device_name(self, device):
         device = device.lower()
         device = device.replace('s plus', '+')
-        
+
         async with aiohttp.ClientSession() as session:
             async with session.get(self.devices_url) as resp:
                 if resp.status == 200:
@@ -203,7 +213,7 @@ class Misc(commands.Cog):
 
                             return name
         return None
-        
+
     @cij.error
     @jumbo.error
     @remindme.error
