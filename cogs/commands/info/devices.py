@@ -1,13 +1,13 @@
+import asyncio
 import json
 import re
 import traceback
 
 import aiohttp
-import asyncio
-from attr.setters import convert
-import discord
-import cogs.utils.permission_checks as permissions
 import cogs.utils.context as context
+import cogs.utils.permission_checks as permissions
+import discord
+from attr.setters import convert
 from discord.ext import commands
 
 
@@ -17,6 +17,7 @@ class Devices(commands.Cog):
         self.devices_url = "https://api.ipsw.me/v4/devices"
         self.firmwares_url = "https://api.ipsw.me/v4/device/"
         self.devices_test = re.compile(r'^.+ \[.+\,.+\]$')
+        self.devices_remove_re = re.compile(r'\[.+\,.+\]$')
         self.possible_devices = ['iphone', 'ipod', 'ipad', 'homepod', 'apple']
 
     @commands.guild_only()
@@ -24,12 +25,13 @@ class Devices(commands.Cog):
     @commands.bot_has_guild_permissions(change_nickname=True)
     @permissions.bot_channel_only_unless_mod()
     @permissions.ensure_invokee_role_lower_than_bot()
-    @commands.command(name="adddevice")
+    @commands.command(name="adddevice", aliases=["addevice"])
     async def adddevice(self, ctx: context.Context, *, device: str) -> None:
         """Add device name to your nickname, i.e `SlimShadyIAm [iPhone 12, 14.2]`. See !listdevices to see the list of possible devices.
 
-        Example usage:
-        `!adddevice <device name>`
+        Example usage
+        -------------
+        !adddevice <device name>
 
         Parameters
         ----------
@@ -37,18 +39,69 @@ class Devices(commands.Cog):
             device user wants to use
 
         """
-
+        new_nick = ctx.author.display_name
         # check if user already has a device in their nick
         if re.match(self.devices_test, ctx.author.display_name):
-            raise commands.BadArgument(
-                "You already have a device nickname set! You can remove it using `!removedevice`.")
+            # they already have a device set
+            prompt = await ctx.send_warning(description="You already have a device nickname set. Would you like to modify it?")
+            prompt_data = context.PromptDataReaction(prompt, ['✅', '❌'], timeout=15, delete_after=True)
+            response, _ = await ctx.prompt_reaction(prompt_data)
+            
+            if response is None or response == '❌':
+                # timeout or X reacted
+                await ctx.send_warning(description="Cancelled adding device to your name.", delete_after=5)
+                await ctx.message.delete(delay=5)
+                return
+            elif response == '✅':
+                # user wants to remove existing device, let's do that
+                new_nick = re.sub(self.devices_remove_re, "", ctx.author.display_name).strip()
+                if len(new_nick) > 32:
+                    raise commands.BadArgument("Nickname too long")
+
+                await ctx.send_success("Alright, we'll swap your device!", delete_after=5)
 
         if not device.split(" ")[0].lower() in self.possible_devices:
             raise commands.BadArgument(
                 "Unsupported device. Please see `!listdevices` for possible devices.")
 
-        the_device = None
+        the_device = await self.find_device_from_ipsw_me(device)
 
+        # did we find a device with given name?
+        if the_device is None:
+            raise commands.BadArgument("Device doesn't exist!")
+
+        # prompt user for which firmware they want in their name
+        firmware = await self.prompt_for_firmware(ctx, the_device)
+        
+        # change the user's nickname!
+        if firmware is not None:
+            name = the_device["name"]
+            name = name.replace(' Plus', '+')
+            name = name.replace('Pro Max', 'PM')
+            new_nick = f"{new_nick} [{name}, {firmware}]"
+
+            if len(new_nick) > 32:
+                raise commands.BadArgument("Nickname too long! Aborting.")
+
+            await ctx.author.edit(nick=new_nick)
+            await ctx.send_success("Changed your nickname!", delete_after=5)
+            await ctx.message.delete(delay=5)
+
+    async def find_device_from_ipsw_me(self, device):
+        """Get device metadata for a given device from IPSW.me API
+
+        Parameters
+        ----------
+        device : str
+            Name of the device we want metadata for (i.e iPhone 12)
+
+        Returns
+        -------
+        dict
+            Dictionary with the relavent metadata
+        """
+        
+        device = device.lower()
         async with aiohttp.ClientSession() as session:
             async with session.get(self.devices_url) as resp:
                 if resp.status == 200:
@@ -67,29 +120,28 @@ class Devices(commands.Cog):
                         name = name.strip()
 
                         # are the names equal?
-                        if name.lower() == device.lower():
+                        if name.lower() == device:
                             d["name"] = name
-                            the_device = d
+                            return d
 
-        # did we find a device with given name?
-        if not the_device:
-            raise commands.BadArgument("Device doesn't exist!")
+    async def prompt_for_firmware(self, ctx, the_device):
+        """Prompt user for the firmware they want to use in their name
 
-        # is this a supported device type for nicknames?
+        Parameters
+        ----------
+        ctx : [type]
+            [description]
+        the_device : dict
+            Metadata of the device we want firmware for. Must ensure this is a valid firmware for this device.
 
-        # firmware stuff for nickname
-        firmwares = None
+        Returns
+        -------
+        str
+            firmware version we want to use, or None if we want to cancel
+        """
+        
         # retrieve list of available firmwares for the given device
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"{self.firmwares_url}/{the_device['identifier']}") as resp:
-                if resp.status == 200:
-                    firmwares = json.loads(await resp.text())["firmwares"]
-
-        if len(firmwares) == 0:
-            raise commands.BadArgument("Unforunately I don't have version history for this device.")
-
-        found = False
-        firmware = None
+        firmwares = await self.find_firmwares_from_ipsw_me(the_device)
         
         # prompt user to input an iOS version they want to put in their nickname
         prompt = context.PromptData(
@@ -99,7 +151,10 @@ class Devices(commands.Cog):
             convertor=str
         )
 
-        firmware = await ctx.prompt(prompt)        
+        firmware = await ctx.prompt(prompt)   
+        found = False     
+        
+        # loop until we find a valid firmware or user cancels.
         while True:
             if firmware is None:
                 await ctx.message.delete(delay=5)
@@ -109,8 +164,8 @@ class Devices(commands.Cog):
             # is this a valid version for this device?
             for f in firmwares:
                 if f["version"] == firmware:
-                    found = True
                     firmware = f["version"]
+                    found = True
                     break
 
             if found:
@@ -119,19 +174,31 @@ class Devices(commands.Cog):
                 prompt.reprompt = True
                 firmware = await ctx.prompt(prompt)
 
-        # change the user's nickname!
-        if found and firmware is not None:
-            name = the_device["name"]
-            name = name.replace(' Plus', '+')
-            name = name.replace('Pro Max', 'PM')
-            new_nick = f"{ctx.author.display_name} [{name}, {firmware}]"
+        return firmware
 
-            if len(new_nick) > 32:
-                raise commands.BadArgument("Nickname too long! Aborting.")
+    async def find_firmwares_from_ipsw_me(self, the_device):
+        """Get list of all valid firmwares for a given device from IPSW.me
 
-            await ctx.author.edit(nick=new_nick)
-            await ctx.send_success("Changed your nickname!", delete_after=5)
-            await ctx.message.delete(delay=5)
+        Parameters
+        ----------
+        the_device : dict
+            Metadata of the device we want firmwares for
+
+        Returns
+        -------
+        list[dict]
+            list of all the firmwares
+        """
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{self.firmwares_url}/{the_device['identifier']}") as resp:
+                if resp.status == 200:
+                    firmwares = json.loads(await resp.text())["firmwares"]
+
+        if len(firmwares) == 0:
+            raise commands.BadArgument("Unforunately I don't have version history for this device.")
+
+        return firmwares
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(change_nickname=True)
@@ -141,15 +208,16 @@ class Devices(commands.Cog):
     async def removedevice(self, ctx: context.Context) -> None:
         """Removes device from your nickname
 
-        Example usage:
-        `!removedevice`
+        Example usage
+        -------------
+        !removedevice
 
         """
 
         if not re.match(self.devices_test, ctx.author.display_name):
             raise commands.BadArgument("You don't have a device nickname set!")
 
-        new_nick = re.sub(self.devices_test, "", ctx.author.display_name)
+        new_nick = re.sub(self.devices_remove_re, "", ctx.author.display_name).strip()
         if len(new_nick) > 32:
             raise commands.BadArgument("Nickname too long")
 
@@ -164,9 +232,9 @@ class Devices(commands.Cog):
     async def listdevices(self, ctx: context.Context) -> None:
         """List all possible devices you can set your nickname to.
 
-        Example usage:
-        `!listdevices`
-
+        Example usage
+        -------------
+        !listdevices
         """
 
         devices_dict = {
