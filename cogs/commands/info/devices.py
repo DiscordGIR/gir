@@ -36,7 +36,7 @@ class Devices(commands.Cog):
         Parameters
         ----------
         device : str
-            device user wants to use
+            "device user wants to use"
 
         """
         new_nick = ctx.author.display_name
@@ -93,12 +93,12 @@ class Devices(commands.Cog):
         Parameters
         ----------
         device : str
-            Name of the device we want metadata for (i.e iPhone 12)
+            "Name of the device we want metadata for (i.e iPhone 12)"
 
         Returns
         -------
         dict
-            Dictionary with the relavent metadata
+            "Dictionary with the relavent metadata
         """
         
         device = device.lower()
@@ -129,15 +129,13 @@ class Devices(commands.Cog):
 
         Parameters
         ----------
-        ctx : [type]
-            [description]
         the_device : dict
-            Metadata of the device we want firmware for. Must ensure this is a valid firmware for this device.
+           "Metadata of the device we want firmware for. Must ensure this is a valid firmware for this device."
 
         Returns
         -------
         str
-            firmware version we want to use, or None if we want to cancel
+            "firmware version we want to use, or None if we want to cancel"
         """
         
         # retrieve list of available firmwares for the given device
@@ -182,12 +180,12 @@ class Devices(commands.Cog):
         Parameters
         ----------
         the_device : dict
-            Metadata of the device we want firmwares for
+            "Metadata of the device we want firmwares for"
 
         Returns
         -------
         list[dict]
-            list of all the firmwares
+            "list of all the firmwares"
         """
         
         async with aiohttp.ClientSession() as session:

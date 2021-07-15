@@ -1,9 +1,9 @@
 import traceback
 
+import cogs.utils.context as context
+import cogs.utils.permission_checks as permissions
 import discord
 from discord.ext import commands
-import cogs.utils.permission_checks as permissions
-import cogs.utils.context as context
 
 
 class Utilities(commands.Cog):
@@ -11,14 +11,14 @@ class Utilities(commands.Cog):
         self.bot = bot
         self.left_col_length = 17
         self.right_col_length = 80
-        self.mod_only = ["ModActions", "ModUtils", "Filters", "BoosterEmojis", "ReactionRoles", "Giveaway", "Admin", "AntiRaid"]
+        self.mod_only = ["ModActions", "ModUtils", "Filters", "BoosterEmojis", "ReactionRoles", "Giveaway", "Admin", "AntiRaid", "Trivia"]
         self.genius_only = ["Genius"]
 
     @commands.command(name="help", hidden=True)
     @commands.guild_only()
     @commands.has_permissions(add_reactions=True, embed_links=True)
     async def help_comm(self, ctx: context.Context, *, command_arg: str = None):
-        """Gets all cogs and commands of mine."""
+        """Gets all my cogs and commands."""
 
         await ctx.message.delete(delay=5)
 
@@ -106,11 +106,15 @@ class Utilities(commands.Cog):
     @commands.has_permissions(add_reactions=True, embed_links=True)
     async def usage(self, ctx: context.Context, *, command_arg: str):
         """Show usage of one command
+        
+        Example usage
+        -------------
+        !usage devices
 
         Parameters
         ----------
         command_arg : str
-            Name of command
+            "Name of command"
         """
         
         await ctx.message.delete(delay=5)
