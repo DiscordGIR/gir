@@ -33,7 +33,7 @@ class ModActions(commands.Cog):
     async def warn(self, ctx: context.Context, user: permissions.ModsAndAboveExternal, points: int, *, reason: str = "No reason.") -> None:
         """Warn a user (mod only)
 
-        Example usage:
+        Example usage
         --------------
         `!warn <@user/ID> <points> <reason (optional)>
 `
@@ -134,7 +134,7 @@ class ModActions(commands.Cog):
     async def liftwarn(self, ctx: context.Context, user: permissions.ModsAndAboveMember, case_id: int, *, reason: str = "No reason.") -> None:
         """Mark a warn as lifted and remove points. (mod only)
 
-        Example usage:
+        Example usage
         --------------
         `!liftwarn <@user/ID> <case ID> <reason (optional)>`
 
@@ -206,7 +206,7 @@ class ModActions(commands.Cog):
     async def editreason(self, ctx: context.Context, user: permissions.ModsAndAboveExternal, case_id: int, *, new_reason: str) -> None:
         """Edit case reason and the embed in #public-mod-logs. (mod only)
 
-        Example usage:
+        Example usage
         --------------
         `!editreason <@user/ID> <case ID> <reason>`
 
@@ -286,7 +286,7 @@ class ModActions(commands.Cog):
     async def removepoints(self, ctx: context.Context, user: permissions.ModsAndAboveMember, points: int, *, reason: str = "No reason.") -> None:
         """Remove warnpoints from a user. (mod only)
 
-        Example usage:
+        Example usage
         --------------
         `!removepoints <@user/ID> <points> <reason (optional)>`
 
@@ -355,7 +355,7 @@ class ModActions(commands.Cog):
     async def roblox(self, ctx: context.Context, user: permissions.ModsAndAboveMember) -> None:
         """Kick a Roblox user and tell them where to go (mod only)
 
-        Example usage:
+        Example usage
         --------------
         `!roblox <@user/ID>`
 
@@ -392,7 +392,7 @@ class ModActions(commands.Cog):
     async def kick(self, ctx: context.Context, user: permissions.ModsAndAboveMember, *, reason: str = "No reason.") -> None:
         """Kick a user (mod only)
 
-        Example usage:
+        Example usage
         --------------
         `!kick <@user/ID> <reason (optional)>`
 
@@ -451,7 +451,7 @@ class ModActions(commands.Cog):
     async def ban(self, ctx: context.Context, user: permissions.ModsAndAboveExternal, *, reason: str = "No reason."):
         """Ban a user (mod only)
 
-        Example usage:
+        Example usage
         --------------
         `!ban <@user/ID> <reason (optional)>`
 
@@ -522,7 +522,7 @@ class ModActions(commands.Cog):
     async def unban(self, ctx: context.Context, user: permissions.ModsAndAboveExternal, *, reason: str = "No reason.") -> None:
         """Unban a user (must use ID) (mod only)
 
-        Example usage:
+        Example usage
         --------------
         `!unban <user ID> <reason (optional)> `
 
@@ -575,7 +575,7 @@ class ModActions(commands.Cog):
     async def purge(self, ctx: context.Context, limit: int = 0) -> None:
         """Purge messages from current channel (mod only)
 
-        Example usage:
+        Example usage
         --------------
         `!purge <number of messages>`
 
@@ -604,7 +604,7 @@ class ModActions(commands.Cog):
     async def mute(self, ctx: context.Context, user: permissions.ModsAndAboveMember, dur: str = "", *, reason: str = "No reason.") -> None:
         """Mute a user (mod only)
 
-        Example usage:
+        Example usage
         --------------
         `!mute <@user/ID> <duration> <reason (optional)>`
 
@@ -694,7 +694,7 @@ class ModActions(commands.Cog):
     async def unmute(self, ctx: context.Context, user: permissions.ModsAndAboveMember, *, reason: str = "No reason.") -> None:
         """Unmute a user (mod only)
 
-        Example usage:
+        Example usage
         --------------
        ` !unmute <@user/ID> <reason (optional)>`
 

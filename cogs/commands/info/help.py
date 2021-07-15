@@ -138,9 +138,13 @@ class Utilities(commands.Cog):
             parts = command.help.split("\n\n")
             embed.description = parts[0] + '\n\n'
             for part in parts[1:len(parts)]:
-                embed.description += "```\n"
-                embed.description += part
-                embed.description += "\n```"
+                name, *value = part.split("\n")
+                value = "\n".join(value)
+                value = value.replace("-", "")
+                embed.add_field(name=name, value=f"```hs{value}```", inline=False)
+                # embed.description += "```\n"
+                # embed.description += part
+                # embed.description += "\n```"
             embed.color = discord.Color.random()
             return embed
 

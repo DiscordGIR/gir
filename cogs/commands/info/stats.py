@@ -48,7 +48,7 @@ class Stats(commands.Cog):
     async def ping(self, ctx: context.Context) -> None:
         """Pong
 
-        Example usage:
+        Example usage
         `!ping`
 
         """
@@ -71,7 +71,7 @@ class Stats(commands.Cog):
     async def stats(self, ctx: context.Context) -> None:
         """Statistics about the bot
 
-        Example usage:
+        Example usage
         `!stats`
 
         """
@@ -97,7 +97,7 @@ class Stats(commands.Cog):
     async def serverinfo(self, ctx: context.Context) -> None:
         """Displays info about the server
 
-        Example usage:
+        Example usage
         `!serverinfo`
 
         """

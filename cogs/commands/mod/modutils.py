@@ -21,7 +21,7 @@ class ModUtils(commands.Cog):
     async def rundown(self, ctx: context.Context, user: discord.Member) -> None:
         """Get information about a user (join/creation date, xp, etc.), defaults to command invoker.
 
-        Example usage:
+        Example usage
         --------------
         `!userinfo <@user/ID (optional)>`
 
@@ -82,7 +82,7 @@ class ModUtils(commands.Cog):
     async def clem(self, ctx: context.Context, user: discord.Member) -> None:
         """Sets user's XP and Level to 0, freezes XP, sets warn points to 599 (AARON ONLY)
 
-        Example usage:
+        Example usage
         --------------
         `!clem <@user/ID>`
 
@@ -128,7 +128,7 @@ class ModUtils(commands.Cog):
     async def musicban(self, ctx: context.Context, user: discord.Member) -> None:
         """Ban a user from using music commands (mod only)
 
-        Example usage:
+        Example usage
         --------------
         `!musicban <@user/ID>`
 
@@ -154,7 +154,7 @@ class ModUtils(commands.Cog):
     async def birthdayexclude(self, ctx: context.Context, user: discord.Member) -> None:
         """Remove a user's birthday (mod only)
 
-        Example usage:
+        Example usage
         --------------
         `!birthdayexclude <@user/ID>`
 
@@ -188,7 +188,7 @@ class ModUtils(commands.Cog):
     async def removebirthday(self, ctx: context.Context, user: discord.Member) -> None:
         """Remove a user's birthday (mod only)
 
-        Example usage:
+        Example usage
         --------------
         `!removebirthday <@user/ID>`
 
@@ -227,7 +227,7 @@ class ModUtils(commands.Cog):
     async def setbirthday(self, ctx: context.Context, user: discord.Member, month: int, date: int) -> None:
         """Override a user's birthday (mod only)
 
-        Example usage:
+        Example usage
         --------------
         `!setbirthday <@user/ID> <month (int)> <date (int)>`
 

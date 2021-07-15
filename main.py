@@ -90,6 +90,9 @@ class Bot(commands.Bot):
         await self.process_commands(message)
 
     async def process_commands(self, message):
+        if message.author.bot:
+            return
+        
         ctx = await self.get_context(message, cls=context.Context)
         await self.invoke(ctx)
 

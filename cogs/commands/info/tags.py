@@ -81,7 +81,7 @@ class Tags(commands.Cog):
     async def addtag(self, ctx: context.Context, name: str, *, content: str) -> None:
         """Add a tag. Optionally attach an iamge. (Genius only)
 
-        Example usage:
+        Example usage
         -------------
         `!addtag roblox This is the content`
 
@@ -167,7 +167,7 @@ class Tags(commands.Cog):
     async def deltag(self, ctx: context.Context, name: str):
         """Delete tag (geniuses only)
 
-        Example usage:
+        Example usage
         --------------
         `!deltag <tagname>`
 

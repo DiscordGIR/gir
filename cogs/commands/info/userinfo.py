@@ -94,7 +94,7 @@ class UserInfo(commands.Cog):
     async def userinfo(self, ctx: context.Context, user: typing.Union[discord.Member, int] = None) -> None:
         """Get information about a user (join/creation date, xp, etc.), defaults to command invoker.
 
-        Example usage:
+        Example usage
         --------------
         `!userinfo <@user/ID (optional)>`
 
@@ -170,7 +170,7 @@ class UserInfo(commands.Cog):
     async def xp(self, ctx: context.Context, user: discord.Member = None):
         """Show your or another user's XP
 
-        Example usage:
+        Example usage
         --------------
         `!xp <@user/ID (optional)`
 
@@ -205,7 +205,7 @@ class UserInfo(commands.Cog):
     async def xptop(self, ctx: context.Context):
         """Show XP leaderboard for top 100, ranked highest to lowest.
 
-        Example usage:
+        Example usage
         --------------
         `!xptop`
 
@@ -225,7 +225,7 @@ class UserInfo(commands.Cog):
     async def warnpoints(self, ctx: context.Context, user: discord.Member = None):
         """Show a user's warnpoints (mod only)
 
-        Example usage:
+        Example usage
         --------------
         `!warnpoints <@user/ID>`
 
@@ -260,7 +260,7 @@ class UserInfo(commands.Cog):
     async def cases(self, ctx: context.Context, user: typing.Union[discord.Member, int] = None):
         """Show list of cases of a user (mod only)
 
-        Example usage:
+        Example usage
         --------------
         `!cases <@user/ID>`
 

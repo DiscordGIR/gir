@@ -57,7 +57,7 @@ class Birthday(commands.Cog):
     async def mybirthday(self, ctx: context.Context, month: int, date: int) -> None:
         """Set your birthday. The birthday role will be given to you on that day. THIS COMMAND IS ONE TIME USE ONLY!
 
-        Example usage:
+        Example usage
         --------------
         `!mybirthday <month (int)> <date (int)>`
 

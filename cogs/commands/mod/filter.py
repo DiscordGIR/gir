@@ -49,7 +49,7 @@ class Filters(commands.Cog):
     async def offlineping(self, ctx: context.Context, val: bool):
         """Bot will ping for reports when offline (mod only)
 
-        Example usage:
+        Example usage
         --------------
         `!offlineping <true/false>`
 
@@ -75,7 +75,7 @@ class Filters(commands.Cog):
     async def filteradd(self, ctx: context.Context, notify: bool, bypass: int, *, phrase: str) -> None:
         """Add a word to filter (admin only)
 
-        Example usage:
+        Example usage
         -------------
         `!filter false 5 :kek:`
 
@@ -126,7 +126,7 @@ class Filters(commands.Cog):
     async def piracy(self, ctx: context.Context, *, word: str):
         """Mark a word as piracy, will be ignored in #dev (admin only)
 
-        Example usage:
+        Example usage
         --------------
         `!piracy xd xd xd`
 
@@ -157,7 +157,7 @@ class Filters(commands.Cog):
     async def filterremove(self, ctx: context.Context, *, word: str):
         """Remove word from filter (admin only)
 
-        Example usage:
+        Example usage
         --------------
         `!filterremove xd xd xd`
 
@@ -186,7 +186,7 @@ class Filters(commands.Cog):
     async def whitelist(self, ctx: context.Context, id: int):
         """Whitelist a guild from invite filter (admin only)
 
-        Example usage:
+        Example usage
         --------------
         `!whitelist 349243932447604736`
 
@@ -209,7 +209,7 @@ class Filters(commands.Cog):
     async def ignorechannel(self, ctx: context.Context, channel: discord.TextChannel) -> None:
         """Ignore channel in filter (admin only)
 
-        Example usage:
+        Example usage
         -------------
         `!ignorechannel #xd`
 
@@ -232,7 +232,7 @@ class Filters(commands.Cog):
     async def unignorechannel(self, ctx: context.Context, channel: discord.TextChannel) -> None:
         """Unignore channel in filter (admin only)
 
-        Example usage:
+        Example usage
         -------------
         `!unignorechannel #xd`
 
@@ -255,7 +255,7 @@ class Filters(commands.Cog):
     async def blacklist(self, ctx: context.Context, id: int):
         """Blacklist a guild from invite filter (admin only)
 
-        Example usage:
+        Example usage
         --------------
         `!blacklist 349243932447604736`
 
@@ -278,7 +278,7 @@ class Filters(commands.Cog):
     async def falsepositive(self, ctx: context.Context, *, word: str):
         """Disabling enhanced filter checks on a word (admin only)
 
-        Example usage:
+        Example usage
         --------------
         `!falsepositive xd`
 

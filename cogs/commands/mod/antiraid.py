@@ -15,7 +15,7 @@ class AntiRaid(commands.Cog):
     async def raid(self, ctx: context.Context, *, phrase: str) -> None:
         """Add a phrase to the raid filter.
 
-        Example Usage:
+        Example usage
         --------------
         `!raid <phrase>`
 
@@ -39,7 +39,7 @@ class AntiRaid(commands.Cog):
     async def removeraid(self, ctx: context.Context, *, phrase: str) -> None:
         """Remove a phrase from the raid filter.
 
-        Example Usage:
+        Example usage
         --------------
         `!removeraid <phrase>`
 
@@ -66,7 +66,7 @@ class AntiRaid(commands.Cog):
     async def spammode(self, ctx: context.Context, mode: bool = None) -> None:
         """Toggle banning of *today's* new accounts in join spam detector.
 
-        Example Usage:
+        Example usage
         --------------
         `!spammode true`
 
