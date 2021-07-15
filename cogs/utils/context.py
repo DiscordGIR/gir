@@ -106,20 +106,25 @@ class Context(commands.Context):
                         await info.message.delete()
                     else:
                         await info.message.clear_reactions()
-                    return
+                    return None, None
                 except Exception:
                     pass
             else:
+                if info.delete_after:
+                    await info.message.delete()
+                else:
+                    await info.message.clear_reactions()
+                
                 return str(reaction.emoji), reactor    
         
     async def send_warning(self, description: str, title=None, delete_after: int = None):
-        return await self.reply(embed=discord.Embed(title=title, description=description, color=discord.Color.orange()), delete_after=delete_after)
+        return await self.reply(embed=discord.Embed(title=title if title is not None else "", description=description, color=discord.Color.orange()), delete_after=delete_after)
 
     async def send_success(self, description: str, title=None, delete_after: int = None):
-        return await self.reply(embed=discord.Embed(title=title, description=description, color=discord.Color.dark_green()), delete_after=delete_after)
+        return await self.reply(embed=discord.Embed(title=title if title is not None else "", description=description, color=discord.Color.dark_green()), delete_after=delete_after)
         
     async def send_error(self, error):
         embed = discord.Embed(title=":(\nYour command ran into a problem")
         embed.color = discord.Color.red()
-        embed.description = discord.utils.escape_markdown(f'{error}')
+        embed.description = str(error)
         await self.send(embed=embed, delete_after=8)
