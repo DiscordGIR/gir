@@ -123,7 +123,7 @@ class Utilities(commands.Cog):
             embed = await self.get_usage_embed(ctx, command)
             await ctx.send(embed=embed)
         else:
-            raise commands.BadArgument("Command not found.", delete_after=5)
+            raise commands.BadArgument("Command not found.")
 
     async def get_usage_embed(self,  ctx: context.Context, command):
         if command.cog.qualified_name in self.mod_only and not ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
@@ -141,14 +141,20 @@ class Utilities(commands.Cog):
                 embed = discord.Embed(title=f"!{command.name} {args}")
             parts = command.help.split("\n\n")
             embed.description = parts[0] + '\n\n'
-            for part in parts[1:len(parts)]:
-                name, *value = part.split("\n")
+            
+            if len(parts) > 1:
+                name, *value = parts[1].split("\n")
                 value = "\n".join(value)
                 value = value.replace("-", "")
-                embed.add_field(name=name, value=f"```hs{value}```", inline=False)
-                # embed.description += "```\n"
-                # embed.description += part
-                # embed.description += "\n```"
+                embed.add_field(name=name, value=f"```{value}```", inline=False)
+                    
+            if len(parts) > 2:
+                for part in parts[2:len(parts)]:
+                    name, *value = part.split("\n")
+                    value = "\n".join(value)
+                    value = value.replace("-", "")
+                    embed.add_field(name=name, value=f"```hs{value}```", inline=False)
+
             embed.color = discord.Color.random()
             return embed
 

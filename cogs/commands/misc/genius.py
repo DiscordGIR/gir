@@ -1,9 +1,8 @@
+import datetime
 import traceback
 
-import datetime
-import asyncio
-import cogs.utils.permission_checks as permissions
 import cogs.utils.context as context
+import cogs.utils.permission_checks as permissions
 import discord
 from discord.ext import commands
 
@@ -19,24 +18,27 @@ class Genius(commands.Cog):
     async def commonissue(self, ctx: context.Context, *, title: str):
         """Submit a new common issue (Geniuses only)
 
-        Example use:
+        Example usage
         ------------
         !commonissue This is a title (you will be prompted for a description)
 
         Parameters
         ----------
         title : str
-            Title for the issue
+            "Title for the issue"
 
         """
 
+        # this should only work in rjb
         if not ctx.guild.id == ctx.settings.guild_id:
             return
-
+        
+        # get #common-issues channel
         channel = ctx.guild.get_channel(ctx.settings.guild().channel_common_issues)
         if not channel:
-            return
+            raise commands.BadArgument("common issues channel not found")
 
+        # prompt user for common issue body
         prompt = context.PromptData(
             value_name="description",
             description="Please enter a description for this common issue.",
@@ -60,22 +62,21 @@ class Genius(commands.Cog):
     async def postembed(self, ctx: context.Context, *, title: str):
         """Post an embed in the current channel (Geniuses only)
 
-        Example use:
+        Example usage
         ------------
         !postembed This is a title (you will be prompted for a description)
 
         Parameters
         ----------
         title : str
-            Title for the embed
+            "Title for the embed"
         
         """
 
         if not ctx.guild.id == ctx.settings.guild_id:
             return
-
-        channel = ctx.channel
         
+        # prompt user for body of embed
         prompt = context.PromptData(
             value_name="description",
             description="Please enter a description for this embed.",
@@ -88,7 +89,7 @@ class Genius(commands.Cog):
             return
 
         embed, f = await self.prepare_issues_embed(title, description, ctx.message)
-        await channel.send(embed=embed, file=f)
+        await ctx.channel.send(embed=embed, file=f)
         await ctx.message.delete()
 
     async def prepare_issues_embed(self, title, description, message):
@@ -96,9 +97,18 @@ class Genius(commands.Cog):
         embed.color = discord.Color.random()
         embed.description = description
         f = None
+        
+        # did the user want to attach an image to this tag?
         if len(message.attachments) > 0:
-            f = await message.attachments[0].to_file()
+            # ensure the attached file is an image
+            image = message.attachments[0]
+            _type = image.content_type
+            if _type not in ["image/png", "image/jpeg", "image/gif", "image/webp"]:
+                raise commands.BadArgument("Attached file was not an image.")
+            
+            f = await image.to_file()
             embed.set_image(url=f"attachment://{f.filename}")
+        
         embed.set_footer(text=f"Submitted by {message.author}")
         embed.timestamp = datetime.datetime.now()
         return embed, f

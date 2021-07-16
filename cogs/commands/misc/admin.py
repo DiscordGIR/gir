@@ -1,9 +1,7 @@
-import datetime as dt
 import traceback
 
-import cogs.utils.permission_checks as permissions
 import cogs.utils.context as context
-import discord
+import cogs.utils.permission_checks as permissions
 from discord.ext import commands
 
 

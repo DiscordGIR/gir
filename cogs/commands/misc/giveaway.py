@@ -1,10 +1,9 @@
-import asyncio
 import datetime
 import random
 import traceback
 
-import cogs.utils.permission_checks as permissions
 import cogs.utils.context as context
+import cogs.utils.permission_checks as permissions
 import discord
 import humanize
 import pytimeparse
@@ -38,23 +37,25 @@ class Giveaway(commands.Cog):
     async def start(self, ctx: context.Context, sponsor: discord.Member = None, time: str = None, winners: int = -1, channel: discord.TextChannel = None):
         """Start a giveaway. Use `!giveaway start` and follow the prompts, or see the example.
 
-        Example Use:
-        ------------
+        Example usage
+        -------------
         !giveaway start (You will be prompted for all info)
         !giveaway start @habibi test#1531 30s 1 #bot-commands
 
         Parameters
         ----------
         sponsor : discord.Member
-            Who sponsored the giveaway
+            "Who sponsored the giveaway"
         time : str, optional
-            When to end, by default None
+            "When to end, by default None"
         winners : int
-            How many winners
+            "How many winners"
         channel : discord.TextChannel, optional
-            Channel to post giveway in
+            "Channel to post giveway in"
         """
 
+        # this is everything we want to prompt for.
+        # handled by our custom prompt system.
         prompts = {
             'name': context.PromptData(
                 value_name="name",
@@ -83,6 +84,7 @@ class Giveaway(commands.Cog):
             ),
         }
 
+        # store responses for prompts in one place
         responses = {
             'name': None,
             'sponsor': sponsor,
@@ -104,10 +106,12 @@ class Giveaway(commands.Cog):
 
                 responses[response] = res
 
+        # calculate end time
         now = datetime.datetime.now()
         delta = responses['time']
         end_time = now + datetime.timedelta(seconds=delta)
 
+        # prepare giveaway embed and post it in giveaway channel
         embed = discord.Embed(title="New giveaway!")
         embed.description = f"**{responses['name']}** is being given away by {responses['sponsor'].mention} to **{responses['winners']}** lucky {'winner' if responses['winners'] == 1 else 'winners'}!"
         embed.add_field(name="Time remaining", value=f"Less than {humanize.naturaldelta(end_time - now)}")
@@ -120,52 +124,21 @@ class Giveaway(commands.Cog):
 
         await ctx.message.delete()
 
-        giveaway = GiveawayDB(_id=message.id, channel=responses['channel'].id, name=responses['name'], winners=responses['winners'], end_time=end_time, sponsor=responses['sponsor'].id)
+        # store giveaway in database
+        giveaway = GiveawayDB(
+            _id=message.id, 
+            channel=responses['channel'].id, 
+            name=responses['name'], 
+            winners=responses['winners'], 
+            end_time=end_time, 
+            sponsor=responses['sponsor'].id)
         giveaway.save()
 
         if ctx.channel.id != responses['channel'].id:
             await ctx.send(f"Giveaway started!", embed=embed, delete_after=10)
 
+        # schedule end task
         ctx.tasks.schedule_end_giveaway(channel_id=responses['channel'].id, message_id=message.id, date=end_time, winners=responses['winners'])
-
-    @tasks.loop(seconds=360)
-    async def time_updater_loop(self):
-        guild = self.bot.get_guild(self.bot.settings.guild_id)
-        if guild is None:
-            return
-
-        giveaways = GiveawayDB.objects(is_ended=False)
-        for giveaway in giveaways:
-            await self.do_giveaway_update(giveaway, guild)
-
-    async def do_giveaway_update(self, giveaway: GiveawayDB, guild: discord.Guild):
-        if giveaway is None:
-            return
-        if giveaway.is_ended:
-            return
-
-        now = datetime.datetime.now()
-        end_time = giveaway.end_time
-        if end_time is None or end_time < now:
-            return
-
-        channel = guild.get_channel(giveaway.channel)
-
-        if giveaway._id in self.giveaway_messages:
-            message = self.giveaway_messages[giveaway._id]
-        else:
-            try:
-                message = await channel.fetch_message(giveaway._id)
-                self.giveaway_messages[giveaway._id] = message
-            except Exception:
-                return
-
-        if len(message.embeds) == 0:
-            return
-
-        embed = message.embeds[0]
-        embed.set_field_at(0, name="Time remaining", value=f"Less than {humanize.naturaldelta(end_time - now)}")
-        await message.edit(embed=embed)
 
     @giveaway.command()
     async def reroll(self, ctx: context.Context, message_id: int):
@@ -178,7 +151,7 @@ class Giveaway(commands.Cog):
         Parameters
         ----------
         message : int
-            ID of the giveaway message
+            "ID of the giveaway message"
         """
 
         g = await ctx.settings.get_giveaway(_id=message_id)
@@ -220,7 +193,7 @@ class Giveaway(commands.Cog):
         Parameters
         ----------
         message : int
-            ID of the giveaway message
+            "ID of the giveaway message"
         """
 
         giveaway = await ctx.settings.get_giveaway(_id=message_id)
@@ -234,6 +207,57 @@ class Giveaway(commands.Cog):
         await end_giveaway(giveaway.channel, message_id, giveaway.winners)
 
         await ctx.send_success("Giveaway ended!", delete_after=5)
+
+    @tasks.loop(seconds=360)
+    async def time_updater_loop(self):
+        """Background task that constantly updates every active giveaway's embed with the remaining time.
+        """
+        guild = self.bot.get_guild(self.bot.settings.guild_id)
+        if guild is None:
+            return
+
+        giveaways = GiveawayDB.objects(is_ended=False)
+        for giveaway in giveaways:
+            await self.do_giveaway_update(giveaway, guild)
+
+    async def do_giveaway_update(self, giveaway: GiveawayDB, guild: discord.Guild):
+        """Helper function to update each giveaway embed
+
+        Parameters
+        ----------
+        giveaway : GiveawayDB
+            Giveaway data
+        guild : discord.Guild
+            Guild to look in
+        """
+        if giveaway is None:
+            return
+        if giveaway.is_ended:
+            return
+
+        now = datetime.datetime.now()
+        end_time = giveaway.end_time
+        if end_time is None or end_time < now:
+            return
+
+        channel = guild.get_channel(giveaway.channel)
+
+        # caching mechanism for each giveaway message so we don't get ratelimited by Discord.
+        if giveaway._id in self.giveaway_messages:
+            message = self.giveaway_messages[giveaway._id]
+        else:
+            try:
+                message = await channel.fetch_message(giveaway._id)
+                self.giveaway_messages[giveaway._id] = message
+            except Exception:
+                return
+
+        if len(message.embeds) == 0:
+            return
+
+        embed = message.embeds[0]
+        embed.set_field_at(0, name="Time remaining", value=f"Less than {humanize.naturaldelta(end_time - now)}")
+        await message.edit(embed=embed)
 
     @time_updater_loop.error
     @giveaway.error

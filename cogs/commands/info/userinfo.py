@@ -2,8 +2,8 @@ import traceback
 import typing
 from math import floor
 
-import cogs.utils.permission_checks as permissions
 import cogs.utils.context as context
+import cogs.utils.permission_checks as permissions
 import discord
 from discord.ext import commands, menus
 
