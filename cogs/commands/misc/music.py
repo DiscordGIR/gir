@@ -119,18 +119,28 @@ class Music(commands.Cog):
     async def track_hook(self, event):
         if isinstance(event, lavalink.events.QueueEndEvent):
             await self.bot.change_presence(status=discord.Status.online, activity=None)
+            guild_id = int(event.player.guild_id)
+            guild = self.bot.get_guild(guild_id)
+            await guild.change_voice_state(channel=None)
+            self.skip_votes = set()
+            self.skip_vote_msg = None
+            if self.np:
+                try:
+                    await self.np.delete()
+                except Exception:
+                    pass
+
         elif isinstance(event, lavalink.events.TrackStartEvent):
             guild = int(event.player.guild_id)
-            await self.do_np(guild)
-            
-            track = event.player.current
-            track = event.player.fetch(track.identifier)
+            track = await self.do_np(guild)
+
             title = track["info"].get('title')
             if title is not None:
                 activity = discord.Activity(type=discord.ActivityType.listening, name=title)
                 await self.bot.change_presence(status=discord.Status.online, activity=activity)
             await asyncio.sleep(5)
             self.update_progress.start()
+
         elif isinstance(event, lavalink.events.TrackEndEvent):
             self.skip_votes = set()
             self.skip_vote_msg = None
@@ -142,7 +152,7 @@ class Music(commands.Cog):
                 except Exception:
                     pass
             self.update_progress.cancel()
-
+           
     async def connect_to(self, guild_id: int, channel_id: str):
         """ Connects to the given voicechannel ID. A channel_id of `None` means disconnect. """
         ws = self.bot._connection._get_websocket(guild_id)
@@ -163,11 +173,11 @@ class Music(commands.Cog):
         embed.add_field(name="By", value=data.get('author'))
         embed.add_field(name="Duration", value=humanize.naturaldelta(datetime.timedelta(milliseconds=data.get('length'))))
         embed.add_field(name="Requested by", value=f"<@{player.current.requester}>")
-        
-        progress = self.get_progress(player, data)  
+
+        progress = self.get_progress(player, data)
         embed.add_field(name="Progress", value=progress)
         embed.color = discord.Color.random()
-        
+
         if not post_reactions:
             await self.channel.send(embed=embed, delete_after=10)
         else:
@@ -178,12 +188,13 @@ class Music(commands.Cog):
                     await self.np.add_reaction(r)
                 except Exception:
                     return
-                
+        return track
+
     def get_progress(self, player, data):
         length = int(data.get('length'))
         position = int(player.position)
         p = int(position / length * 100) if position != length else 0
-        
+
         def fix_emojis(desc):
             custom_emojis = re.findall(r':\w*:', desc)
             new = ""
@@ -193,7 +204,7 @@ class Music(commands.Cog):
                 if replacement is not None:
                     new = new + str(replacement)
             return new
-        
+
         percentage = int(((position / length) * 100 / 10) ) if position != length else 0
         if percentage == 0:
             progress = f":progress1:{':progressempty:' * 8}:progressempty2:"
@@ -216,10 +227,10 @@ class Music(commands.Cog):
             return
         track = player.fetch(track.identifier)
         data = track["info"]
-        
+
         embed = self.np.embeds[0]
         embed.set_field_at(4, name="Progress", value=self.get_progress(player, data))
-        
+
         try:
             await self.np.edit(embed=embed)
         except Exception:
@@ -228,7 +239,7 @@ class Music(commands.Cog):
     async def do_skip(self, channel, skipper, player):
         if not player.is_playing:
             raise commands.BadArgument('I am not currently playing anything!')
-        
+
         # bypass vote if skipper is a mod or original requester of the song.
         if int(player.current.requester) != skipper.id and not self.bot.settings.permissions.hasAtLeast(channel.guild, skipper, 5):
             vc = channel.guild.get_channel(int(player.channel_id))
@@ -253,7 +264,7 @@ class Music(commands.Cog):
         embed.description = f"{skipper.mention}: Skipped the song!"
         embed.color = discord.Color.blurple()
         await channel.send(embed=embed, delete_after=5)
-    
+
     async def do_clear(self, channel, clearer, player):
         if not player.is_playing:
             raise commands.BadArgument('I am not currently playing anything!')
@@ -286,7 +297,7 @@ class Music(commands.Cog):
         embed.description = f"Cleared queue."
         embed.color = discord.Color.blurple()
         await channel.send(embed=embed, delete_after=5)
-    
+
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         player = self.bot.lavalink.player_manager.get(member.guild.id)
@@ -295,19 +306,22 @@ class Music(commands.Cog):
         if member.bot:
             return
 
-        chan = self.bot.get_channel(int(player.channel_id))
+        guild = self.bot.get_guild(int(player.guild_id))
+        chan = guild.get_channel(int(player.channel_id))
         if len(chan.members) == 1 and chan.members[0].id == self.bot.user.id:
             await player.set_pause(True)
             self.update_progress.stop()
+            await guild.change_voice_state(channel=None)
             await self.bot.change_presence(status=discord.Status.online, activity=None)
-        elif len(chan.members) > 1:
-            if player.paused:
-                await player.set_pause(False)
-                self.update_progress.start()
-                embed = discord.Embed()
-                embed.description = "The player was paused because no one was in the voice channel. Resuming previous!"
-                embed.color = discord.Color.blurple()
-                await self.channel.send(member.mention, embed=embed, delete_after=10)
+        # elif len(chan.members) > 1:
+        #     if player.paused:
+        #         await guild.change_voice_state(channel=voice.channel)
+        #         await player.set_pause(False)
+        #         self.update_progress.start()
+        #         embed = discord.Embed()
+        #         embed.description = "The player was paused because no one was in the voice channel. Resuming previous!"
+        #         embed.color = discord.Color.blurple()
+        #         await self.channel.send(member.mention, embed=embed, delete_after=10)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
@@ -385,7 +399,7 @@ class Music(commands.Cog):
         elif spotify_playlist.match(query):
             playlist = self.sp.playlist(query, fields='name,tracks.items.track.name,tracks.items.track.artists')
             results = {'loadType': "PLAYLIST_LOADED", 'tracks': [], 'playlistInfo':  {'name': playlist['name']}}
-            
+
             async with ctx.channel.typing():
                 for track in playlist['tracks']['items']:
                     track = track['track']
@@ -450,7 +464,7 @@ class Music(commands.Cog):
     async def now_playing(self, ctx):
         """Show which song is currently playing"""
         await self.do_np(ctx.guild.id, post_reactions=False)
-    
+
     @commands.guild_only()
     @commands.command(name='queue', aliases=['q', 'playlist'])
     async def queue_info(self, ctx):
