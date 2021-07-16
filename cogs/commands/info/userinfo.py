@@ -90,18 +90,19 @@ class UserInfo(commands.Cog):
         self.bot = bot
 
     @commands.guild_only()
+    @permissions.bot_channel_only_unless_mod()
     @commands.command(name="userinfo", aliases=["info"])
     async def userinfo(self, ctx: context.Context, user: typing.Union[discord.Member, int] = None) -> None:
         """Get information about a user (join/creation date, xp, etc.), defaults to command invoker.
 
         Example usage
         --------------
-        `!userinfo <@user/ID (optional)>`
+        !userinfo <@user/ID (optional)>
 
         Parameters
         ----------
         user : discord.Member, optional
-            User to get info about, by default the author of command, by default None
+            "User to get info about, by default the author of command, by default None"
         """
 
         if user is None:
@@ -109,27 +110,28 @@ class UserInfo(commands.Cog):
 
         is_mod = ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5)
 
+        # is the invokee in the guild?
         if isinstance(user, int):
             if not is_mod:
                 raise commands.BadArgument("You do not have permission to use this command.")
+            
+            # fetch invokee's profile from Discord API
             try:
                 user = await self.bot.fetch_user(user)
             except discord.NotFound:
                 raise commands.BadArgument(
                     f"Couldn't find user with ID {user}")
 
+        # non-mods are only allowed to request their own userinfo
         if not is_mod and user.id != ctx.author.id:
             await ctx.message.delete()
             raise commands.BadArgument(
                 "You do not have permission to use this command.")
 
-        bot_chan = ctx.settings.guild().channel_botspam
-        if not is_mod and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(
-                f"Command only allowed in <#{bot_chan}>")
-
+        # begin to prepare userinfo embed
+        
+        # prepare list of roles and join date
         roles = ""
-
         if isinstance(user, discord.Member) and user.joined_at is not None:
             reversed_roles = user.roles
             reversed_roles.reverse()
@@ -141,6 +143,7 @@ class UserInfo(commands.Cog):
             roles = "No roles."
             joined = f"User not in {ctx.guild.name}."
 
+        # fetch XP, level data of user from our database
         results = (await ctx.settings.user(user.id))
 
         created = user.created_at.strftime("%B %d, %Y, %I:%M %p") + " UTC"
@@ -172,12 +175,12 @@ class UserInfo(commands.Cog):
 
         Example usage
         --------------
-        `!xp <@user/ID (optional)`
+        !xp <@user/ID (optional)
 
         Parameters
         ----------
         user : discord.Member, optional
-            User to get XP of, by default None
+            "User to get XP of, by default None"
 
         """
 
@@ -207,12 +210,11 @@ class UserInfo(commands.Cog):
 
         Example usage
         --------------
-        `!xptop`
+        !xptop
 
         """
 
         results = enumerate(await ctx.settings.leaderboard())
-        # ctx.user_cache = self.user_cache
         results = [ (i, m) for (i, m) in results if ctx.guild.get_member(m._id) is not None][0:100]
         menus = MenuPages(source=LeaderboardSource(
             results, key=lambda t: 1, per_page=10), clear_reactions_after=True)
@@ -227,21 +229,25 @@ class UserInfo(commands.Cog):
 
         Example usage
         --------------
-        `!warnpoints <@user/ID>`
+        !warnpoints <@user/ID>
 
         Parameters
         ----------
         user : discord.Member
-            User whose warnpoints to show
+            "User whose warnpoints to show"
 
         """
 
+        # if an invokee is not provided in command, call command on the invoker
+        # (get invoker's warnpoints)
         user = user or ctx.author
 
+        # users can only invoke on themselves if they aren't mods
         if not ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user.id != ctx.author.id:
             raise commands.BadArgument(
                 f"You don't have permissions to check others' warnpoints.")
 
+        # fetch user profile from database
         results = await ctx.settings.user(user.id)
 
         embed = discord.Embed(title="Warn Points")
@@ -256,30 +262,28 @@ class UserInfo(commands.Cog):
         await ctx.message.reply(embed=embed)
 
     @commands.guild_only()
+    @permissions.bot_channel_only_unless_mod()
     @commands.command(name="cases")
     async def cases(self, ctx: context.Context, user: typing.Union[discord.Member, int] = None):
         """Show list of cases of a user (mod only)
 
         Example usage
         --------------
-        `!cases <@user/ID>`
+        !cases <@user/ID>
 
         Parameters
         ----------
         user : typing.Union[discord.Member,int]
-            User we want to get cases of, doesn't have to be in guild
+            "User we want to get cases of, doesn't have to be in guild"
 
         """
 
         if user is None:
+            # hack workaround
             user = ctx.author
             ctx.args[2] = user
 
-        bot_chan = ctx.settings.guild().channel_botspam
-        if not ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
-            raise commands.BadArgument(
-                f"Command only allowed in <#{bot_chan}>")
-
+        # users can only check their own cases if they aren't mods
         if not isinstance(user, int):
             if not ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and user.id != ctx.author.id:
                 raise commands.BadArgument(
@@ -289,6 +293,7 @@ class UserInfo(commands.Cog):
                 raise commands.BadArgument(
                     f"You don't have permissions to check others' cases.")
 
+        # if user not in guild, fetch their profile from the Discord API
         if isinstance(user, int):
             try:
                 user = await self.bot.fetch_user(user)
@@ -297,6 +302,7 @@ class UserInfo(commands.Cog):
                     f"Couldn't find user with ID {user}")
             ctx.args[2] = user
 
+        # fetch user's cases from our database
         results = await ctx.settings.cases(user.id)
         if len(results.cases) == 0:
             if isinstance(user, int):
@@ -304,7 +310,10 @@ class UserInfo(commands.Cog):
                     f'User with ID {user.id} had no cases.')
             else:
                 raise commands.BadArgument(f'{user.mention} had no cases.')
+        
+        # filter out unmute cases because they are irrelevant
         cases = [case for case in results.cases if case._type != "UNMUTE"]
+        # reverse so newest cases are first
         cases.reverse()
 
         menus = MenuPages(source=CasesSource(
@@ -331,11 +340,14 @@ class UserInfo(commands.Cog):
             traceback.print_exc()
 
 
-def xp_for_next_level(next):
+def xp_for_next_level(_next):
+    """Magic formula to determine XP thresholds for levels
+    """
+    
     level = 0
     xp = 0
 
-    for _ in range(0, next):
+    for _ in range(0, _next):
         xp = xp + 45 * level * (floor(level / 10) + 1)
         level += 1
 
