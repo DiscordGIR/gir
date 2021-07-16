@@ -1,14 +1,15 @@
-import aiohttp
+import datetime
 import traceback
 from io import BytesIO
 
-import discord
-from data.tag import Tag
-import datetime
-import cogs.utils.permission_checks as permissions
+import aiohttp
 import cogs.utils.context as context
-from discord.ext import commands
-from discord.ext import menus
+import cogs.utils.permission_checks as permissions
+import discord
+from cogs.utils.message_cooldown import MessageTextBucket
+from data.tag import Tag
+from discord.ext import commands, menus
+from discord.ext.commands.cooldowns import CooldownMapping
 
 
 class TagsSource(menus.GroupByPageSource):
@@ -34,46 +35,12 @@ class MenuPages(menus.MenuPages):
                 return
         await super().update(payload)
 
-class CustomBucketType(commands.BucketType):
-    custom = 7
-    
-    def get_key(self, tag):
-        return tag
-        
-        
-class CustomCooldown(commands.Cooldown):
-    __slots__ = ('rate', 'per', 'type', '_window', '_tokens', '_last')
-
-    def __init__(self, rate, per, type):
-        self.rate = int(rate)
-        self.per = float(per)
-        self.type = type
-        self._window = 0.0
-        self._tokens = self.rate
-        self._last = 0.0
-
-        if not isinstance(self.type, CustomBucketType):
-            raise TypeError('Cooldown type must be a BucketType')
-        
-    def copy(self):
-        return CustomCooldown(self.rate, self.per, self.type)
-
-
-class CustomCooldownMapping(commands.CooldownMapping):
-    def __init__(self, original):
-        self._cache = {}
-        self._cooldown = original
-        
-    @classmethod
-    def from_cooldown(cls, rate, per, type):
-        return cls(CustomCooldown(rate, per, type))
-
 
 class Tags(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         
-        self.tag_cooldown = CustomCooldownMapping.from_cooldown(1, 5, CustomBucketType.custom)
+        self.tag_cooldown = CooldownMapping.from_cooldown(1, 5, MessageTextBucket.custom)
 
     @commands.guild_only()
     @permissions.genius_or_submod_and_up()
