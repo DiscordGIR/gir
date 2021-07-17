@@ -98,7 +98,8 @@ class Filters(commands.Cog):
         fw.notify = notify
         fw.word = phrase
 
-        await ctx.settings.add_filtered_word(fw)
+        if not await ctx.settings.add_filtered_word(fw):
+            raise commands.BadArgument("That word is already filtered!")
 
         phrase = discord.utils.escape_markdown(phrase)
         phrase = discord.utils.escape_mentions(phrase)
@@ -110,7 +111,6 @@ class Filters(commands.Cog):
     @commands.command(name="filterlist")
     async def filterlist(self, ctx: context.Context):
         """List filtered words (admin only)
-
         """
 
         filters = ctx.settings.guild().filter_words

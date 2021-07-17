@@ -177,7 +177,12 @@ class Settings(commands.Cog):
         Cases.objects(_id=_id).update_one(push__cases=case)
 
     async def add_filtered_word(self, fw: FilterWord) -> None:
+        existing = self.guild().filter_words.filter(word=fw.word)
+        if(len(existing) > 0):
+            return False
+
         Guild.objects(_id=self.guild_id).update_one(push__filter_words=fw)
+        return True
 
     async def remove_filtered_word(self, word: str):
         return Guild.objects(_id=self.guild_id).update_one(pull__filter_words__word=FilterWord(word=word).word)
