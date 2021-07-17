@@ -46,21 +46,25 @@ class Filters(commands.Cog):
     @commands.guild_only()
     @permissions.mod_and_up()
     @commands.command(name="offlineping")
-    async def offlineping(self, ctx: context.Context, val: bool):
+    async def offlineping(self, ctx: context.Context, val: bool = None):
         """Bot will ping for reports when offline (mod only)
 
         Example usage
         --------------
-        `!offlineping <true/false>`
+        !offlineping <true/false>
 
         Parameters
         ----------
         val : bool
-            True or False, if you want pings or not
+            "True or False, if you want pings or not"
 
         """
 
         cur = await ctx.settings.user(ctx.author.id)
+        
+        if val is None:
+            val = not cur.offline_report_ping 
+
         cur.offline_report_ping = val
         cur.save()
 
@@ -77,16 +81,16 @@ class Filters(commands.Cog):
 
         Example usage
         -------------
-        `!filter false 5 :kek:`
+        !filter false 5 :kek:
 
         Parameters
         ----------
         notify : bool
-            Whether to generate a report or not when this word is filtered
+            "Whether to generate a report or not when this word is filtered"
         bypass : int
-            Level that can bypass this word
+            "Level that can bypass this word"
         phrase : str
-            Phrase to filter
+            "Phrase to filter"
         """
 
         fw = FilterWord()
@@ -128,12 +132,12 @@ class Filters(commands.Cog):
 
         Example usage
         --------------
-        `!piracy xd xd xd`
+        !piracy xd xd xd
 
         Parameters
         ----------
         word : str
-            Word to mark as piracy
+            "Word to mark as piracy"
 
         """
 
@@ -159,12 +163,12 @@ class Filters(commands.Cog):
 
         Example usage
         --------------
-        `!filterremove xd xd xd`
+        !filterremove xd xd xd
 
         Parameters
         ----------
         word : str
-            Word to remove
+            "Word to remove"
 
         """
 
@@ -188,12 +192,12 @@ class Filters(commands.Cog):
 
         Example usage
         --------------
-        `!whitelist 349243932447604736`
+        !whitelist 349243932447604736
 
         Parameters
         ----------
         id : int
-            ID of guild to whitelist
+            "ID of guild to whitelist"
 
         """
 
@@ -211,12 +215,12 @@ class Filters(commands.Cog):
 
         Example usage
         -------------
-        `!ignorechannel #xd`
+        !ignorechannel #xd
 
         Parameters
         ----------
         channel : discord.Channel
-            Channel to ignore
+            "Channel to ignore"
 
         """
 
@@ -234,12 +238,12 @@ class Filters(commands.Cog):
 
         Example usage
         -------------
-        `!unignorechannel #xd`
+        !unignorechannel #xd
 
         Parameters
         ----------
         channel : discord.Channel
-            Channel to unignore
+            "Channel to unignore"
         """
 
         if await ctx.settings.remove_ignored_channel(channel.id):
@@ -257,12 +261,12 @@ class Filters(commands.Cog):
 
         Example usage
         --------------
-        `!blacklist 349243932447604736`
+        !blacklist 349243932447604736
 
         Parameters
         ----------
         id : int
-            ID of guild to blacklist
+            "ID of guild to blacklist"
 
         """
 
@@ -280,12 +284,12 @@ class Filters(commands.Cog):
 
         Example usage
         --------------
-        `!falsepositive xd`
+        !falsepositive xd
 
         Parameters
         ----------
         word : str
-            Word to mark as false positive
+            "Word to mark as false positive"
 
         """
 

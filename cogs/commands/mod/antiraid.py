@@ -1,9 +1,9 @@
-from discord.ext import commands
-import cogs.utils.permission_checks as permissions
-import cogs.utils.context as context
-import discord
 import traceback
-import datetime
+
+import cogs.utils.context as context
+import cogs.utils.permission_checks as permissions
+from discord.ext import commands
+
 
 class AntiRaid(commands.Cog):
     def __init__(self, bot):
@@ -11,42 +11,42 @@ class AntiRaid(commands.Cog):
     
     @commands.guild_only()
     @permissions.admin_and_up()
-    @commands.command(name="raid")
+    @commands.command(name="raid", aliases=["raidphrase"])
     async def raid(self, ctx: context.Context, *, phrase: str) -> None:
         """Add a phrase to the raid filter.
 
         Example usage
         --------------
-        `!raid <phrase>`
+        !raid <phrase>
 
         Parameters
         ----------
         phrase : str
-            Phrase to add
+            "Phrase to add"
         """
         
+        # these are phrases that when said by a whitename, automatically bans them.
+        # for example: known scam URLs
         done = await ctx.settings.add_raid_phrase(phrase)
         if not done:
             raise commands.BadArgument("That phrase is already in the list.")
         else:
-            # one_week = datetime.date.today() + datetime.timedelta(days=7)
-            # ctx.tasks.schedule_remove_raid_phrase(phrase, one_week)
             await ctx.send_success(description=f"Added `{phrase}` to the raid phrase list!")
     
     @commands.guild_only()
     @permissions.admin_and_up()
-    @commands.command(name="removeraid")
+    @commands.command(name="removeraid", aliases=["removeraidphrase"])
     async def removeraid(self, ctx: context.Context, *, phrase: str) -> None:
         """Remove a phrase from the raid filter.
 
         Example usage
         --------------
-        `!removeraid <phrase>`
+        !removeraid <phrase>
 
         Parameters
         ----------
         phrase : str
-            Phrase to remove
+            "Phrase to remove"
         """
         
         word = phrase.lower()
@@ -68,12 +68,7 @@ class AntiRaid(commands.Cog):
 
         Example usage
         --------------
-        `!spammode true`
-
-        Parameters
-        ----------
-        phrase : str
-            Phrase to remove
+        !spammode true
         """
         
         if mode is None:
