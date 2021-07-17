@@ -1,9 +1,9 @@
 import datetime
 import traceback
 
+import cogs.utils.context as context
 import cogs.utils.logs as logging
 import cogs.utils.permission_checks as permissions
-import cogs.utils.context as context
 import discord
 import humanize
 import pytimeparse
@@ -35,16 +35,16 @@ class ModActions(commands.Cog):
 
         Example usage
         --------------
-        `!warn <@user/ID> <points> <reason (optional)>
-`
+        !warn <@user/ID> <points> <reason (optional)>
+        
         Parameters
         ----------
         user : discord.Member
-            The member to warn
+            "The member to warn"
         points : int
-            Number of points to warn far
+            "Number of points to warn far"
         reason : str, optional
-            Reason for warning, by default "No reason."
+            "Reason for warning, by default 'No reason.'"
 
         """
         if points < 1:  # can't warn for negative/0 points
@@ -136,16 +136,16 @@ class ModActions(commands.Cog):
 
         Example usage
         --------------
-        `!liftwarn <@user/ID> <case ID> <reason (optional)>`
+        !liftwarn <@user/ID> <case ID> <reason (optional)>
 
         Parameters
         ----------
         user : discord.Member
-            User to remove warn from
+            "User to remove warn from"
         case_id : int
-            The ID of the case for which we want to remove points
+            "The ID of the case for which we want to remove points"
         reason : str, optional
-            Reason for lifting warn, by default "No reason."
+            "Reason for lifting warn, by default 'No reason.'"
 
         """
 
@@ -208,16 +208,16 @@ class ModActions(commands.Cog):
 
         Example usage
         --------------
-        `!editreason <@user/ID> <case ID> <reason>`
+        !editreason <@user/ID> <case ID> <reason>
 
         Parameters
         ----------
         user : discord.Member
-            User to edit case of
+            "User to edit case of"
         case_id : int
-            The ID of the case for which we want to edit reason
+            "The ID of the case for which we want to edit reason"
         new_reason : str
-            New reason
+            "New reason"
 
         """
 
@@ -288,16 +288,16 @@ class ModActions(commands.Cog):
 
         Example usage
         --------------
-        `!removepoints <@user/ID> <points> <reason (optional)>`
+        !removepoints <@user/ID> <points> <reason (optional)>
 
         Parameters
         ----------
         user : discord.Member
-            User to remove warn from
+            "User to remove warn from"
         points : int
-            Amount of points to remove
+            "Amount of points to remove"
         reason : str, optional
-            Reason for lifting warn, by default "No reason."
+            "Reason for lifting warn, by default 'No reason.'"
 
         """
 
@@ -357,12 +357,12 @@ class ModActions(commands.Cog):
 
         Example usage
         --------------
-        `!roblox <@user/ID>`
+        !roblox <@user/ID>
 
         Parameters
         ----------
         user : discord.Member
-            User to kick
+            "User to kick"
         """
         
         reason = "This Discord server is for iOS jailbreaking, not Roblox. Please join https://discord.gg/jailbreak instead, thank you!"
@@ -394,14 +394,14 @@ class ModActions(commands.Cog):
 
         Example usage
         --------------
-        `!kick <@user/ID> <reason (optional)>`
+        !kick <@user/ID> <reason (optional)>
 
         Parameters
         ----------
         user : discord.Member
-            User to kick
+            "User to kick"
         reason : str, optional
-            Reason for kick, by default "No reason."
+            "Reason for kick, by default 'No reason.'"
 
         """
 
@@ -453,15 +453,14 @@ class ModActions(commands.Cog):
 
         Example usage
         --------------
-        `!ban <@user/ID> <reason (optional)>`
+        !ban <@user/ID> <reason (optional)>
 
         Parameters
         ----------
         user : typing.Union[discord.Member, int]
-            The user to be banned, doesn't have to be part of the guild
+            "The user to be banned, doesn't have to be part of the guild"
         reason : str, optional
-            Reason for ban, by default "No reason."
-
+            "Reason for ban, by default 'No reason.'"
         """
 
         reason = discord.utils.escape_markdown(reason)
@@ -524,14 +523,14 @@ class ModActions(commands.Cog):
 
         Example usage
         --------------
-        `!unban <user ID> <reason (optional)> `
+        !unban <user ID> <reason (optional)>
 
         Parameters
         ----------
         user : int
-            ID of the user to unban
+            "ID of the user to unban"
         reason : str, optional
-            Reason for unban, by default "No reason."
+            "Reason for unban, by default 'No reason.'"
 
         """
 
@@ -577,13 +576,12 @@ class ModActions(commands.Cog):
 
         Example usage
         --------------
-        `!purge <number of messages>`
+        !purge <number of messages>
 
         Parameters
         ----------
         limit : int, optional
-            Number of messages to purge, must be > 0, by default 0 for error handling
-
+            "Number of messages to purge, must be > 0, by default 0 for error handling"
         """
 
         if limit <= 0:
@@ -606,16 +604,16 @@ class ModActions(commands.Cog):
 
         Example usage
         --------------
-        `!mute <@user/ID> <duration> <reason (optional)>`
+        !mute <@user/ID> <duration> <reason (optional)>
 
         Parameters
         ----------
         user : discord.Member
-            Member to mute
+            "Member to mute"
         dur : str
-            Duration of mute (i.e 1h, 10m, 1d)
+            "Duration of mute (i.e 1h, 10m, 1d)"
         reason : str, optional
-            Reason for mute, by default "No reason."
+            "Reason for mute, by default 'No reason.'"
 
         """
 
@@ -696,15 +694,14 @@ class ModActions(commands.Cog):
 
         Example usage
         --------------
-       ` !unmute <@user/ID> <reason (optional)>`
+        !unmute <@user/ID> <reason (optional)>
 
         Parameters
         ----------
         user : discord.Member
-            Member to unmute
+            "Member to unmute"
         reason : str, optional
-            Reason for unmute, by default "No reason."
-
+            "Reason for unmute, by default 'No reason.'"
         """
 
         mute_role = ctx.settings.guild().role_mute
@@ -757,12 +754,13 @@ class ModActions(commands.Cog):
 
         Example usage
         --------------
-        !lock or !lock #channel
+        !lock
+        !lock #channel
             
         Parameters
         ----------
         channel : discord.TextChannel, optional
-            Channel to lock
+            "Channel to lock"
         """
 
         if channel is None:
@@ -783,12 +781,13 @@ class ModActions(commands.Cog):
 
         Example usage
         --------------
-        !unlock or !unlock #channel
+        !unlock 
+        !unlock #channel
             
         Parameters
         ----------
         channel : discord.TextChannel, optional
-            Channel to unlock
+            "Channel to unlock"
         """
 
         if channel is None:
@@ -806,6 +805,14 @@ class ModActions(commands.Cog):
     @commands.command(name="freezeable")
     @commands.max_concurrency(1, per=commands.BucketType.guild)
     async def freezeable(self,  ctx: context.Context, channel: discord.TextChannel=None):
+        """Mark a channel as automatically freezable during a raid (admin only)
+
+        Parameters
+        ----------
+        channel : discord.TextChannel, optional
+            "Channel to mark, current channel by default"
+        """
+
         channel = channel or ctx.channel
         if channel.id in await ctx.settings.get_locked_channels():
             raise commands.BadArgument("That channel is already lockable.")

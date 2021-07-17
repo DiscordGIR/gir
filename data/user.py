@@ -8,6 +8,7 @@ class User(mongoengine.Document):
     is_music_banned     = mongoengine.BooleanField(default=False, required=True)
     was_warn_kicked     = mongoengine.BooleanField(default=False, required=True)
     birthday_excluded   = mongoengine.BooleanField(default=False, required=True)
+    raid_verified       = mongoengine.BooleanField(default=False, required=True)
     
     xp                  = mongoengine.IntField(default=0, required=True)
     trivia_points       = mongoengine.IntField(default=0, required=True)

@@ -1,90 +1,79 @@
 import string
-from asyncio import sleep
-from datetime import datetime, timezone
-from re import U
+from asyncio import Lock
+from datetime import datetime, timedelta, timezone
 
-import cogs.utils.logs as logger
 import cogs.utils.context as context
+import cogs.utils.logs as logger
+from cogs.utils.message_cooldown import MessageTextBucket
 import discord
 from data.case import Case
 from discord.ext import commands
 from expiringdict import ExpiringDict
 from fold_to_ascii import fold
-from asyncio import Lock
+
 
 class RaidType:
     PingSpam = 1
     RaidPhrase = 2
     MessageSpam = 3
     JoinSpamOverTime = 4
-    
-class CustomBucketType(commands.BucketType):
-    custom = 7
-    
-    def get_key(self, tag):
-        return tag
-        
-        
-class CustomCooldown(commands.Cooldown):
-    __slots__ = ('rate', 'per', 'type', '_window', '_tokens', '_last')
 
-    def __init__(self, rate, per, type):
-        self.rate = int(rate)
-        self.per = float(per)
-        self.type = type
-        self._window = 0.0
-        self._tokens = self.rate
-        self._last = 0.0
-
-        if not isinstance(self.type, CustomBucketType):
-            raise TypeError('Cooldown type must be a BucketType')
-        
-    def copy(self):
-        return CustomCooldown(self.rate, self.per, self.type)
-
-
-class CustomCooldownMapping(commands.CooldownMapping):
-    def __init__(self, original):
-        self._cache = {}
-        self._cooldown = original
-        
-    @classmethod
-    def from_cooldown(cls, rate, per, type):
-        return cls(CustomCooldown(rate, per, type))
 
 class AntiRaidMonitor(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.join_raid_detection_threshold = commands.CooldownMapping.from_cooldown(10, 8, commands.BucketType.guild)
-        self.raid_detection_threshold = commands.CooldownMapping.from_cooldown(4, 15.0, commands.BucketType.guild)
-        self.message_spam_detection_threshold = commands.CooldownMapping.from_cooldown(7, 5.0, commands.BucketType.member)
-        self.join_overtime_raid_detection_threshold = CustomCooldownMapping.from_cooldown(4, 2700, CustomBucketType.custom)
+        
+        # cooldown to monitor if too many users join in a short period of time (more than 10 within 8 seconds)
+        self.join_raid_detection_threshold = commands.CooldownMapping.from_cooldown(rate=10, per=8, type=commands.BucketType.guild)
+        # cooldown to monitor if users are spamming a message (8 within 5 seconds)
+        self.message_spam_detection_threshold = commands.CooldownMapping.from_cooldown(rate=7, per=5.0, type=commands.BucketType.member)
+        # cooldown to monitor if too many accounts created on the same date are joining within a short period of time 
+        # (5 accounts created on the same date joining within 45 minutes of each other)
+        self.join_overtime_raid_detection_threshold = commands.CooldownMapping.from_cooldown(rate=4, per=2700, type=MessageTextBucket.custom)
 
-        # self.message_spam_detection_threshold = MessageCooldownMapping.from_cooldown(4, 8, BucketType.message)
-
+        # cooldown to monitor how many times AntiRaid has been triggered (5 triggers per 15 seconds puts server in lockdown)
+        self.raid_detection_threshold = commands.CooldownMapping.from_cooldown(rate=4, per=15.0, type=commands.BucketType.guild)
+        # cooldown to only send one raid alert for moderators per 10 minutes
         self.raid_alert_cooldown = commands.CooldownMapping.from_cooldown(1, 600.0, commands.BucketType.guild)
-        
-        self.spam_user_mapping = ExpiringDict(max_len=100, max_age_seconds=10)
+
+        # stores the users that trigger self.join_raid_detection_threshold so we can ban them
         self.join_user_mapping = ExpiringDict(max_len=100, max_age_seconds=10)
-        self.ban_user_mapping = ExpiringDict(max_len=100, max_age_seconds=120)
+        # stores the users that trigger self.message_spam_detection_threshold so we can ban them
+        self.spam_user_mapping = ExpiringDict(max_len=100, max_age_seconds=10)
+        # stores the users that trigger self.join_overtime_raid_detection_threshold so we can ban them
         self.join_overtime_mapping = ExpiringDict(max_len=100, max_age_seconds=2700)
+        # stores the users that we have banned so we don't try to ban them repeatedly
+        self.ban_user_mapping = ExpiringDict(max_len=100, max_age_seconds=120)
         
+        # locks to prevent race conditions when banning concurrently
         self.join_overtime_lock = Lock()
         self.banning_lock = Lock()
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        # TODO: this seriously needs to be rewritten...
-        
+        """Antiraid filter for when members join.
+        This watches for when too many members join within a small period of time,
+        as well as when too many users created on the same day join within a small period of time
+
+        Parameters
+        ----------
+        member : discord.Member
+            the member that joined
+        """
+
         if member.guild.id != self.bot.settings.guild_id:
             return
         if member.bot:
             return
         
+        
+        """Detect whether more than 10 users join within 8 seconds"""
+        # add user to cooldown
         current = datetime.now().timestamp()
         join_spam_detection_bucket = self.join_raid_detection_threshold.get_bucket(member)
         self.join_user_mapping[member.id] = member
         
+        # if ratelimit is triggered, we should ban all the users that joined in the past 8 seconds
         if join_spam_detection_bucket.update_rate_limit(current):
             users = list(self.join_user_mapping.keys())
             for user in users:
@@ -103,9 +92,25 @@ class AntiRaidMonitor(commands.Cog):
                 await self.bot.report.report_raid(member)
                 await self.freeze_server(member.guild)
         
-        if member.created_at < datetime.strptime("01/05/21 00:00:00", '%d/%m/%y %H:%M:%S'):
-            return # skip if not a very new account
+        """Detect whether more than 4 users created on the same day
+        (after May 1st 2021) join within 45 minutes of each other"""
         
+        # skip if the user was created within the last 15 minutes
+        if member.created_at > datetime.now() - timedelta(minutes=15):
+            return
+
+        # skip user if we manually verified them, i.e they were approved by a moderator
+        # using the !verify command when they appealed a ban.
+        if (await self.bot.settings.user(member.id)).raid_verified:
+            return
+
+        # skip if it's an older account (before May 1st 2021)
+        if member.created_at < datetime.strptime("01/05/21 00:00:00", '%d/%m/%y %H:%M:%S'):
+            return 
+        
+        # this setting disables the filter for accounts created from "Today"
+        # useful when we get alot of new users, for example when a new Jailbreak is released.
+        # this setting is controlled using !spammode
         if not self.bot.settings.guild().ban_today_spam_accounts:
             now = datetime.today()
             now = [now.year, now.month, now.day]
@@ -114,11 +119,14 @@ class AntiRaidMonitor(commands.Cog):
             if now == member_now:
                 return
         
-        timestamp_ = member.created_at.strftime(
+        timestamp_bucket_for_logging = member.created_at.strftime(
             "%B %d, %Y, %I %p")
+        # generate string representation for the account creation date (July 1st, 2021 for example).
+        # we will use this for the cooldown mechanism, to ratelimit accounts created on this date.
         timestamp = member.created_at.strftime(
             "%B %d, %Y")
         
+        # store this user with all the users that were created on this date
         async with self.join_overtime_lock:
             if self.join_overtime_mapping.get(timestamp) is None:
                 self.join_overtime_mapping[timestamp] = [member]
@@ -127,14 +135,15 @@ class AntiRaidMonitor(commands.Cog):
                     return
                 
                 self.join_overtime_mapping[timestamp].append(member)
-                
+
+        # handle ratelimitting. If ratelimit is triggered, ban all the users we know were created on this date.
         bucket = self.join_overtime_raid_detection_threshold.get_bucket(timestamp)
         current = member.joined_at.replace(tzinfo=timezone.utc).timestamp()
         if bucket.update_rate_limit(current):
             users = [ m for m in self.join_overtime_mapping.get(timestamp) ] # why isnt this working
             for user in users:
                 try:
-                    await self.raid_ban(user, reason=f"Join spam over time detected (bucket `{timestamp_}`)", dm_user=True)
+                    await self.raid_ban(user, reason=f"Join spam over time detected (bucket `{timestamp_bucket_for_logging}`)", dm_user=True)
                     self.join_overtime_mapping[timestamp].remove(user)
                 except Exception:
                     pass

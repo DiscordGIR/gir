@@ -1,7 +1,9 @@
 import traceback
+import typing
 
 import cogs.utils.context as context
 import cogs.utils.permission_checks as permissions
+import discord
 from discord.ext import commands
 
 
@@ -77,7 +79,32 @@ class AntiRaid(commands.Cog):
         await ctx.settings.set_spam_mode(mode)
         await ctx.send_success(description=f"We {'**will ban**' if mode else 'will **not ban**'} accounts created today in join spam filter.", delete_after=10)
         await ctx.message.delete(delay=5)
+
+    @commands.guild_only()
+    @permissions.admin_and_up()
+    @commands.command(name="verify")
+    async def verify(self, ctx: context.Context, user: permissions.ModsAndAboveExternal, mode: bool = None) -> None:
+        """Verify a user so they won't be banned by antiraid filters.
+
+        Example usage
+        --------------
+        !verify @user
+        !verify @user true/false
+        """
+        
+        profile = await ctx.settings.user(user.id)
+        if mode is None:
+            profile.raid_verified = not profile.raid_verified
+        else:
+            profile.raid_verified = mode
+        
+        profile.save()
+        
+        await ctx.settings.set_spam_mode(mode)
+        await ctx.send_success(description=f"{'**Verified**' if profile.raid_verified else '**Unverified**'} user {user.mention}.", delete_after=5)
+        await ctx.message.delete(delay=5)
     
+    @verify.error
     @spammode.error
     @removeraid.error
     @raid.error
