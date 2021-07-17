@@ -3,6 +3,7 @@ import datetime
 import os
 import re
 import traceback
+from random import shuffle
 
 import cogs.utils.context as context
 import discord
@@ -163,7 +164,7 @@ class Music(commands.Cog):
             await asyncio.sleep(5)
             # start loop to update song progress in embed
             try:
-                self.update_progress.start()
+                self.update_current_song_progressbar.start()
             except Exception:
                 pass
 
@@ -189,7 +190,7 @@ class Music(commands.Cog):
                 
             # stop updating progress for the song that just ended
             try:
-                self.update_progress.cancel()
+                self.update_current_song_progressbar.cancel()
             except Exception:
                 pass
 
@@ -223,7 +224,7 @@ class Music(commands.Cog):
             await player.set_pause(True)
             # stop updating song progress in embed
             try:
-                self.update_progress.stop()
+                self.update_current_song_progressbar.stop()
             except Exception:
                 pass
             # reset bot's status
@@ -236,7 +237,7 @@ class Music(commands.Cog):
                 await player.set_pause(False)
                 # resume updating song progress in embed
                 try:
-                    self.update_progress.start()
+                    self.update_current_song_progressbar.start()
                 except Exception:
                     pass
                 
@@ -272,8 +273,9 @@ class Music(commands.Cog):
             return
         if player.channel_id is None:
             return
+        
+        # break if not a recognized control emoji
         if str(reaction.emoji) not in self.reactions:
-            await reaction.message.remove_reaction(reaction, user)
             return
         
         if player.current is None:
@@ -288,6 +290,7 @@ class Music(commands.Cog):
 
         # alright! we passed all the constraints. now let's handle the controls
         if str(reaction.emoji) == '⏯️':
+            # toggle play/pause status
             embed = discord.Embed(color=discord.Color.blurple())
             await player.set_pause(not player.paused)
             
@@ -309,7 +312,6 @@ class Music(commands.Cog):
                     activity = discord.Activity(type=discord.ActivityType.listening, name=title)
                     await self.bot.change_presence(status=discord.Status.online, activity=activity)
 
-
         elif str(reaction.emoji) == '⏭️':
             await self.do_skip(reaction.message.channel, user, player)
 
@@ -320,10 +322,11 @@ class Music(commands.Cog):
         """ Connects to the given voicechannel ID. A channel_id of `None` means disconnect. """
         ws = self.bot._connection._get_websocket(guild_id)
         await ws.voice_state(str(guild_id), channel_id)
-        # The above looks dirty, we could alternatively use `bot.shards[shard_id].ws` but that assumes
-        # the bot instance is an AutoShardedBot.
 
     async def activities_for_new_song(self, event, post_reactions=True):
+        """This is run every time a new song is played. It posts embed of this song in #bot-commands,
+        sets the bot status, starts song progress updating loop"""
+        
         guild = int(event.player.guild_id)
         player = self.bot.lavalink.player_manager.get(guild)
         track = player.current
@@ -340,6 +343,7 @@ class Music(commands.Cog):
         progress = self.get_progress(player, data)
         embed.add_field(name="Progress", value=progress)
         embed.color = discord.Color.random()
+        
         if not post_reactions:
             await self.bot_commands_text_channel.send(embed=embed, delete_after=10)
         else:
@@ -356,8 +360,8 @@ class Music(commands.Cog):
             activity = discord.Activity(type=discord.ActivityType.listening, name=title)
             await self.bot.change_presence(status=discord.Status.online, activity=activity)
 
-
     def get_progress(self, player, data):
+        """Generates a string with a fancy progress bar made of emojis for currently playing song"""
         length = int(data.get('length'))
         position = int(player.position)
         p = int(position / length * 100) if position != length else 0
@@ -383,7 +387,7 @@ class Music(commands.Cog):
         return str(p) + "% " + fix_emojis(progress)
 
     @tasks.loop(seconds=20)
-    async def update_progress(self):
+    async def update_current_song_progressbar(self):
         player = self.bot.lavalink.player_manager.get(self.bot_commands_text_channel.guild.id)
         if self.now_playing_embed_message is None:
             return
@@ -404,6 +408,8 @@ class Music(commands.Cog):
             pass
 
     async def do_skip(self, channel, skipper, player):
+        """Helper function to handle skipping song"""
+
         if not player.is_playing:
             raise commands.BadArgument('I am not currently playing anything!')
 
@@ -433,6 +439,8 @@ class Music(commands.Cog):
         await channel.send(embed=embed, delete_after=5)
 
     async def do_clear(self, channel, clearer, player):
+        """Helper function to handle clearing queue"""
+
         if not player.is_playing:
             raise commands.BadArgument('I am not currently playing anything!')
 
@@ -472,12 +480,12 @@ class Music(commands.Cog):
 
         Example usage
         -------------
-        `!play xo tour llif3`
+        !play xo tour llif3
 
         Parameters
         ----------
         query : str
-            Search term
+            "Search term, or Spotify/YouTube URL"
         """
 
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
@@ -512,12 +520,6 @@ class Music(commands.Cog):
 
         embed = discord.Embed(color=discord.Color.blurple())
 
-        # Valid loadTypes are:
-        #   TRACK_LOADED    - single video/direct URL)
-        #   PLAYLIST_LOADED - direct URL to playlist)
-        #   SEARCH_RESULT   - query prefixed with either ytsearch: or scsearch:.
-        #   NO_MATCHES      - query yielded no results
-        #   LOAD_FAILED     - most likely, the video encountered an exception during loading.
         if results['loadType'] == 'PLAYLIST_LOADED':
             tracks = results['tracks']
 
@@ -561,10 +563,6 @@ class Music(commands.Cog):
     @commands.command(name='queue', aliases=['q', 'playlist'])
     async def queue_info(self, ctx):
         """Retrieve a basic queue of upcoming songs."""
-        # vc = ctx.voice_client
-
-        # if not vc or not vc.is_connected():
-            # raise commands.BadArgument('I am not currently connected to voice!')
 
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         if len(player.queue) == 0:
@@ -573,7 +571,6 @@ class Music(commands.Cog):
         # Grab up to 5 entries from the queue...
         upcoming = player.queue[0:5]
 
-        # fmt = '\n'.join(f'**`{_["title"]}`**' for _ in upcoming)
         embed = discord.Embed(title=f'Upcoming - Next {len(upcoming)}')
         embed.color = discord.Color.blurple()
         for i, song in enumerate(upcoming):
@@ -588,12 +585,12 @@ class Music(commands.Cog):
 
         Example usage
         -------------
-        `!volume 100`
+        !volume 100
 
         Parameters
         ------------
         volume: int
-            The volume to set the player to in percentage. This must be between 1 and 100.
+            "The volume to set the player to in percentage. This must be between 1 and 100."
         """
 
         if not 0 < vol < 101:
@@ -642,6 +639,13 @@ class Music(commands.Cog):
 
         await self.do_skip(ctx.channel, ctx.author, player)
 
+    @commands.guild_only()
+    @commands.command(name='shuffle')
+    async def shuffle_(self, ctx):
+        """Shuffle the queue."""
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        shuffle(player.queue)
+        await ctx.send("Shuffled queue.")
 
     @commands.command(name="clear", aliases=['clearqueue'])
     async def disconnect(self, ctx):
@@ -662,6 +666,7 @@ class Music(commands.Cog):
     @queue_info.error
     @skip_.error
     @play.error
+    @shuffle_.error
     async def info_error(self,  ctx: context.Context, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
