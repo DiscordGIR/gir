@@ -65,7 +65,6 @@ class Music(commands.Cog):
             return False
         
         # non-mods can only use music commands in #bot-commands channel
-        await ctx.message.delete()
         if not ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != self.bot_commands_text_channel.id:
             raise commands.BadArgument(
                 f"Command only allowed in <#{self.bot_commands_text_channel.id}>")
@@ -488,6 +487,7 @@ class Music(commands.Cog):
             "Search term, or Spotify/YouTube URL"
         """
 
+        await ctx.message.delete()
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         # Remove leading and trailing <>. <> may be used to suppress embedding links in Discord.
         query = query.strip('<>')
@@ -557,6 +557,7 @@ class Music(commands.Cog):
     @commands.command(name='nowplaying', aliases=['np'])
     async def now_playing(self, ctx):
         """Show which song is currently playing"""
+        await ctx.message.delete()
         await self.activities_for_new_song(ctx.guild.id, post_reactions=False)
 
     @commands.guild_only()
@@ -564,6 +565,7 @@ class Music(commands.Cog):
     async def queue_info(self, ctx):
         """Retrieve a basic queue of upcoming songs."""
 
+        await ctx.message.delete()
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         if len(player.queue) == 0:
             raise commands.BadArgument('There are currently no more queued songs.')
@@ -576,7 +578,7 @@ class Music(commands.Cog):
         for i, song in enumerate(upcoming):
             embed.add_field(name=f"{i+1}. {song.title}", value=f"Requested by <@{song.requester}>", inline=False)
         embed.set_footer(text=f"{len(upcoming)} songs out of {len(player.queue)}")
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, delete_after=15)
 
     @commands.guild_only()
     @commands.command(name='volume', aliases=['vol'])
@@ -599,10 +601,8 @@ class Music(commands.Cog):
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         await player.set_volume(vol)
-        embed = discord.Embed()
-        embed.description = f'{ctx.author.mention} set the volume to **{vol}%**'
-        embed.color = discord.Color.blurple()
-        await ctx.send(embed=embed, delete_after=5)
+        await ctx.message.delete(delay=5)
+        await ctx.send_success(f'{ctx.author.mention} set the volume to **{vol}%**', delete_after=5)
 
     @commands.guild_only()
     @commands.command(name='pause')
@@ -615,10 +615,9 @@ class Music(commands.Cog):
 
         await player.set_pause(True)
         await self.bot.change_presence(status=discord.Status.online, activity=None)
-        embed = discord.Embed()
-        embed.description = f"{ctx.author.mention}: Paused the song!"
-        embed.color = discord.Color.blurple()
-        await ctx.send(embed=embed, delete_after=5)
+
+        await ctx.message.delete(delay=5)
+        await ctx.send_success(f"{ctx.author.mention}: Paused the song!", delete_after=5)
 
     @commands.guild_only()
     @commands.command(name='resume')
@@ -628,8 +627,10 @@ class Music(commands.Cog):
 
         if not player.is_playing:
             raise commands.BadArgument('I am not currently playing anything!')
-
         await player.set_pause(False)
+        
+        await ctx.message.delete(delay=5)
+        await ctx.send_success(f"{ctx.author.mention}: Resumed the song!", delete_after=5)
 
     @commands.guild_only()
     @commands.command(name='skip')
@@ -644,8 +645,13 @@ class Music(commands.Cog):
     async def shuffle_(self, ctx):
         """Shuffle the queue."""
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        
+        if len(player.queue) <= 1:
+            raise commands.BadArgument("Nothing to shuffle.")
+        
         shuffle(player.queue)
-        await ctx.send("Shuffled queue.")
+        await ctx.send_success("Shuffled queue.", delete_after=5)
+        await ctx.message.delete(delay=5)
 
     @commands.command(name="clear", aliases=['clearqueue'])
     async def disconnect(self, ctx):
