@@ -79,7 +79,6 @@ class FilterMonitor(commands.Cog):
             pass
 
 
-   
     async def info_error(self,  ctx: context.Context, error):
         if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, commands.BadArgument)

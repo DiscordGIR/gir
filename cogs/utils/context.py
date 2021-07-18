@@ -5,23 +5,25 @@ from discord.ext import commands
 import pytimeparse
 
 class PromptData:
-    def __init__(self, value_name, description, convertor, title=None, reprompt=False):
+    def __init__(self, value_name, description, convertor, timeout=120, title="", reprompt=False):
         self.value_name = value_name
         self.description = description
         self.convertor = convertor
         self.title = title
         self.reprompt = reprompt
+        self.timeout = timeout
         
     def __copy__(self):
         return PromptData(self.value_name, self.description, self.convertor, self.title, self.reprompt)
 
 
 class PromptDataReaction:
-    def __init__(self, message, reactions, timeout=None, delete_after=False):
+    def __init__(self, message, reactions, timeout=None, delete_after=False, raw_emoji=False):
         self.message = message
         self.reactions = reactions        
         self.timeout = timeout
         self.delete_after = delete_after
+        self.raw_emoji = raw_emoji
 
 
 class Context(commands.Context):
@@ -44,7 +46,7 @@ class Context(commands.Context):
         
         prompt_msg = await self.send(embed=embed)
         try:
-            response = await self.bot.wait_for('message', check=wait_check, timeout=120)
+            response = await self.bot.wait_for('message', check=wait_check, timeout=info.timeout)
         except asyncio.TimeoutError:
             await prompt_msg.delete()
             return
@@ -84,8 +86,11 @@ class Context(commands.Context):
             
         def wait_check(reaction, user):
             res = (user.id != self.bot.user.id
-                and reaction.message == info.message
-                and str(reaction.emoji) in info.reactions)
+                and reaction.message == info.message)
+            
+            if info.reactions:
+                res = res and str(reaction.emoji) in info.reactions
+            
             return res
             
         if info.timeout is None:
@@ -115,13 +120,16 @@ class Context(commands.Context):
                 else:
                     await info.message.clear_reactions()
                 
-                return str(reaction.emoji), reactor    
+                if not info.raw_emoji:
+                    return str(reaction.emoji), reactor    
+                else:
+                    return reaction, reactor    
         
-    async def send_warning(self, description: str, title=None, delete_after: int = None):
-        return await self.reply(embed=discord.Embed(title=title if title is not None else "", description=description, color=discord.Color.orange()), delete_after=delete_after)
+    async def send_warning(self, description: str, title="", delete_after: int = None):
+        return await self.reply(embed=discord.Embed(title=title, description=description, color=discord.Color.orange()), delete_after=delete_after)
 
-    async def send_success(self, description: str, title=None, delete_after: int = None):
-        return await self.reply(embed=discord.Embed(title=title if title is not None else "", description=description, color=discord.Color.dark_green()), delete_after=delete_after)
+    async def send_success(self, description: str, title="", delete_after: int = None):
+        return await self.reply(embed=discord.Embed(title=title, description=description, color=discord.Color.dark_green()), delete_after=delete_after)
         
     async def send_error(self, error):
         embed = discord.Embed(title=":(\nYour command ran into a problem")

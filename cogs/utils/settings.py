@@ -100,11 +100,10 @@ class Settings(commands.Cog):
         g.reaction_role_mapping = current
         g.save()
 
-    async def append_rero_mapping(self, mapping):
+    async def append_rero_mapping(self, message_id, mapping):
         g = self.guild()
         current = g.reaction_role_mapping
-        the_key = list(mapping.keys())[0]
-        current[str(the_key)] = current[str(the_key)] | mapping[the_key]
+        current[str(message_id)] = current[str(message_id)] | mapping
         g.reaction_role_mapping = current
         g.save()
 
