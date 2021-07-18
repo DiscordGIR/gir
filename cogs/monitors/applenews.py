@@ -6,6 +6,8 @@ class AppleNews(commands.Cog):
     
     @commands.Cog.listener()
     async def on_message(self, msg):
+        """When a message is posted in the #apple-news news channel, automatically publish it."""
+        
         if not msg.guild:
             return
         if msg.channel.id != self.bot.settings.guild().channel_applenews:

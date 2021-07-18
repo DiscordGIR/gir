@@ -140,7 +140,7 @@ class AntiRaidMonitor(commands.Cog):
         bucket = self.join_overtime_raid_detection_threshold.get_bucket(timestamp)
         current = member.joined_at.replace(tzinfo=timezone.utc).timestamp()
         if bucket.update_rate_limit(current):
-            users = [ m for m in self.join_overtime_mapping.get(timestamp) ] # why isnt this working
+            users = [ m for m in self.join_overtime_mapping.get(timestamp) ]
             for user in users:
                 try:
                     await self.raid_ban(user, reason=f"Join spam over time detected (bucket `{timestamp_bucket_for_logging}`)", dm_user=True)
@@ -169,7 +169,6 @@ class AntiRaidMonitor(commands.Cog):
     async def handle_raid_detection(self, message: discord.Message, raid_type: RaidType):
         current = message.created_at.replace(tzinfo=timezone.utc).timestamp()
         spam_detection_bucket = self.raid_detection_threshold.get_bucket(message)
-        ctx = await self.bot.get_context(message, cls=context.Context)
         user = message.author
         
         do_freeze = False
@@ -190,6 +189,7 @@ class AntiRaidMonitor(commands.Cog):
         if do_freeze:
             await self.freeze_server(message.guild)
 
+        # ban all the spammers
         if raid_type in [RaidType.PingSpam, RaidType.MessageSpam]:
             if not do_banning and not do_freeze:
                 if raid_type is RaidType.PingSpam:
@@ -210,11 +210,15 @@ class AntiRaidMonitor(commands.Cog):
                         continue
                     
                     try:
-                        await self.raid_ban(user, reason="Ping spam detected")
+                        await self.raid_ban(user, reason="Ping spam detected" if raid_type is RaidType.PingSpam else "Message spam detected")
                     except Exception:
                         pass
 
     async def ping_spam(self, message):
+        """If a user pings more than 5 people, or pings more than 2 roles, mute them.
+        A report is generated which a mod must review (either unmute or ban the user using a react)
+        """
+
         if len(set(message.mentions)) > 4 or len(set(message.role_mentions)) > 2:
             mute = self.bot.get_command("mute")
             if mute is not None:
@@ -228,6 +232,10 @@ class AntiRaidMonitor(commands.Cog):
         return False
     
     async def message_spam(self, message):
+        """If a message is spammed 8 times in 5 seconds, mute the user and generate a report.
+        A mod must either unmute or ban the user.
+        """
+
         if self.bot.settings.permissions.hasAtLeast(message.guild, message.author, 1):
             return False
                 
@@ -251,6 +259,10 @@ class AntiRaidMonitor(commands.Cog):
                 return True
     
     async def raid_phrase_detected(self, message):
+        """Raid phrases are specific phrases (such as known scam URLs), and upon saying them, whitenames
+        will immediately be banned. Uses the same system as filters to search messages for the phrases.
+        """
+        
         if self.bot.settings.permissions.hasAtLeast(message.guild, message.author, 2):
             return False
 
@@ -280,6 +292,8 @@ class AntiRaidMonitor(commands.Cog):
         return False
             
     async def raid_ban(self, user: discord.Member, reason="Raid phrase detected", dm_user=False):
+        """Helper function to ban users"""
+        
         async with self.banning_lock:
             if self.ban_user_mapping.get(user.id) is not None:
                 return
@@ -291,7 +305,7 @@ class AntiRaidMonitor(commands.Cog):
                 _type="BAN",
                 date=datetime.now(),
                 mod_id=self.bot.user.id,
-                mod_tag=str(self.bot),
+                mod_tag=str(self.bot.user),
                 punishment="PERMANENT",
                 reason=reason
             )
@@ -319,6 +333,9 @@ class AntiRaidMonitor(commands.Cog):
                 await public_logs.send(embed=log)
 
     async def freeze_server(self, guild):
+        """Freeze all channels marked as freezeable during a raid, meaning only people with the Member+ role and up
+        can talk (temporarily lock out whitenames during a raid)"""
+        
         settings = self.bot.settings.guild()
         
         for channel in settings.locked_channels:
