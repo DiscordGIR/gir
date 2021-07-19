@@ -473,6 +473,15 @@ class Settings(commands.Cog):
     async def set_spam_mode(self, mode) -> None:
         Guild.objects(_id=self.guild_id).update_one(set__ban_today_spam_accounts=mode)
 
+    async def fetch_raids(self):
+        values = {}
+        values["Join spam"] = Cases.objects(cases__reason__contains="Join spam detected.").count()
+        values["Join spam over time"] = Cases.objects(cases__reason__contains="Join spam over time detected").count()
+        values["Raid phrase"] = Cases.objects(cases__reason__contains="Raid phrase detected").count()
+        values["Ping spam"] = Cases.objects(cases__reason__contains="Ping spam detected").count()
+        values["Message spam"] = Cases.objects(cases__reason__contains="Message spam detected").count()
+        
+        return values
 
 class Permissions:
     """A way of calculating a user's permissions.

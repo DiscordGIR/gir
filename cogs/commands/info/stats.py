@@ -124,6 +124,21 @@ class Stats(commands.Cog):
         embed.set_footer(text=f"Requested by {ctx.author}")
         await ctx.message.reply(embed=embed)
 
+    @commands.guild_only()
+    @commands.command(name="raidstats")
+    @permissions.bot_channel_only_unless_mod()
+    async def raidstats(self, ctx: context.Context) -> None:
+        """Present statistics on who has been banned for raids.
+        """
+
+        embed = discord.Embed(title="Raid Statistics", color=discord.Color.blurple())
+        raids = await ctx.settings.fetch_raids()
+        
+        for raid_type, cases in raids.items():
+            embed.add_field(name=raid_type, value=f"{cases} cases.")
+        await ctx.message.reply(embed=embed)
+
+    @raidstats.error
     @serverinfo.error
     @roleinfo.error
     @stats.error
