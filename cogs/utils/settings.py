@@ -475,11 +475,11 @@ class Settings(commands.Cog):
 
     async def fetch_raids(self):
         values = {}
-        values["Join spam"] = Cases.objects(cases__reason__contains="Join spam detected.").count()
+        values["Join spam"] = Cases.objects(cases__reason__contains="Join spam detected").count()
         values["Join spam over time"] = Cases.objects(cases__reason__contains="Join spam over time detected").count()
         values["Raid phrase"] = Cases.objects(cases__reason__contains="Raid phrase detected").count()
-        values["Ping spam"] = Cases.objects(cases__reason__contains="Ping spam detected").count()
-        values["Message spam"] = Cases.objects(cases__reason__contains="Message spam detected").count()
+        values["Ping spam"] = Cases.objects(cases__reason__contains="Ping spam").count()
+        values["Message spam"] = Cases.objects(cases__reason__contains="Message spam").count()
         
         return values
 
