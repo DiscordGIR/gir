@@ -2,14 +2,14 @@ import datetime
 import os
 import platform
 import traceback
+from asyncio import sleep
 from math import floor
 
+import cogs.utils.context as context
+import cogs.utils.permission_checks as permissions
 import discord
 import humanize
 import psutil
-from asyncio import sleep
-import cogs.utils.context as context
-import cogs.utils.permission_checks as permissions
 from discord.ext import commands
 
 
@@ -26,12 +26,12 @@ class Stats(commands.Cog):
 
         Example usage
         -------------
-        `!roleinfo <@role/ID>`
+        !roleinfo <@role/ID>
 
         Parameters
         ----------
         role : discord.Role
-            Role to get info of
+            "Role to get info of"
 
         """
 
@@ -48,8 +48,9 @@ class Stats(commands.Cog):
     async def ping(self, ctx: context.Context) -> None:
         """Pong
 
-        Example usage:
-        `!ping`
+        Example usage
+        -------------
+        !ping
 
         """
 
@@ -59,6 +60,7 @@ class Stats(commands.Cog):
         embed.set_thumbnail(url=self.bot.user.avatar_url)
         embed.description = "Latency: testing..."
 
+        # measure time between sending a message and time it is posted
         m = await ctx.message.reply(embed=embed)
         ping = floor((datetime.datetime.utcnow() - b).total_seconds() * 1000)
         await sleep(1)
@@ -71,8 +73,9 @@ class Stats(commands.Cog):
     async def stats(self, ctx: context.Context) -> None:
         """Statistics about the bot
 
-        Example usage:
-        `!stats`
+        Example usage
+        -------------
+        !stats
 
         """
 
@@ -97,8 +100,9 @@ class Stats(commands.Cog):
     async def serverinfo(self, ctx: context.Context) -> None:
         """Displays info about the server
 
-        Example usage:
-        `!serverinfo`
+        Example usage
+        -------------
+        !serverinfo
 
         """
 

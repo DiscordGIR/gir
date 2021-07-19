@@ -1,12 +1,12 @@
 import datetime
-import pytz
 import traceback
 import typing
-import humanize
 
-import discord
-import cogs.utils.permission_checks as permissions
 import cogs.utils.context as context
+import cogs.utils.permission_checks as permissions
+import discord
+import humanize
+import pytz
 from data.case import Case
 from discord.ext import commands
 
@@ -21,14 +21,14 @@ class ModUtils(commands.Cog):
     async def rundown(self, ctx: context.Context, user: discord.Member) -> None:
         """Get information about a user (join/creation date, xp, etc.), defaults to command invoker.
 
-        Example usage:
+        Example usage
         --------------
-        `!userinfo <@user/ID (optional)>`
+        !userinfo <@user/ID (optional)>
 
         Parameters
         ----------
         user : discord.Member, optional
-            User to get info about, by default the author of command, by default None
+            "User to get info about, by default the author of command, by default None"
         """
 
         await ctx.message.reply(embed=await self.prepare_rundown_embed(ctx, user))
@@ -36,7 +36,7 @@ class ModUtils(commands.Cog):
     @commands.guild_only()
     @permissions.admin_and_up()
     @commands.command(name="transferprofile")
-    async def transferprofile(self,  ctx: context.Context, oldmember: typing.Union[int, discord.Member], newmember: discord.Member):
+    async def transferprofile(self,  ctx: context.Context, oldmember: typing.Union[int, discord.Member], newmember: typing.Union[int, discord.Member],):
         """Transfer all data in the database between users (admin only)
 
         Example usage
@@ -46,9 +46,9 @@ class ModUtils(commands.Cog):
         Parameters
         ----------
         oldmember : typing.Union[int, discord.Member]
-            ID/@tag of the old user, optionally in the guild
+            "ID/@tag of the old user, optionally in the guild"
         newmember : discord.Member
-            ID/@tag of the new user, must be in the
+            "ID/@tag of the new user"
 
         """
 
@@ -58,6 +58,13 @@ class ModUtils(commands.Cog):
             except discord.NotFound:
                 raise commands.BadArgument(
                     f"Couldn't find user with ID {oldmember}")
+
+        if isinstance(newmember, int):
+            try:
+                newmember = await self.bot.fetch_user(newmember)
+            except discord.NotFound:
+                raise commands.BadArgument(
+                    f"Couldn't find user with ID {newmember}")
 
         u, case_count = await ctx.settings.transfer_profile(oldmember.id, newmember.id)
 
@@ -82,15 +89,14 @@ class ModUtils(commands.Cog):
     async def clem(self, ctx: context.Context, user: discord.Member) -> None:
         """Sets user's XP and Level to 0, freezes XP, sets warn points to 599 (AARON ONLY)
 
-        Example usage:
+        Example usage
         --------------
-        `!clem <@user/ID>`
+        !clem <@user/ID>
 
         Parameters
         ----------
         user : discord.Member
-            User to put on clem
-
+            "User to put on clem"
         """
 
         if user.id == ctx.author.id:
@@ -128,14 +134,14 @@ class ModUtils(commands.Cog):
     async def musicban(self, ctx: context.Context, user: discord.Member) -> None:
         """Ban a user from using music commands (mod only)
 
-        Example usage:
+        Example usage
         --------------
-        `!musicban <@user/ID>`
+        !musicban <@user/ID>
 
         Parameters
         ----------
         user : discord.Member
-            User to ban from music
+            "User to ban from music"
         """
 
         if user.id == self.bot.user.id:
@@ -154,14 +160,14 @@ class ModUtils(commands.Cog):
     async def birthdayexclude(self, ctx: context.Context, user: discord.Member) -> None:
         """Remove a user's birthday (mod only)
 
-        Example usage:
+        Example usage
         --------------
-        `!birthdayexclude <@user/ID>`
+        !birthdayexclude <@user/ID>
 
         Parameters
         ----------
         user : discord.Member
-            User to ban from birthdays
+            "User to ban from birthdays"
         """
 
         if user.id == self.bot.user.id:
@@ -188,14 +194,14 @@ class ModUtils(commands.Cog):
     async def removebirthday(self, ctx: context.Context, user: discord.Member) -> None:
         """Remove a user's birthday (mod only)
 
-        Example usage:
+        Example usage
         --------------
-        `!removebirthday <@user/ID>`
+        !removebirthday <@user/ID>
 
         Parameters
         ----------
         user : discord.Member
-            User to remove birthday of
+            "User to remove birthday of"
         """
 
         if user.id == self.bot.user.id:
@@ -227,18 +233,18 @@ class ModUtils(commands.Cog):
     async def setbirthday(self, ctx: context.Context, user: discord.Member, month: int, date: int) -> None:
         """Override a user's birthday (mod only)
 
-        Example usage:
+        Example usage
         --------------
-        `!setbirthday <@user/ID> <month (int)> <date (int)>`
+        !setbirthday @user 7 24
 
         Parameters
         ----------
         user : discord.Member
-            User whose bithday to set
+            "User whose bithday to set"
         month : int
-            Month of birthday
+            "Month of birthday"
         date : int
-            Date of birthday
+            "Date of birthday"
         """
 
         if user.id == self.bot.user.id:
@@ -275,8 +281,9 @@ class ModUtils(commands.Cog):
             try:
                 time = now + datetime.timedelta(days=1-h-m)
                 ctx.settings.tasks.schedule_remove_bday(user.id, time)
-            except Exception as e:
+            except Exception:
                 return
+
             await user.add_roles(birthday_role)
             await user.send(f"According to my calculations, today is your birthday! We've given you the {birthday_role} role for 24 hours.")
 

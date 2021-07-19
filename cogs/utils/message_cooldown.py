@@ -1,35 +1,16 @@
 from discord.ext import commands
 
-class BucketType(commands.BucketType):
-    message = 8
+"""
+A custom Cooldown type subclassing built in cooldowns from discord.ext commands.
+This is a bucket type that allows cooldowns to work based on some text, allowing
+things like cooldown on individual `Tags`, or message spam detection.
+"""
+
+class MessageTextBucket(commands.BucketType):
+    custom = 7
     
-    def get_key(self, tag):
-        return tag
+    def get_key(self, text):
+        return text
         
-        
-class MessageCooldown(commands.Cooldown):
-    __slots__ = ('rate', 'per', 'type', '_window', '_tokens', '_last')
-
-    def __init__(self, rate, per, type):
-        self.rate = int(rate)
-        self.per = float(per)
-        self.type = type
-        self._window = 0.0
-        self._tokens = self.rate
-        self._last = 0.0
-
-        if not isinstance(self.type, BucketType):
-            raise TypeError('Cooldown type must be a BucketType')
-        
-    def copy(self):
-        return MessageCooldown(self.rate, self.per, self.type)
-
-
-class MessageCooldownMapping(commands.CooldownMapping):
-    def __init__(self, original):
-        self._cache = {}
-        self._cooldown = original
-        
-    @classmethod
-    def from_cooldown(cls, rate, per, type):
-        return cls(MessageCooldown(rate, per, type))
+    def __call__(self, msg):
+        return self.get_key(msg)   

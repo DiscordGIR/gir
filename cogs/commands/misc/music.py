@@ -3,6 +3,7 @@ import datetime
 import os
 import re
 import traceback
+from random import shuffle
 
 import cogs.utils.context as context
 import discord
@@ -20,19 +21,29 @@ spotify_playlist = re.compile(r"[\bhttps://open.\b]*spotify[\b.com\b]*[/:]*playl
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.np = None
+        self.now_playing_embed_message = None
         self.reactions = ['⏯️', '⏭️', '⏹']
+        
+        # set of users that have voted to skip currently playing song
         self.skip_votes = set()
+        # message where users are voting to skip
         self.skip_vote_msg = None
+        
+        # set of users that have voted to clear queue
         self.clear_votes = set()
+        # message where users are voting to clear queue
         self.clear_vote_msg = None
+        
+        # percentage of users in voice channels that need to vote to skip or clear queue
         self.vote_ratio = 0.5
 
+        # spotify API session for queueing spotify songs/playlists
         self.sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id=os.environ.get("SPOTIFY_CLIENT_ID"),
                                                            client_secret=os.environ.get("SPOTIFY_CLIENT_SECRET")))
 
+        # initialize music backend (lavalink)
         guild = self.bot.get_guild(self.bot.settings.guild_id)
-        self.channel = guild.get_channel(self.bot.settings.guild().channel_botspam)
+        self.bot_commands_text_channel = guild.get_channel(self.bot.settings.guild().channel_botspam)
         if not hasattr(bot, 'lavalink'):  # This ensures the client isn't overwritten during cog reloads.
             bot.lavalink = lavalink.Client(self.bot.user.id)
             bot.lavalink.add_node('127.0.0.1', 2333, os.environ.get("LAVALINK_PASS"), guild.region, 'default-node')  # Host, Port, Password, Region, Name
@@ -52,35 +63,30 @@ class Music(commands.Cog):
 
         if not guild_check:
             return False
-
-        await ctx.message.delete()
-        if not ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != self.channel.id:
+        
+        # non-mods can only use music commands in #bot-commands channel
+        if not ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5) and ctx.channel.id != self.bot_commands_text_channel.id:
             raise commands.BadArgument(
-                f"Command only allowed in <#{self.channel.id}>")
+                f"Command only allowed in <#{self.bot_commands_text_channel.id}>")
 
         if (await ctx.settings.user(ctx.author.id)).is_music_banned:
             raise commands.BadArgument(f"{ctx.author.mention}, you are banned from using Music commands.")
 
+        # ensure user is connected to a voice channel before allowing them to control bot
         await self.ensure_voice(ctx)
         return guild_check
 
     async def ensure_voice(self, ctx):
         """ This check ensures that the bot and command author are in the same voicechannel. """
-        player = self.bot.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
-        # Create returns a player if one exists, otherwise creates.
-        # This line is important because it ensures that a player always exists for a guild.
 
-        # Most people might consider this a waste of resources for guilds that aren't playing, but this is
-        # the easiest and simplest way of ensuring players are created.
+        # Create returns a player if one exists, otherwise creates.
+        player = self.bot.lavalink.player_manager.create(ctx.guild.id, endpoint=str(ctx.guild.region))
 
         # These are commands that require the bot to join a voicechannel (i.e. initiating playback).
         # Commands such as volume/skip etc don't require the bot to be in a voicechannel so don't need listing here.
         should_connect = ctx.command.name in ('play', 'pause', 'skip', 'resume', 'queue', 'volume', )
 
         if not ctx.author.voice or not ctx.author.voice.channel:
-            # Our cog_command_error handler catches this and sends it to the voicechannel.
-            # Exceptions allow us to "short-circuit" command invocation via checks so the
-            # execution state of the command goes no further.
             raise commands.CommandInvokeError('Join a voicechannel first.')
 
         # check if bot is connected to a voice channel
@@ -111,79 +117,254 @@ class Music(commands.Cog):
                 if ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5):
                     await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
                 else:
-                    if int(player.channel_id) == self.channel.id:
+                    if int(player.channel_id) == self.bot_commands_text_channel.id:
                         await self.connect_to(ctx.guild.id, str(ctx.author.voice.channel.id))
                     else:
                         raise commands.BadArgument('You need to be in my voicechannel.')
 
     async def track_hook(self, event):
+        """This is caled whenever the music backend emits an event (i.e queue ends, track changes). We want to
+        customize this behavior."""
+        
         if isinstance(event, lavalink.events.QueueEndEvent):
-            await self.bot.change_presence(status=discord.Status.online, activity=None)
-        elif isinstance(event, lavalink.events.TrackStartEvent):
-            guild = int(event.player.guild_id)
-            await self.do_np(guild)
+            # queue has ended
             
-            track = event.player.current
-            track = event.player.fetch(track.identifier)
-            title = track["info"].get('title')
-            if title is not None:
-                activity = discord.Activity(type=discord.ActivityType.listening, name=title)
-                await self.bot.change_presence(status=discord.Status.online, activity=activity)
-            await asyncio.sleep(5)
-            self.update_progress.start()
-        elif isinstance(event, lavalink.events.TrackEndEvent):
+            # remove current song from bot's status 
+            await self.bot.change_presence(status=discord.Status.online, activity=None)
+            
+            guild_id = int(event.player.guild_id)
+            guild = self.bot.get_guild(guild_id)
+            
+            # disconnect from the voice channel
+            # await guild.change_voice_state(channel=None)
+            
+            # reset votes to skip current song
             self.skip_votes = set()
-            self.skip_vote_msg = None
-            self.clear_votes = set()
-            self.clear_vote_msg = None
-            if self.np:
+            if self.skip_vote_msg is not None:
                 try:
-                    await self.np.delete()
+                    await self.skip_vote_msg.delete()
+                except:
+                    pass
+                finally:
+                    self.skip_vote_msg = None
+            
+            if self.now_playing_embed_message:
+                try:
+                    await self.now_playing_embed_message.delete()
                 except Exception:
                     pass
-            self.update_progress.cancel()
 
+        elif isinstance(event, lavalink.events.TrackStartEvent):
+            # a new track has just started playing
+            
+            # post embed for this song, change bot playing status
+            await self.activities_for_new_song(event)
+
+            await asyncio.sleep(5)
+            # start loop to update song progress in embed
+            try:
+                self.update_current_song_progressbar.start()
+            except Exception:
+                pass
+
+        elif isinstance(event, lavalink.events.TrackEndEvent):
+            # a track has just ended
+            
+            # reset skip vote, delete skip vote message
+            self.skip_votes = set()
+            if self.skip_vote_msg is not None:
+                try:
+                    await self.skip_vote_msg.delete()
+                except:
+                    pass
+                finally:
+                    self.skip_vote_msg = None
+
+            # delete the ended song's embed message
+            if self.now_playing_embed_message is not None:
+                try:
+                    await self.now_playing_embed_message.delete()
+                except Exception:
+                    pass
+                
+            # stop updating progress for the song that just ended
+            try:
+                self.update_current_song_progressbar.cancel()
+            except Exception:
+                pass
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        """This function is run every time someone joines or leaves a voice channel.
+        We want to pause the player if there are no users in the music channel and
+        resume if someone joins and the player was paused.
+
+        Parameters
+        ----------
+        member : discord.Member
+            whoever just joined or left the voice channel
+        before : ignored
+        after : ignored
+        """
+        
+        if member.bot:
+            return
+
+        player = self.bot.lavalink.player_manager.get(member.guild.id)
+        if player is None or player.channel_id is None:
+            return
+
+        guild = self.bot.get_guild(int(player.guild_id))
+        chan = guild.get_channel(int(player.channel_id))
+        
+        # is the bot alone in the music channel now?
+        if len(chan.members) == 1 and chan.members[0].id == self.bot.user.id:
+            # yes! pause the player
+            await player.set_pause(True)
+            # stop updating song progress in embed
+            try:
+                self.update_current_song_progressbar.stop()
+            except Exception:
+                pass
+            # reset bot's status
+            await self.bot.change_presence(status=discord.Status.online, activity=None)
+            
+        # is the bot not alone in the voice channel?
+        elif len(chan.members) > 1:
+            # yes. we want to resume the player if it was paused.
+            if player.paused:
+                await player.set_pause(False)
+                # resume updating song progress in embed
+                try:
+                    self.update_current_song_progressbar.start()
+                except Exception:
+                    pass
+                
+                # notify whoever joined that we're resuming.
+                embed = discord.Embed()
+                embed.description = "The player was paused because no one was in the voice channel. Resuming previous!"
+                embed.color = discord.Color.blurple()
+                await self.bot_commands_text_channel.send(member.mention, embed=embed, delete_after=10)
+
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction, user):
+        """Watch for reaction events. We have an embed which has play, pause, skip controls
+        using reactions. This handles the actions when the reaction is added."""
+        
+        # constraints to ignore depending on who reacted
+        if user.bot:
+            return
+        if reaction.message.guild is None:
+            return
+        if reaction.message.author.id != self.bot.user.id:
+            return
+        if reaction.message.channel.id != self.bot_commands_text_channel.id:
+            return
+        
+        # ignore if reactor is music banned
+        if (await self.bot.settings.user(user.id)).is_music_banned:
+            await reaction.message.remove_reaction(reaction, user)
+            return
+
+        # get player, if player not playing, nothing to do.
+        player = self.bot.lavalink.player_manager.get(reaction.message.guild.id)
+        if player is None:
+            return
+        if player.channel_id is None:
+            return
+        
+        # break if not a recognized control emoji
+        if str(reaction.emoji) not in self.reactions:
+            return
+        
+        if player.current is None:
+            return
+
+        # check if the reactor is in music channel
+        vc = self.bot.get_channel(int(player.channel_id))
+        if user not in vc.members:
+            return
+        
+        await reaction.message.remove_reaction(reaction, user)
+
+        # alright! we passed all the constraints. now let's handle the controls
+        if str(reaction.emoji) == '⏯️':
+            # toggle play/pause status
+            embed = discord.Embed(color=discord.Color.blurple())
+            await player.set_pause(not player.paused)
+            
+            if player.paused:
+                await self.bot.change_presence(status=discord.Status.online, activity=None)
+                embed.description = f"{user.mention}: Paused the song!"
+                await self.bot_commands_text_channel.send(embed=embed, delete_after=5)
+
+            else:
+                embed.description = f"{user.mention}: Resumed the song!"
+                await self.bot_commands_text_channel.send(embed=embed, delete_after=5)
+
+                track = player.current
+                if track is None:
+                    return
+                track = player.fetch(track.identifier)
+                title = track["info"].get('title')
+                if title is not None:
+                    activity = discord.Activity(type=discord.ActivityType.listening, name=title)
+                    await self.bot.change_presence(status=discord.Status.online, activity=activity)
+
+        elif str(reaction.emoji) == '⏭️':
+            await self.do_skip(reaction.message.channel, user, player)
+
+        elif str(reaction.emoji) == '⏹':
+            await self.do_clear(reaction.message.channel, user, player)
+           
     async def connect_to(self, guild_id: int, channel_id: str):
         """ Connects to the given voicechannel ID. A channel_id of `None` means disconnect. """
         ws = self.bot._connection._get_websocket(guild_id)
         await ws.voice_state(str(guild_id), channel_id)
-        # The above looks dirty, we could alternatively use `bot.shards[shard_id].ws` but that assumes
-        # the bot instance is an AutoShardedBot.
 
-    async def do_np(self, guild, post_reactions=True):
+    async def activities_for_new_song(self, event, post_reactions=True):
+        """This is run every time a new song is played. It posts embed of this song in #bot-commands,
+        sets the bot status, starts song progress updating loop"""
+        
+        guild = int(event.player.guild_id)
         player = self.bot.lavalink.player_manager.get(guild)
         track = player.current
         if track is None or not player.is_playing:
             raise commands.BadArgument('I am not currently playing anything!')
         track = player.fetch(track.identifier)
         data = track["info"]
-
         embed = discord.Embed(title="Now playing...")
         embed.add_field(name="Song", value=f"[{data.get('title')}]({data.get('uri')})", inline=False)
         embed.add_field(name="By", value=data.get('author'))
         embed.add_field(name="Duration", value=humanize.naturaldelta(datetime.timedelta(milliseconds=data.get('length'))))
         embed.add_field(name="Requested by", value=f"<@{player.current.requester}>")
-        
-        progress = self.get_progress(player, data)  
+
+        progress = self.get_progress(player, data)
         embed.add_field(name="Progress", value=progress)
         embed.color = discord.Color.random()
         
         if not post_reactions:
-            await self.channel.send(embed=embed, delete_after=10)
+            await self.bot_commands_text_channel.send(embed=embed, delete_after=10)
         else:
-            self.np = await self.channel.send(embed=embed)
-
+            msg = await self.bot_commands_text_channel.send(embed=embed)
+            self.now_playing_embed_message = msg
             for r in self.reactions:
                 try:
-                    await self.np.add_reaction(r)
-                except Exception:
+                    await msg.add_reaction(r)
+                except Exception as e:
                     return
-                
+        
+        title = data.get('title')
+        if title is not None:
+            activity = discord.Activity(type=discord.ActivityType.listening, name=title)
+            await self.bot.change_presence(status=discord.Status.online, activity=activity)
+
     def get_progress(self, player, data):
+        """Generates a string with a fancy progress bar made of emojis for currently playing song"""
         length = int(data.get('length'))
         position = int(player.position)
         p = int(position / length * 100) if position != length else 0
-        
+
         def fix_emojis(desc):
             custom_emojis = re.findall(r':\w*:', desc)
             new = ""
@@ -193,7 +374,7 @@ class Music(commands.Cog):
                 if replacement is not None:
                     new = new + str(replacement)
             return new
-        
+
         percentage = int(((position / length) * 100 / 10) ) if position != length else 0
         if percentage == 0:
             progress = f":progress1:{':progressempty:' * 8}:progressempty2:"
@@ -205,9 +386,9 @@ class Music(commands.Cog):
         return str(p) + "% " + fix_emojis(progress)
 
     @tasks.loop(seconds=20)
-    async def update_progress(self):
-        player = self.bot.lavalink.player_manager.get(self.channel.guild.id)
-        if self.np is None:
+    async def update_current_song_progressbar(self):
+        player = self.bot.lavalink.player_manager.get(self.bot_commands_text_channel.guild.id)
+        if self.now_playing_embed_message is None:
             return
         if player is None:
             return
@@ -216,19 +397,21 @@ class Music(commands.Cog):
             return
         track = player.fetch(track.identifier)
         data = track["info"]
-        
-        embed = self.np.embeds[0]
+
+        embed = self.now_playing_embed_message.embeds[0]
         embed.set_field_at(4, name="Progress", value=self.get_progress(player, data))
-        
+
         try:
-            await self.np.edit(embed=embed)
+            await self.now_playing_embed_message.edit(embed=embed)
         except Exception:
             pass
 
     async def do_skip(self, channel, skipper, player):
+        """Helper function to handle skipping song"""
+
         if not player.is_playing:
             raise commands.BadArgument('I am not currently playing anything!')
-        
+
         # bypass vote if skipper is a mod or original requester of the song.
         if int(player.current.requester) != skipper.id and not self.bot.settings.permissions.hasAtLeast(channel.guild, skipper, 5):
             vc = channel.guild.get_channel(int(player.channel_id))
@@ -245,7 +428,7 @@ class Music(commands.Cog):
                 embed = discord.Embed(title="Vote skip")
                 embed.add_field(name="Vote skip", value=f"{len(self.skip_votes)} out of {num_in_vc} have voted to skip. We need more than {int(self.vote_ratio * num_in_vc)}.")
                 embed.color = discord.Color.green()
-                self.skip_vote_msg = await self.channel.send(embed=embed)
+                self.skip_vote_msg = await self.bot_commands_text_channel.send(embed=embed)
                 return
 
         await player.skip()
@@ -253,8 +436,10 @@ class Music(commands.Cog):
         embed.description = f"{skipper.mention}: Skipped the song!"
         embed.color = discord.Color.blurple()
         await channel.send(embed=embed, delete_after=5)
-    
+
     async def do_clear(self, channel, clearer, player):
+        """Helper function to handle clearing queue"""
+
         if not player.is_playing:
             raise commands.BadArgument('I am not currently playing anything!')
 
@@ -273,7 +458,7 @@ class Music(commands.Cog):
                 embed = discord.Embed(title="Vote skip")
                 embed.add_field(name="Vote skip", value=f"{len(self.clear_votes)} out of {num_in_vc} have voted to clear the queue. We need more than {int(self.vote_ratio * num_in_vc)}.")
                 embed.color = discord.Color.green()
-                self.clear_vote_msg = await self.channel.send(embed=embed)
+                self.clear_vote_msg = await self.bot_commands_text_channel.send(embed=embed)
                 return
 
         # Clear the queue to ensure old tracks don't start playing
@@ -286,78 +471,6 @@ class Music(commands.Cog):
         embed.description = f"Cleared queue."
         embed.color = discord.Color.blurple()
         await channel.send(embed=embed, delete_after=5)
-    
-    @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):
-        player = self.bot.lavalink.player_manager.get(member.guild.id)
-        if player is None or player.channel_id is None:
-            return
-        if member.bot:
-            return
-
-        chan = self.bot.get_channel(int(player.channel_id))
-        if len(chan.members) == 1 and chan.members[0].id == self.bot.user.id:
-            await player.set_pause(True)
-            self.update_progress.stop()
-            await self.bot.change_presence(status=discord.Status.online, activity=None)
-        elif len(chan.members) > 1:
-            if player.paused:
-                await player.set_pause(False)
-                self.update_progress.start()
-                embed = discord.Embed()
-                embed.description = "The player was paused because no one was in the voice channel. Resuming previous!"
-                embed.color = discord.Color.blurple()
-                await self.channel.send(member.mention, embed=embed, delete_after=10)
-
-    @commands.Cog.listener()
-    async def on_reaction_add(self, reaction, user):
-        if user.bot:
-            return
-        if reaction.message.guild is None:
-            return
-        if reaction.message.author.id != self.bot.user.id:
-            return
-        if reaction.message.channel.id != self.channel.id:
-            return
-        if (await self.bot.settings.user(user.id)).is_music_banned:
-            await reaction.message.remove_reaction(reaction, user)
-            return
-
-        player = self.bot.lavalink.player_manager.get(reaction.message.guild.id)
-        if player is None:
-            return
-        ctx = self.channel
-        if player.channel_id is None:
-            return
-        if str(reaction.emoji) not in self.reactions:
-            await reaction.message.remove_reaction(reaction, user)
-            return
-
-        vc = self.bot.get_channel(int(player.channel_id))
-        if user not in vc.members:
-            await reaction.message.remove_reaction(reaction, user)
-            return
-
-        if str(reaction.emoji) == '⏯️':
-            if not player.paused:
-                await self.bot.change_presence(status=discord.Status.online, activity=None)
-                await player.set_pause(True)
-                embed = discord.Embed()
-                embed.description = f"{user.mention}: Paused the song!"
-                embed.color = discord.Color.blurple()
-                await ctx.send(embed=embed, delete_after=5)
-            else:
-                await player.set_pause(False)
-                embed = discord.Embed()
-                embed.description = f"{user.mention}: Resumed the song!"
-                embed.color = discord.Color.blurple()
-                await ctx.send(embed=embed, delete_after=5)
-
-        elif str(reaction.emoji) == '⏭️':
-            await self.do_skip(reaction.message.channel, user, player)
-
-        elif str(reaction.emoji) == '⏹':
-            await self.do_clear(reaction.message.channel, user, player)
 
     @commands.command(aliases=['p'])
     @commands.cooldown(2, 10, commands.BucketType.member)
@@ -366,14 +479,15 @@ class Music(commands.Cog):
 
         Example usage
         -------------
-        `!play xo tour llif3`
+        !play xo tour llif3
 
         Parameters
         ----------
         query : str
-            Search term
+            "Search term, or Spotify/YouTube URL"
         """
 
+        await ctx.message.delete()
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         # Remove leading and trailing <>. <> may be used to suppress embedding links in Discord.
         query = query.strip('<>')
@@ -385,7 +499,7 @@ class Music(commands.Cog):
         elif spotify_playlist.match(query):
             playlist = self.sp.playlist(query, fields='name,tracks.items.track.name,tracks.items.track.artists')
             results = {'loadType': "PLAYLIST_LOADED", 'tracks': [], 'playlistInfo':  {'name': playlist['name']}}
-            
+
             async with ctx.channel.typing():
                 for track in playlist['tracks']['items']:
                     track = track['track']
@@ -406,12 +520,6 @@ class Music(commands.Cog):
 
         embed = discord.Embed(color=discord.Color.blurple())
 
-        # Valid loadTypes are:
-        #   TRACK_LOADED    - single video/direct URL)
-        #   PLAYLIST_LOADED - direct URL to playlist)
-        #   SEARCH_RESULT   - query prefixed with either ytsearch: or scsearch:.
-        #   NO_MATCHES      - query yielded no results
-        #   LOAD_FAILED     - most likely, the video encountered an exception during loading.
         if results['loadType'] == 'PLAYLIST_LOADED':
             tracks = results['tracks']
 
@@ -449,17 +557,15 @@ class Music(commands.Cog):
     @commands.command(name='nowplaying', aliases=['np'])
     async def now_playing(self, ctx):
         """Show which song is currently playing"""
-        await self.do_np(ctx.guild.id, post_reactions=False)
-    
+        await ctx.message.delete()
+        await self.activities_for_new_song(ctx.guild.id, post_reactions=False)
+
     @commands.guild_only()
     @commands.command(name='queue', aliases=['q', 'playlist'])
     async def queue_info(self, ctx):
         """Retrieve a basic queue of upcoming songs."""
-        # vc = ctx.voice_client
 
-        # if not vc or not vc.is_connected():
-            # raise commands.BadArgument('I am not currently connected to voice!')
-
+        await ctx.message.delete()
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
         if len(player.queue) == 0:
             raise commands.BadArgument('There are currently no more queued songs.')
@@ -467,13 +573,12 @@ class Music(commands.Cog):
         # Grab up to 5 entries from the queue...
         upcoming = player.queue[0:5]
 
-        # fmt = '\n'.join(f'**`{_["title"]}`**' for _ in upcoming)
         embed = discord.Embed(title=f'Upcoming - Next {len(upcoming)}')
         embed.color = discord.Color.blurple()
         for i, song in enumerate(upcoming):
             embed.add_field(name=f"{i+1}. {song.title}", value=f"Requested by <@{song.requester}>", inline=False)
         embed.set_footer(text=f"{len(upcoming)} songs out of {len(player.queue)}")
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, delete_after=15)
 
     @commands.guild_only()
     @commands.command(name='volume', aliases=['vol'])
@@ -482,12 +587,12 @@ class Music(commands.Cog):
 
         Example usage
         -------------
-        `!volume 100`
+        !volume 100
 
         Parameters
         ------------
         volume: int
-            The volume to set the player to in percentage. This must be between 1 and 100.
+            "The volume to set the player to in percentage. This must be between 1 and 100."
         """
 
         if not 0 < vol < 101:
@@ -496,10 +601,8 @@ class Music(commands.Cog):
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)
 
         await player.set_volume(vol)
-        embed = discord.Embed()
-        embed.description = f'{ctx.author.mention} set the volume to **{vol}%**'
-        embed.color = discord.Color.blurple()
-        await ctx.send(embed=embed, delete_after=5)
+        await ctx.message.delete(delay=5)
+        await ctx.send_success(f'{ctx.author.mention} set the volume to **{vol}%**', delete_after=5)
 
     @commands.guild_only()
     @commands.command(name='pause')
@@ -512,10 +615,9 @@ class Music(commands.Cog):
 
         await player.set_pause(True)
         await self.bot.change_presence(status=discord.Status.online, activity=None)
-        embed = discord.Embed()
-        embed.description = f"{ctx.author.mention}: Paused the song!"
-        embed.color = discord.Color.blurple()
-        await ctx.send(embed=embed, delete_after=5)
+
+        await ctx.message.delete(delay=5)
+        await ctx.send_success(f"{ctx.author.mention}: Paused the song!", delete_after=5)
 
     @commands.guild_only()
     @commands.command(name='resume')
@@ -525,8 +627,10 @@ class Music(commands.Cog):
 
         if not player.is_playing:
             raise commands.BadArgument('I am not currently playing anything!')
-
         await player.set_pause(False)
+        
+        await ctx.message.delete(delay=5)
+        await ctx.send_success(f"{ctx.author.mention}: Resumed the song!", delete_after=5)
 
     @commands.guild_only()
     @commands.command(name='skip')
@@ -536,6 +640,18 @@ class Music(commands.Cog):
 
         await self.do_skip(ctx.channel, ctx.author, player)
 
+    @commands.guild_only()
+    @commands.command(name='shuffle')
+    async def shuffle_(self, ctx):
+        """Shuffle the queue."""
+        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        
+        if len(player.queue) <= 1:
+            raise commands.BadArgument("Nothing to shuffle.")
+        
+        shuffle(player.queue)
+        await ctx.send_success("Shuffled queue.", delete_after=5)
+        await ctx.message.delete(delay=5)
 
     @commands.command(name="clear", aliases=['clearqueue'])
     async def disconnect(self, ctx):
@@ -556,6 +672,7 @@ class Music(commands.Cog):
     @queue_info.error
     @skip_.error
     @play.error
+    @shuffle_.error
     async def info_error(self,  ctx: context.Context, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)

@@ -67,12 +67,16 @@ class Giveaway(commands.Cog):
     async def add(self, ctx: context.Context, member: discord.Member, amount: int):
         """Give a user trivia points (mod only).
 
+        Example usage
+        -------------
+        !points add @user 1
+
         Parameters
         ----------
         member : discord.Member
-            Member to give points to
+            "Member to give points to"
         amount : int
-            Amount of points to give
+            "Amount of points to give"
         """
         
         if amount < 1:
@@ -95,12 +99,16 @@ class Giveaway(commands.Cog):
     async def remove(self, ctx: context.Context, member: discord.Member, amount: int):
         """Take a user's trivia points (mod only).
 
+        Example usage
+        -------------
+        !points remove @user 1
+
         Parameters
         ----------
         member : discord.Member
-            Member to take points from
+            "Member to take points from"
         amount : int
-            Amount of points to take
+            "Amount of points to take"
         """
         
         if amount < 1:
@@ -140,7 +148,6 @@ class Giveaway(commands.Cog):
         """
 
         results = enumerate(await ctx.settings.trivia_leaderboard())
-        # ctx.user_cache = self.user_cache
         results = [ (i, m) for (i, m) in results if ctx.guild.get_member(m._id) is not None and m.trivia_points != 0][0:100]
         if len(results) == 0:
             raise commands.BadArgument("The leaderboard is currently empty.")

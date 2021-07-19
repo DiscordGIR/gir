@@ -1,10 +1,10 @@
+import re
+import traceback
+
+import cogs.utils.context as context
+import cogs.utils.permission_checks as permissions
 import discord
 from discord.ext import commands
-import cogs.utils.permission_checks as permissions
-import cogs.utils.context as context
-import traceback
-import asyncio
-import re
 
 
 class ReactionRoles(commands.Cog):
@@ -26,96 +26,60 @@ class ReactionRoles(commands.Cog):
         Parameters
         ----------
         message_id : int
-            ID of message to add reactions to
+            "ID of message to add reactions to"
         """
 
         if not ctx.guild.id == ctx.settings.guild_id:
             return
 
-        channel = ctx.guild.get_channel(ctx.settings.guild().channel_reaction_roles)
+        request_role_channel = ctx.guild.get_channel(ctx.settings.guild().channel_reaction_roles)
 
-        if channel is None:
+        if request_role_channel is None:
             return
 
         message = None
         try:
-            message = await channel.fetch_message(message_id)
+            message = await request_role_channel.fetch_message(message_id)
         except Exception:
             raise commands.BadArgument("Message not found.")
 
-        def check_msg(m):
-            return m.author == ctx.author and m.channel == ctx.channel
-
         reaction_mapping = {message.id: {}}
-        stack = [ctx.message]
-        reactions = []
-
-        async def delete_stack(the_stack):
-            for m in the_stack:
-                try:
-                    await m.delete()
-                except Exception:
-                    pass
-            return []
-
+        
         while True:
-            prompt_embed = await ctx.send("Add the reaction to this message that you want to watch for (or :white_check_mark: to stop).")
-            stack.append(prompt_embed)
+            reaction = await self.prompt_for_reaction(ctx, reaction_mapping[message.id])
+            
+            if reaction is None:
+                await ctx.send_warning("Timed out waiting for reaction, cancelling.", delete_after=5)
+                await ctx.message.delete(delay=5)
+                return
+            elif str(reaction.emoji) == "✅":
+                break
+            elif isinstance(reaction.emoji, discord.PartialEmoji) or (isinstance(reaction.emoji, discord.Emoji) and not reaction.emoji.available):
+                await ctx.send(embed=discord.Embed(description="That emoji is not available to me :(", color=discord.Color.dark_orange()), delete_after=5)
+                continue
+            
+            role = await self.prompt_for_role(ctx, reaction, reaction_mapping[message.id])
+            if role is None:
+                await ctx.send_warning("Cancelled setting reactions.", delete_after=5)
+                await ctx.message.delete(delay=5)
+                return
+            
+            reaction_mapping[message.id][str(reaction.emoji)] = role.id
 
-            def check_reaction(reaction, user):
-                return user.id == ctx.author.id and reaction.message.id == prompt_embed.id
-
-            try:
-                reaction, _ = await self.bot.wait_for('reaction_add', timeout=30.0, check=check_reaction)
-            except asyncio.TimeoutError:
-                try:
-                    stack = await delete_stack(stack)
-                    return
-                except Exception:
-                    pass
-            else:
-                if str(reaction.emoji) == "✅":
-                    stack = await delete_stack(stack)
-                    break
-
-                if isinstance(reaction.emoji, discord.PartialEmoji) or (isinstance(reaction.emoji, discord.Emoji) and not reaction.emoji.available):
-                    stack = await delete_stack(stack)
-                    await ctx.send("That emoji is not available to me :(", delete_after=5)
-                    continue
-
-                while True:
-                    stack = await delete_stack(stack)
-                    try:
-                        prompt_role = await ctx.send("Please enter a role ID to use for this react (or 'cancel' to stop)")
-                        stack.append(prompt_role)
-                        role_id = await self.bot.wait_for('message', check=check_msg, timeout=30.0)
-                        stack.append(role_id)
-                    except asyncio.TimeoutError:
-                        stack = await delete_stack(stack)
-                        return
-                    else:
-                        if role_id.content.lower() == 'cancel':
-                            stack = await delete_stack(stack)
-                            return
-                        the_role = ctx.guild.get_role(int(role_id.content))
-                        if the_role is None:
-                            stack = await delete_stack(stack)
-                        else:
-                            reaction_mapping[message.id][str(reaction.emoji)] = the_role.id
-                            reactions.append(reaction)
-                            stack = await delete_stack(stack)
-                            break
+        if not reaction_mapping[message.id].keys():
+            raise commands.BadArgument("Nothing to do.")
 
         await ctx.settings.add_rero_mapping(reaction_mapping)
-        the_string = "Done! We added the following emotes:\n"
         await message.clear_reactions()
 
+        resulting_reactions_list = ""
         async with ctx.channel.typing():
-            for r in reactions:
-                the_string += f"Reaction {str(r)} will give role <@&{reaction_mapping[message.id][str(r.emoji)]}>\n"
+            for r in reaction_mapping[message.id]:
+                resulting_reactions_list += f"Reaction {r} will give role <@&{reaction_mapping[message.id][r]}>\n"
                 await message.add_reaction(r)
 
-        await ctx.send(the_string, delete_after=10)
+        await ctx.send_success(title="Reaction roles set!", description=resulting_reactions_list, delete_after=10)
+        await ctx.message.delete(delay=10)
 
     @commands.command(name="newreaction")
     @commands.guild_only()
@@ -131,7 +95,7 @@ class ReactionRoles(commands.Cog):
         Parameters
         ----------
         message : int
-            Message to add reaction to
+            "Message to add reaction to"
         """
 
         if not ctx.guild.id == ctx.settings.guild_id:
@@ -142,8 +106,8 @@ class ReactionRoles(commands.Cog):
         if channel is None:
             return
 
-        rero_mapping = await ctx.settings.get_rero_mapping(str(message_id))
-        if rero_mapping is None:
+        reaction_mapping = dict(await ctx.settings.get_rero_mapping(str(message_id)))
+        if reaction_mapping is None:
             raise commands.BadArgument(f"Message with ID {message_id} had no reactions set in database. Use `!setreactions` first.")
 
         message = None
@@ -151,80 +115,79 @@ class ReactionRoles(commands.Cog):
             message = await channel.fetch_message(message_id)
         except Exception:
             raise commands.BadArgument("Message not found.")
-
-        def check_msg(m):
-            return m.author == ctx.author and m.channel == ctx.channel
-
-        reaction_mapping = {message.id: {}}
-        stack = [ctx.message]
-        reactions = []
-
-        async def delete_stack(the_stack):
-            for m in the_stack:
-                try:
-                    await m.delete()
-                except Exception:
-                    pass
-            return []
-
+        
         while True:
-            prompt_embed = await ctx.send("Add the reaction to this message that you want to watch for (or :white_check_mark: to cancel).")
-            stack.append(prompt_embed)
+            reaction = await self.prompt_for_reaction(ctx, reaction_mapping)
+            
+            if reaction is None:
+                await ctx.send_warning("Timed out waiting for reaction, cancelling.", delete_after=5)
+                await ctx.message.delete(delay=5)
+                return
+            elif str(reaction.emoji) in reaction_mapping:
+                await ctx.message.delete(delay=5)
+                raise commands.BadArgument(f"Reaction {str(reaction)} is already in use on that message.")
+            elif str(reaction.emoji) == "✅":
+                await ctx.send_warning("Cancelled adding new reaction.", delete_after=5)
+                await ctx.message.delete(delay=5)
+                return
+            elif isinstance(reaction.emoji, discord.PartialEmoji) or (isinstance(reaction.emoji, discord.Emoji) and not reaction.emoji.available):
+                await ctx.send(embed=discord.Embed(description="That emoji is not available to me :(", color=discord.Color.dark_orange()), delete_after=5)
+                continue
+            
+            role = await self.prompt_for_role(ctx, reaction, reaction_mapping)
+            if role is None:
+                await ctx.send_warning("Cancelled setting reactions.", delete_after=5)
+                await ctx.message.delete(delay=5)
+                return
+            elif role.id in reaction_mapping.values():
+                await ctx.message.delete(delay=5)
+                raise commands.BadArgument(f"There is already a reaction for {role.mention} on that message.")
+            
+            reaction_mapping[str(reaction.emoji)] = role.id
+            break
 
-            def check_reaction(reaction, user):
-                return user.id == ctx.author.id and reaction.message.id == prompt_embed.id
+        await ctx.settings.append_rero_mapping(message_id, reaction_mapping)
+        await message.clear_reactions()
 
-            try:
-                reaction, _ = await self.bot.wait_for('reaction_add', timeout=30.0, check=check_reaction)
-            except asyncio.TimeoutError:
-                try:
-                    stack = await delete_stack(stack)
-                    return
-                except Exception:
-                    pass
-            else:
-                if str(reaction.emoji) == "✅":
-                    stack = await delete_stack(stack)
-                    return
-
-                if isinstance(reaction.emoji, discord.PartialEmoji) or (isinstance(reaction.emoji, discord.Emoji) and not reaction.emoji.available):
-                    stack = await delete_stack(stack)
-                    await ctx.send("That emoji is not available to me :(", delete_after=5)
-                    continue
-
-                while True:
-                    stack = await delete_stack(stack)
-                    try:
-                        prompt_role = await ctx.send("Please enter a role ID to use for this react (or 'cancel' to stop)")
-                        stack.append(prompt_role)
-                        role_id = await self.bot.wait_for('message', check=check_msg, timeout=30.0)
-                        stack.append(role_id)
-                    except asyncio.TimeoutError:
-                        stack = await delete_stack(stack)
-                        return
-                    else:
-                        if role_id.content.lower() == 'cancel':
-                            stack = await delete_stack(stack)
-                            return
-                        the_role = ctx.guild.get_role(int(role_id.content))
-                        if the_role is None:
-                            stack = await delete_stack(stack)
-                        else:
-                            reaction_mapping[message.id][str(reaction.emoji)] = the_role.id
-                            reactions.append(reaction)
-                            stack = await delete_stack(stack)
-                            break
-                break
-
-        await ctx.settings.append_rero_mapping(reaction_mapping)
-        the_string = "Done! We added the following emotes:\n"
-
+        resulting_reactions_list = ""
         async with ctx.channel.typing():
-            for r in reactions:
-                the_string += f"Reaction {str(r)} will give role <@&{reaction_mapping[message.id][str(r.emoji)]}>\n"
+            for r in reaction_mapping:
+                resulting_reactions_list += f"Reaction {r} will give role <@&{reaction_mapping[r]}>\n"
                 await message.add_reaction(r)
 
-        await ctx.send(the_string, delete_after=10)
+        await ctx.send_success(title="Added new reaction!", description=resulting_reactions_list, delete_after=10)
+        await ctx.message.delete(delay=10)
+
+    async def prompt_for_reaction(self, ctx, reactions):
+        text = "Please add the reaction to this message that you want to watch for (or :white_check_mark: to finish or cancel if nothing set so far)"
+        if reactions:
+            text += "\n\n**Current reactions**"
+            for r in reactions:
+                text += f"\n{r} <@&{reactions[r]}>"
+
+        prompt_reaction_message = await ctx.send_success(description=text, title="Reaction roles")
+        prompt_reaction = context.PromptDataReaction(
+            message=prompt_reaction_message, 
+            reactions=[], 
+            timeout=30, 
+            delete_after=True,
+            raw_emoji=True)
+        
+        reaction, _ = await ctx.prompt_reaction(prompt_reaction)
+        return reaction
+    
+    async def prompt_for_role(self, ctx, current_reaction, reactions):
+        text = f"Please enter a role ID to use for {current_reaction} (or 'cancel' to stop)"
+        if reactions:
+            text += "\n\n**Current reactions**"
+            for r in reactions:
+                text += f"\n{r} <@&{reactions[r]}>"
+
+        prompt_role = context.PromptData(value_name="role to give", 
+                                            description=text, 
+                                            convertor=commands.converter.RoleConverter().convert)
+        
+        return await ctx.prompt(prompt_role)
 
     @commands.command(name="movereactions")
     @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
@@ -240,9 +203,9 @@ class ReactionRoles(commands.Cog):
         Parameters
         ----------
         before : int
-            ID of before messsage
+            "ID of before messsage"
         after : int
-            ID of after message
+            "ID of after message"
         """
 
         if not ctx.guild.id == ctx.settings.guild_id:
@@ -271,7 +234,6 @@ class ReactionRoles(commands.Cog):
         except Exception:
             pass
 
-        await ctx.message.delete()
         rero_mapping = {after: rero_mapping}
 
         await ctx.settings.add_rero_mapping(rero_mapping)
@@ -279,13 +241,14 @@ class ReactionRoles(commands.Cog):
 
         await after_message.clear_reactions()
 
-        the_string = "Done! We added the following emotes:\n"
+        resulting_reactions_list = "Done! We added the following emotes:\n"
         async with ctx.channel.typing():
             for r in rero_mapping[after]:
-                the_string += f"Reaction {str(r)} will give role <@&{rero_mapping[after][r]}>\n"
+                resulting_reactions_list += f"Reaction {str(r)} will give role <@&{rero_mapping[after][r]}>\n"
                 await after_message.add_reaction(r)
 
-        await ctx.send(the_string, delete_after=10)
+        await ctx.send_success(title="Reaction roles moved!", description=resulting_reactions_list, delete_after=10)
+        await ctx.message.delete(delay=10)
 
     @commands.command(name="repostreactions")
     @permissions.admin_and_up()
@@ -327,6 +290,10 @@ class ReactionRoles(commands.Cog):
             return
         if payload.channel_id != self.bot.settings.guild().channel_reaction_roles:
             return
+        
+        mapping = await self.bot.settings.get_rero_mapping(str(payload.message_id))
+        if mapping is None:
+            return
 
         channel = payload.member.guild.get_channel(payload.channel_id)
         if payload.message_id not in self.cached_messages:
@@ -334,11 +301,6 @@ class ReactionRoles(commands.Cog):
             self.cached_messages[payload.message_id] = message
         else:
             message = self.cached_messages[payload.message_id]
-
-        mapping = await self.bot.settings.get_rero_mapping(str(payload.message_id))
-        if mapping is None:
-            await message.remove_reaction(payload.emoji, payload.member)
-            return
 
         if str(payload.emoji) not in mapping:
             await message.remove_reaction(payload.emoji, payload.member)

@@ -1,9 +1,9 @@
 import traceback
 
-import discord
-from discord.ext import commands
 import cogs.utils.context as context
 import cogs.utils.permission_checks as permissions
+import discord
+from discord.ext import commands
 
 
 class SubNews(commands.Cog):
@@ -23,14 +23,13 @@ class SubNews(commands.Cog):
         Parameters
         ----------
         description : str
-            Body of the news post
+            "Body of the news post"
         """
 
         if not ctx.guild.id == ctx.settings.guild_id:
             return
 
         db = ctx.settings.guild()
-        submod = ctx.guild.get_role(db.role_sub_mod)
 
         channel = ctx.guild.get_channel(db.channel_subnews)
         if not channel:
