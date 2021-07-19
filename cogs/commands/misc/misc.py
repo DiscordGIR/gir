@@ -131,7 +131,7 @@ class Misc(commands.Cog):
         not_animated = ["png", "jpeg", "webp"]
         
         def fmt(format_):
-            return f"[{format_}]({member.avatar_url_as(format=format_, size=4096)})"
+            return f"[{format_}]({member.avatar_as(format=format_, size=4096)})"
         
         # add links to various formats of the profile picture URL, depending on if it's a gif
         if member.is_avatar_animated():
@@ -139,7 +139,7 @@ class Misc(commands.Cog):
         else:
             embed.description = f"View As\n {'  '.join([fmt(format_) for format_ in not_animated])}"
         
-        embed.set_image(url=str(member.avatar_url_as(size=4096)))
+        embed.set_image(url=str(member.avatar_as(size=4096)))
         embed.color = discord.Color.random()
         embed.set_footer(text=f"Requested by {ctx.author}")
         await ctx.send(embed=embed)

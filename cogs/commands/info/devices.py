@@ -11,6 +11,33 @@ from attr.setters import convert
 from discord.ext import commands
 
 
+class Confirm(discord.ui.View):
+    def __init__(self, ctx: context.Context, true_response, false_response):
+        super().__init__()
+        self.ctx = ctx
+        self.value = None
+        self.true_response = true_response
+        self.false_response = false_response
+
+
+    # When the confirm button is pressed, set the inner value to `True` and
+    # stop the View from listening to more input.
+    # We also send the user an ephemeral message that we're confirming their choice.
+    @discord.ui.button(label='Yes', style=discord.ButtonStyle.success)
+    async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
+        if interaction.user == self.ctx.author:
+            await self.ctx.send_success(description=self.true_response, delete_after=5)
+            self.value = True
+            self.stop()
+
+    # This one is similar to the confirmation button except sets the inner value to `False`
+    @discord.ui.button(label='No', style=discord.ButtonStyle.grey)
+    async def cancel(self, button: discord.ui.Button, interaction: discord.Interaction):
+        if interaction.user == self.ctx.author:
+            await self.ctx.send_warning(description=self.false_response, delete_after=5)
+            self.value = False
+            self.stop()
+
 class Devices(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -43,22 +70,22 @@ class Devices(commands.Cog):
         # check if user already has a device in their nick
         if re.match(self.devices_test, ctx.author.display_name):
             # they already have a device set
-            prompt = await ctx.send_warning(description="You already have a device nickname set. Would you like to modify it?")
-            prompt_data = context.PromptDataReaction(prompt, ['✅', '❌'], timeout=15, delete_after=True)
-            response, _ = await ctx.prompt_reaction(prompt_data)
+            view = Confirm(ctx, true_response="Alright, we'll swap your device!",
+                            false_response="Cancelled adding device to your name.")
+            change_name_prompt = await ctx.send('You already have a device in your nickname. Would you like to replace it?', view=view)
+            # Wait for the View to stop listening for input...
+            await view.wait()
+            await change_name_prompt.delete()
+            change_name = view.value
             
-            if response is None or response == '❌':
-                # timeout or X reacted
-                await ctx.send_warning(description="Cancelled adding device to your name.", delete_after=5)
+            if not change_name:
                 await ctx.message.delete(delay=5)
                 return
-            elif response == '✅':
+            else:
                 # user wants to remove existing device, let's do that
                 new_nick = re.sub(self.devices_remove_re, "", ctx.author.display_name).strip()
                 if len(new_nick) > 32:
                     raise commands.BadArgument("Nickname too long")
-
-                await ctx.send_success("Alright, we'll swap your device!", delete_after=5)
 
         if not device.split(" ")[0].lower() in self.possible_devices:
             raise commands.BadArgument(

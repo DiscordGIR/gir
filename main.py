@@ -275,7 +275,7 @@ class Bot(commands.Bot):
         public_chan = ctx.guild.get_channel(self.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
-            log.set_thumbnail(url=user.avatar_url)
+            log.set_thumbnail(url=user.avatar)
             await public_chan.send(embed=log)
 
         try:
@@ -316,4 +316,4 @@ async def run_once_when_ready():
 
 
 bot.loop.create_task(run_once_when_ready())
-bot.run(os.environ.get("BOTTY_TOKEN"), bot=True, reconnect=True)
+bot.run(os.environ.get("BOTTY_TOKEN"), reconnect=True)

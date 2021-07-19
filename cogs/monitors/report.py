@@ -5,6 +5,35 @@ import cogs.utils.context as context
 import discord
 import humanize
 
+class ReportButtons(discord.ui.View):
+    def __init__(self, bot: context.Context, reportee: discord.Member):
+        super().__init__()
+        self.value = None
+        self.reportee = reportee
+        self.bot = bot
+
+    @discord.ui.button(label='Discord report', style=discord.ButtonStyle.success)
+    async def discard(self, button: discord.ui.Button, interaction: discord.Interaction):
+        ctx = await self.bot.get_context(interaction.message, cls=context.Context)
+        if ctx.settings.permissions.hasAtLeast(ctx.guild, interaction.user, 5):
+            await ctx.message.delete()
+            self.stop()
+
+    @discord.ui.button(label='Get ID', style=discord.ButtonStyle.blurple)
+    async def get_id(self, button: discord.ui.Button, interaction: discord.Interaction):
+        ctx = await self.bot.get_context(interaction.message, cls=context.Context)
+        if ctx.settings.permissions.hasAtLeast(ctx.guild, interaction.user, 5):
+            await ctx.send(self.reportee.id)
+            self.stop()
+
+    # This one is similar to the confirmation button except sets the inner value to `False`
+    @discord.ui.button(label='Purge channel 🧹', style=discord.ButtonStyle.danger)
+    async def purge_channel(self, button: discord.ui.Button, interaction: discord.Interaction):
+        ctx = await self.bot.get_context(interaction.message, cls=context.Context)
+        if ctx.settings.permissions.hasAtLeast(ctx.guild, interaction.user, 5):
+            await ctx.channel.purge(limit=100)
+            self.stop()
+
 class Report:
     def __init__(self, bot):
         self.bot = bot
@@ -12,38 +41,41 @@ class Report:
     
     async def report(self, msg, user, word, invite=None):
         channel = msg.guild.get_channel(self.bot.settings.guild().channel_reports)
-        ping_string = await self.prepare_ping_string(msg)
+        # ping_string = await self.prepare_ping_string(msg)
+        ping_string = ""
         embed = await self.prepare_embed(user, msg, word)
+        view = ReportButtons(self.bot, user)
 
         if invite:
-            report_msg = await channel.send(f"{ping_string}\nMessage contained invite: {invite}", embed=embed)
+            report_msg = await channel.send(f"{ping_string}\nMessage contained invite: {invite}", embed=embed, view=view)
         else:
-            report_msg = await channel.send(ping_string, embed=embed)
-        report_reactions = ['✅', '🆔', '🧹']
+            report_msg = await channel.send(ping_string, embed=embed, view=view)
+            
+        # report_reactions = ['✅', '🆔', '🧹']
 
-        ctx = await self.bot.get_context(report_msg, cls=context.Context)
-        prompt_data = context.PromptDataReaction(report_msg, report_reactions)
+        # ctx = await self.bot.get_context(report_msg, cls=context.Context)
+        # prompt_data = context.PromptDataReaction(report_msg, report_reactions)
         
-        while True:
-            self.pending_tasks[report_msg.id] = "NOT TERMINATED"
-            reaction, reactor = await ctx.prompt_reaction(prompt_data)
-            if reaction == "TERMINATE":
-                return
+        # while True:
+        #     self.pending_tasks[report_msg.id] = "NOT TERMINATED"
+        #     reaction, reactor = await ctx.prompt_reaction(prompt_data)
+        #     if reaction == "TERMINATE":
+        #         return
 
-            if not self.bot.settings.permissions.hasAtLeast(user.guild, user, 5) or reaction not in report_reactions:
-                await report_msg.remove_reaction(reaction, reactor)
+        #     if not self.bot.settings.permissions.hasAtLeast(user.guild, user, 5) or reaction not in report_reactions:
+        #         await report_msg.remove_reaction(reaction, reactor)
         
-            if reaction == '✅':
-                try:
-                    await report_msg.delete()
-                except Exception:
-                    pass
-                return
-            elif reaction == '🆔':
-                await channel.send(user.id)
-            elif reaction == '🧹':
-                await channel.purge(limit=100)
-                return
+        #     if reaction == '✅':
+        #         try:
+        #             await report_msg.delete()
+        #         except Exception:
+        #             pass
+        #         return
+        #     elif reaction == '🆔':
+        #         await channel.send(user.id)
+        #     elif reaction == '🧹':
+        #         await channel.purge(limit=100)
+                # return
 
 
     async def report_spam(self, msg, user, title):
@@ -128,7 +160,7 @@ class Report:
         embed.title = "Possible raid occurring"
         embed.description = "The raid filter has been triggered 5 or more times in the past 10 seconds. I am automatically locking all the channels. Use `!unfreeze` when you're done."
         embed.color = discord.Color.red()
-        embed.set_thumbnail(url=user.avatar_url)
+        embed.set_thumbnail(url=user.avatar)
         embed.add_field(name="Member", value=f"{user} ({user.mention})")
         if msg is not None:
             embed.add_field(name="Message", value=msg.content, inline=False)
@@ -151,7 +183,7 @@ class Report:
         embed = discord.Embed(title=title)
         embed.color = discord.Color.red()
 
-        embed.set_thumbnail(url=user.avatar_url)
+        embed.set_thumbnail(url=user.avatar)
         embed.add_field(name="Member", value=f"{user} ({user.mention})")
         embed.add_field(name="Channel", value=msg.channel.mention)
 

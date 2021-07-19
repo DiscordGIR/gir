@@ -309,7 +309,7 @@ class ModUtils(commands.Cog):
 
         embed = discord.Embed(title="Rundown")
         embed.color = user.top_role.color
-        embed.set_thumbnail(url=user.avatar_url)
+        embed.set_thumbnail(url=user.avatar)
 
         embed.add_field(name="Member", value=f"{user} ({user.mention}, {user.id})")
         embed.add_field(name="Join date", value=f"{joined} UTC")

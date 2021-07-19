@@ -59,7 +59,7 @@ class Logging(commands.Cog):
         try:
             await webhook.send(
                 username=str(self.bot.user.name),
-                avatar_url=self.bot.user.avatar_url,
+                avatar=self.bot.user.avatar,
                 embed=embed
             )
         except Exception:
@@ -82,7 +82,7 @@ class Logging(commands.Cog):
 
         embed = discord.Embed(title="Member joined")
         embed.color = discord.Color.green()
-        embed.set_thumbnail(url=member.avatar_url)
+        embed.set_thumbnail(url=member.avatar)
         embed.add_field(
             name="User", value=f'{member} ({member.mention})', inline=True)
         embed.add_field(name="Warnpoints", value=(await self.bot.settings.user(member.id)).warn_points, inline=True)
@@ -118,7 +118,7 @@ class Logging(commands.Cog):
 
         embed = discord.Embed(title="Member left")
         embed.color = discord.Color.purple()
-        embed.set_thumbnail(url=member.avatar_url)
+        embed.set_thumbnail(url=member.avatar)
         embed.add_field(
             name="User", value=f'{member} ({member.mention})', inline=True)
         embed.timestamp = datetime.now()
@@ -148,7 +148,7 @@ class Logging(commands.Cog):
 
         embed = discord.Embed(title="Message Updated")
         embed.color = discord.Color.orange()
-        embed.set_thumbnail(url=before.author.avatar_url)
+        embed.set_thumbnail(url=before.author.avatar)
         embed.add_field(
             name="User", value=f'{before.author} ({before.author.mention})', inline=False)
         before_content = before.content
@@ -190,7 +190,7 @@ class Logging(commands.Cog):
 
         embed = discord.Embed(title="Message Deleted")
         embed.color = discord.Color.red()
-        embed.set_thumbnail(url=message.author.avatar_url)
+        embed.set_thumbnail(url=message.author.avatar)
         embed.add_field(
             name="User", value=f'{message.author} ({message.author.mention})', inline=True)
         embed.add_field(
@@ -280,7 +280,7 @@ class Logging(commands.Cog):
     async def member_nick_update(self, before, after):
         embed = discord.Embed(title="Member Renamed")
         embed.color = discord.Color.orange()
-        embed.set_thumbnail(url=after.avatar_url)
+        embed.set_thumbnail(url=after.avatar)
         embed.add_field(
             name="Member", value=f'{after} ({after.mention})', inline=False)
         embed.add_field(
@@ -303,7 +303,7 @@ class Logging(commands.Cog):
             embed.title = "Member Role Removed"
             embed.color = discord.Color.red()
 
-        embed.set_thumbnail(url=after.avatar_url)
+        embed.set_thumbnail(url=after.avatar)
         embed.add_field(
             name="Member", value=f'{after} ({after.mention})', inline=False)
         embed.add_field(

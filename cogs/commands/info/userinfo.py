@@ -18,7 +18,7 @@ class LeaderboardSource(menus.GroupByPageSource):
             if menu.current_page == 0:
                 if i == entry.items[0][0]:
                     trophy = ':first_place:'
-                    embed.set_thumbnail(url=member.avatar_url)
+                    embed.set_thumbnail(url=member.avatar)
                 if i == entry.items[1][0]:
                     trophy = ':second_place:'
                 if i == entry.items[2][0]:
@@ -48,7 +48,7 @@ class CasesSource(menus.GroupByPageSource):
         u = await menu.ctx.bot.settings.user(user.id)
         embed = discord.Embed(
             title=f'Cases - {u.warn_points} warn points', color=discord.Color.blurple())
-        embed.set_author(name=user, icon_url=user.avatar_url)
+        embed.set_author(name=user, icon_url=user.avatar)
         for case in entry.items:
             timestamp = case.date.strftime("%B %d, %Y, %I:%M %p")
             if case._type == "WARN" or case._type == "LIFTWARN":
@@ -151,7 +151,7 @@ class UserInfo(commands.Cog):
         embed = discord.Embed(title="User Information")
         embed.color = user.color
         embed.set_author(name=user)
-        embed.set_thumbnail(url=user.avatar_url)
+        embed.set_thumbnail(url=user.avatar)
         embed.add_field(name="Username",
                         value=f'{user} ({user.mention})', inline=True)
         embed.add_field(
@@ -191,7 +191,7 @@ class UserInfo(commands.Cog):
 
         embed = discord.Embed(title="Level Statistics")
         embed.color = user.top_role.color
-        embed.set_author(name=user, icon_url=user.avatar_url)
+        embed.set_author(name=user, icon_url=user.avatar)
         embed.add_field(
             name="Level", value=results.level if not results.is_clem else "0", inline=True)
         embed.add_field(
@@ -252,7 +252,7 @@ class UserInfo(commands.Cog):
 
         embed = discord.Embed(title="Warn Points")
         embed.color = discord.Color.orange()
-        embed.set_thumbnail(url=user.avatar_url)
+        embed.set_thumbnail(url=user.avatar)
         embed.add_field(
             name="Member", value=f'{user.mention}\n{user}\n({user.id})', inline=True)
         embed.add_field(name="Warn Points",

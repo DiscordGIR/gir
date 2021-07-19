@@ -7,7 +7,7 @@ authors = ["SlimShadyIAm <me@slim.rocks>"]
 [tool.poetry.dependencies]
 python = "^3.9.0"
 python-dotenv = "^0.15.0"
-"discord.py" = "^1.6.0"
+"discord.py" = {git = "https://github.com/Rapptz/discord.py.git", rev = "f14e584"}
 discord-ext-menus = {git = "https://github.com/Rapptz/discord-ext-menus"}
 mongoengine = "^0.21.0"
 apscheduler = "^3.6.3"

@@ -1,8 +1,6 @@
 from datetime import datetime
 import traceback
 
-from discord import member
-
 import cogs.utils.permission_checks as permissions
 import cogs.utils.context as context
 import discord
@@ -19,7 +17,7 @@ class LeaderboardSource(menus.GroupByPageSource):
             if menu.current_page == 0:
                 if i == entry.items[0][0]:
                     trophy = ':first_place:'
-                    embed.set_thumbnail(url=member.avatar_url)
+                    embed.set_thumbnail(url=member.avatar)
                 elif i == entry.items[1][0]:
                     trophy = ':second_place:'
                 elif i == entry.items[2][0]:
@@ -44,7 +42,7 @@ class MenuPages(menus.MenuPages):
         await super().update(payload)
 
 
-class Giveaway(commands.Cog):
+class Trivia(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -84,7 +82,7 @@ class Giveaway(commands.Cog):
         
         current_points = await ctx.settings.inc_trivia_points(member.id, amount)
         embed = discord.Embed()
-        embed.set_author(name=member, icon_url=member.avatar_url)
+        embed.set_author(name=member, icon_url=member.avatar)
         embed.color = discord.Color.dark_green()
         embed.description = f"Wow {member.mention}, great moves! Keep it up!\n\n \
             You gained **{amount} points** ({current_points} points in total)"
@@ -116,7 +114,7 @@ class Giveaway(commands.Cog):
         
         current_points = await ctx.settings.inc_trivia_points(member.id, (-1*amount))
         embed = discord.Embed()
-        embed.set_author(name=member, icon_url=member.avatar_url)
+        embed.set_author(name=member, icon_url=member.avatar)
         embed.color = discord.Color.red()
         embed.description = f"Better luck next time, {member.mention}. \n\n \
             You lost **{amount} points** ({current_points} points in total)"
@@ -181,4 +179,4 @@ class Giveaway(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Giveaway(bot))
+    bot.add_cog(Trivia(bot))

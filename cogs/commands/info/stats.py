@@ -57,7 +57,7 @@ class Stats(commands.Cog):
         b = datetime.datetime.utcnow()
         embed = discord.Embed(
             title=f"Pong!", color=discord.Color.blurple())
-        embed.set_thumbnail(url=self.bot.user.avatar_url)
+        embed.set_thumbnail(url=self.bot.user.avatar)
         embed.description = "Latency: testing..."
 
         # measure time between sending a message and time it is posted
@@ -85,7 +85,7 @@ class Stats(commands.Cog):
 
         embed = discord.Embed(
             title=f"{self.bot.user.name} Statistics", color=discord.Color.blurple())
-        embed.set_thumbnail(url=self.bot.user.avatar_url)
+        embed.set_thumbnail(url=ctx.me.avatar)
         embed.add_field(name="Uptime", value=diff)
         embed.add_field(name="CPU Usage", value=f"{psutil.cpu_percent()}%")
         embed.add_field(name="Memory Usage",

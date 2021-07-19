@@ -189,7 +189,7 @@ async def remove_mute(id: int) -> None:
                 log = await prepare_unmute_log(BOT_GLOBAL.user, user, case)
 
                 log.remove_author()
-                log.set_thumbnail(url=user.avatar_url)
+                log.set_thumbnail(url=user.avatar)
 
                 public_chan = guild.get_channel(
                     BOT_GLOBAL.settings.guild().channel_public)

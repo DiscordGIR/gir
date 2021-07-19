@@ -120,12 +120,12 @@ class ModActions(commands.Cog):
             ctx.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
-            log.set_thumbnail(url=user.avatar_url)
+            log.set_thumbnail(url=user.avatar)
             await public_chan.send(user.mention if not dmed else "", embed=log)
 
             if log_kickban:
                 log_kickban.remove_author()
-                log_kickban.set_thumbnail(url=user.avatar_url)
+                log_kickban.set_thumbnail(url=user.avatar)
                 await public_chan.send(embed=log_kickban)
 
     @commands.guild_only()
@@ -197,7 +197,7 @@ class ModActions(commands.Cog):
             ctx.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
-            log.set_thumbnail(url=user.avatar_url)
+            log.set_thumbnail(url=user.avatar)
             await public_chan.send(user.mention if not dmed else "", embed=log)
 
     @commands.guild_only()
@@ -274,7 +274,7 @@ class ModActions(commands.Cog):
         else:
             await ctx.message.reply(f"We updated the case but weren't able to find a corresponding message in {public_chan.mention}!", embed=log, delete_after=10)
             log.remove_author()
-            log.set_thumbnail(url=user.avatar_url)
+            log.set_thumbnail(url=user.avatar)
             await public_chan.send(user.mention if not dmed else "", embed=log)
 
         await ctx.message.delete(delay=10)
@@ -345,7 +345,7 @@ class ModActions(commands.Cog):
             ctx.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
-            log.set_thumbnail(url=user.avatar_url)
+            log.set_thumbnail(url=user.avatar)
             await public_chan.send(user.mention if not dmed else "", embed=log)
 
     @commands.guild_only()
@@ -382,7 +382,7 @@ class ModActions(commands.Cog):
             ctx.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
-            log.set_thumbnail(url=user.avatar_url)
+            log.set_thumbnail(url=user.avatar)
             await public_chan.send(embed=log)
             
     @commands.guild_only()
@@ -424,7 +424,7 @@ class ModActions(commands.Cog):
             ctx.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
-            log.set_thumbnail(url=user.avatar_url)
+            log.set_thumbnail(url=user.avatar)
             await public_chan.send(embed=log)
 
     async def add_kick_case(self,  ctx: context.Context, user, reason):
@@ -493,7 +493,7 @@ class ModActions(commands.Cog):
             ctx.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
-            log.set_thumbnail(url=user.avatar_url)
+            log.set_thumbnail(url=user.avatar)
             await public_chan.send(embed=log)
 
     async def add_ban_case(self,  ctx: context.Context, user, reason):
@@ -564,7 +564,7 @@ class ModActions(commands.Cog):
             ctx.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
-            log.set_thumbnail(url=user.avatar_url)
+            log.set_thumbnail(url=user.avatar)
             await public_chan.send(embed=log)
 
     @commands.guild_only()
@@ -672,7 +672,7 @@ class ModActions(commands.Cog):
         await ctx.message.delete(delay=10)
 
         log.remove_author()
-        log.set_thumbnail(url=user.avatar_url)
+        log.set_thumbnail(url=user.avatar)
         dmed = True
         try:
             await user.send(f"You have been muted in {ctx.guild.name}", embed=log)
@@ -742,7 +742,7 @@ class ModActions(commands.Cog):
             ctx.settings.guild().channel_public)
         if public_chan:
             log.remove_author()
-            log.set_thumbnail(url=user.avatar_url)
+            log.set_thumbnail(url=user.avatar)
             await public_chan.send(user.mention if not dmed else "", embed=log)
 
     @commands.guild_only()

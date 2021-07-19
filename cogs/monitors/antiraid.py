@@ -329,7 +329,7 @@ class AntiRaidMonitor(commands.Cog):
             public_logs = user.guild.get_channel(self.bot.settings.guild().channel_public)
             if public_logs:
                 log.remove_author()
-                log.set_thumbnail(url=user.avatar_url)
+                log.set_thumbnail(url=user.avatar)
                 await public_logs.send(embed=log)
 
     async def freeze_server(self, guild):
