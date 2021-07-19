@@ -134,8 +134,12 @@ class Stats(commands.Cog):
         embed = discord.Embed(title="Raid Statistics", color=discord.Color.blurple())
         raids = await ctx.settings.fetch_raids()
         
+        total = 0
         for raid_type, cases in raids.items():
+            total += cases
             embed.add_field(name=raid_type, value=f"{cases} cases.")
+            
+        embed.add_field(name="Total antiraid cases", value=f"{total}", inline=False)
         await ctx.message.reply(embed=embed)
 
     @raidstats.error
