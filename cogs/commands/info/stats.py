@@ -141,7 +141,31 @@ class Stats(commands.Cog):
             
         embed.add_field(name="Total antiraid cases", value=f"{total}", inline=False)
         await ctx.message.reply(embed=embed)
+        
+    @commands.guild_only()
+    @commands.command(name="casestats")
+    @permissions.mod_and_up()
+    async def casestats(self, ctx: context.Context, mod: discord.Member) -> None:
+        """Present statistics on cases by each mod.
+        """
 
+        embed = discord.Embed(color=discord.Color.blurple())
+        embed.set_author(name=f"{mod}'s case statistics", icon_url=mod.avatar_url)
+        
+        
+        raids = await ctx.settings.fetch_cases_by_mod(mod.id)
+        embed.add_field(name="Total cases", value=raids.get("total"))
+        
+        string = ""
+        for reason, count in raids.get("counts")[:5]:
+            string += f"**{reason}**: {count}\n"
+        
+        if string:
+            embed.add_field(name="Top reasons", value=string, inline=False)
+        
+        await ctx.message.reply(embed=embed)
+
+    @casestats.error
     @raidstats.error
     @serverinfo.error
     @roleinfo.error
