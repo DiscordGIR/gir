@@ -11,6 +11,35 @@ from attr.setters import convert
 from discord.ext import commands
 
 
+# class Test(discord.ui.View):
+#     def __init__(self, ctx: context.Context):
+#         super().__init__()
+#         self.ctx = ctx
+
+#     @discord.ui.button(label='Google.com', style=discord.ButtonStyle.link, link="https://google.com/")
+#     async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
+#         if interaction.user == self.ctx.author:
+#             self.stop()
+
+class Select(discord.ui.Select):
+    def __init__(self, versions):
+        super().__init__(custom_id="Some identifier", placeholder="Select a version...", min_values=1, max_values=1, 
+                    options=[discord.SelectOption(label=version) for version in versions])
+        self.value = None
+    
+    async def start(self):
+        
+    
+    async def callback(self, interaction: discord.Interaction):
+        self.value = interaction.data
+        self.view.stop()
+
+
+class Confirm(discord.ui.Select):
+    def __init__(self, ctx: context.Context, true_response, false_response):
+        super().__init__()
+        
+        
 class Confirm(discord.ui.View):
     def __init__(self, ctx: context.Context, true_response, false_response):
         super().__init__()
@@ -46,6 +75,12 @@ class Devices(commands.Cog):
         self.devices_test = re.compile(r'^.+ \[.+\,.+\]$')
         self.devices_remove_re = re.compile(r'\[.+\,.+\]$')
         self.possible_devices = ['iphone', 'ipod', 'ipad', 'homepod', 'apple']
+
+    @commands.command()
+    async def test(self, ctx):
+        view = discord.ui.View()
+        # view.add_item(discord.ui.Button(label='Add to Sileo', emoji="🔗", url="sileo://source/https://repo.packix.com"))
+        await ctx.send("test", view=view)
 
     @commands.guild_only()
     @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
@@ -83,6 +118,7 @@ class Devices(commands.Cog):
                 return
             else:
                 # user wants to remove existing device, let's do that
+                print("here")
                 new_nick = re.sub(self.devices_remove_re, "", ctx.author.display_name).strip()
                 if len(new_nick) > 32:
                     raise commands.BadArgument("Nickname too long")
@@ -167,39 +203,16 @@ class Devices(commands.Cog):
         
         # retrieve list of available firmwares for the given device
         firmwares = await self.find_firmwares_from_ipsw_me(the_device)
+        firmwares_list = [f["version"] for f in firmwares]
         
-        # prompt user to input an iOS version they want to put in their nickname
-        prompt = context.PromptData(
-            value_name="firmware",
-            title="Please enter a version number.",
-            description="Here are the 5 most recent...\n" + '\n'.join(firmware['version'] for firmware in firmwares[0:5]),
-            convertor=str
-        )
-
-        firmware = await ctx.prompt(prompt)   
-        found = False     
+        view = discord.ui.View()
+        s = Select(firmwares_list[:25])
+        view.add_item(s)
+        m = await ctx.send("Choose a firmware for your device", view=view)
         
-        # loop until we find a valid firmware or user cancels.
-        while True:
-            if firmware is None:
-                await ctx.message.delete(delay=5)
-                await ctx.send_warning("Cancelled.", delete_after=5)
-                return
-            
-            # is this a valid version for this device?
-            for f in firmwares:
-                if f["version"] == firmware:
-                    firmware = f["version"]
-                    found = True
-                    break
-
-            if found:
-                break
-            else:
-                prompt.reprompt = True
-                firmware = await ctx.prompt(prompt)
-
-        return firmware
+        await view.wait()
+        await m.delete()
+        return s.value.get('values')[0]
 
     async def find_firmwares_from_ipsw_me(self, the_device):
         """Get list of all valid firmwares for a given device from IPSW.me
@@ -300,6 +313,7 @@ class Devices(commands.Cog):
 
         await ctx.message.reply(embed=embed)
 
+    @test.error
     @removedevice.error
     @adddevice.error
     @listdevices.error

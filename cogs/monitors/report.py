@@ -47,36 +47,9 @@ class Report:
         view = ReportButtons(self.bot, user)
 
         if invite:
-            report_msg = await channel.send(f"{ping_string}\nMessage contained invite: {invite}", embed=embed, view=view)
+            await channel.send(f"{ping_string}\nMessage contained invite: {invite}", embed=embed, view=view)
         else:
-            report_msg = await channel.send(ping_string, embed=embed, view=view)
-            
-        # report_reactions = ['✅', '🆔', '🧹']
-
-        # ctx = await self.bot.get_context(report_msg, cls=context.Context)
-        # prompt_data = context.PromptDataReaction(report_msg, report_reactions)
-        
-        # while True:
-        #     self.pending_tasks[report_msg.id] = "NOT TERMINATED"
-        #     reaction, reactor = await ctx.prompt_reaction(prompt_data)
-        #     if reaction == "TERMINATE":
-        #         return
-
-        #     if not self.bot.settings.permissions.hasAtLeast(user.guild, user, 5) or reaction not in report_reactions:
-        #         await report_msg.remove_reaction(reaction, reactor)
-        
-        #     if reaction == '✅':
-        #         try:
-        #             await report_msg.delete()
-        #         except Exception:
-        #             pass
-        #         return
-        #     elif reaction == '🆔':
-        #         await channel.send(user.id)
-        #     elif reaction == '🧹':
-        #         await channel.purge(limit=100)
-                # return
-
+            await channel.send(ping_string, embed=embed, view=view)
 
     async def report_spam(self, msg, user, title):
         channel = msg.guild.get_channel(self.bot.settings.guild().channel_reports)
