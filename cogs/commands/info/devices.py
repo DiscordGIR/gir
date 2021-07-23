@@ -27,18 +27,47 @@ class Select(discord.ui.Select):
                     options=[discord.SelectOption(label=version) for version in versions])
         self.value = None
     
-    async def start(self):
-        
-    
     async def callback(self, interaction: discord.Interaction):
         self.value = interaction.data
         self.view.stop()
 
 
-class Confirm(discord.ui.Select):
-    def __init__(self, ctx: context.Context, true_response, false_response):
+class FirmwareDropdown(discord.ui.View):
+    def __init__(self, firmware_list):
         super().__init__()
+        self.ctx = None
+        self.pagination_index = 0
+        self.max_index = len(firmware_list) // 25 if len(firmware_list) % 25 == 0 else (len(firmware_list) // 25 )+ 1
+        self.firmware_list = firmware_list
+        self.current_dropdown = Select(firmware_list[:25])
         
+    async def start(self, ctx):
+        self.ctx = ctx
+        self.add_item(self.current_dropdown)
+        m = await ctx.send("Choose a firmware for your device", view=self)
+        await self.wait()
+        await m.delete()
+        
+        return self.current_dropdown.value.get('values')[0] if self.current_dropdown.value.get('values') else None        
+    
+    @discord.ui.button(label='Older firmwares', style=discord.ButtonStyle.secondary, row=1)
+    async def older(self, button: discord.ui.Button, interaction: discord.Interaction):
+        if interaction.user == self.ctx.author and self.pagination_index + 1 <= self.max_index:
+            self.pagination_index += 1
+            await self.refresh_current_dropdown(interaction)
+
+
+    @discord.ui.button(label='Newer firmwares', style=discord.ButtonStyle.secondary, row=1)
+    async def newer(self, button: discord.ui.Button, interaction: discord.Interaction):
+        if interaction.user == self.ctx.author and self.pagination_index > 0:
+            self.pagination_index -= 1
+            await self.refresh_current_dropdown(interaction)
+
+    async def refresh_current_dropdown(self, interaction):
+        self.remove_item(self.current_dropdown)
+        self.current_dropdown = Select(self.firmware_list[self.pagination_index*25:(self.pagination_index+1)*25])
+        self.add_item(self.current_dropdown)
+        await interaction.response.edit_message(content="Choose a firmware for your device", view=self)
         
 class Confirm(discord.ui.View):
     def __init__(self, ctx: context.Context, true_response, false_response):
@@ -118,7 +147,6 @@ class Devices(commands.Cog):
                 return
             else:
                 # user wants to remove existing device, let's do that
-                print("here")
                 new_nick = re.sub(self.devices_remove_re, "", ctx.author.display_name).strip()
                 if len(new_nick) > 32:
                     raise commands.BadArgument("Nickname too long")
@@ -203,16 +231,9 @@ class Devices(commands.Cog):
         
         # retrieve list of available firmwares for the given device
         firmwares = await self.find_firmwares_from_ipsw_me(the_device)
-        firmwares_list = [f["version"] for f in firmwares]
+        firmwares_list = sorted(list(set([f["version"] for f in firmwares])), reverse=True)
         
-        view = discord.ui.View()
-        s = Select(firmwares_list[:25])
-        view.add_item(s)
-        m = await ctx.send("Choose a firmware for your device", view=view)
-        
-        await view.wait()
-        await m.delete()
-        return s.value.get('values')[0]
+        return await FirmwareDropdown(firmwares_list).start(ctx)
 
     async def find_firmwares_from_ipsw_me(self, the_device):
         """Get list of all valid firmwares for a given device from IPSW.me
