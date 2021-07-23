@@ -53,7 +53,7 @@ class TweakMenu(menus.AsyncIteratorPageSource):
     async def format_page(self, menu, entry):
         entry = await package_request(entry)
         embed = discord.Embed(title=entry.get('Name'), color=discord.Color.blue())
-        embed.description = discord.utils.escape_markdown(entry.get('Description'))
+        embed.description = discord.utils.escape_markdown(entry.get('Description')) or "No description"
         embed.add_field(name="Author", value= discord.utils.escape_markdown(entry.get('Author') or "No author"), inline=True)
         embed.add_field(name="Version", value= discord.utils.escape_markdown(entry.get('Version') or "No version"), inline=True)
         embed.add_field(name="Price", value=entry.get("Price") or "Free")

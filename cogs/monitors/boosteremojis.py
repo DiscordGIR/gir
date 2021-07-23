@@ -60,6 +60,7 @@ class BoosterEmojis(commands.Cog):
                 convertor=str
             )
             try:
+                msg.author = payload.member
                 ctx = await self.bot.get_context(msg, cls=context.Context)
                 name = await ctx.prompt(prompt)
                 while True:
@@ -74,6 +75,8 @@ class BoosterEmojis(commands.Cog):
         if name is not None:
             emoji = await channel.guild.create_custom_emoji(image=_bytes, name=name)
             await msg.delete()
+        else:
+            return
 
         try:
             await payload.member.send(emoji)
