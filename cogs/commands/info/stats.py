@@ -54,13 +54,13 @@ class Stats(commands.Cog):
 
         """
 
-        b = datetime.datetime.utcnow()
         embed = discord.Embed(
             title=f"Pong!", color=discord.Color.blurple())
         embed.set_thumbnail(url=self.bot.user.avatar_url)
         embed.description = "Latency: testing..."
 
         # measure time between sending a message and time it is posted
+        b = datetime.datetime.utcnow()
         m = await ctx.message.reply(embed=embed)
         ping = floor((datetime.datetime.utcnow() - b).total_seconds() * 1000)
         await sleep(1)
