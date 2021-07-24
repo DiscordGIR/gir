@@ -55,7 +55,7 @@ class Stats(commands.Cog):
         """
 
         embed = discord.Embed(
-            title=f"Pong!", color=discord.Color.blurple())
+            title="Pong!", color=discord.Color.blurple())
         embed.set_thumbnail(url=self.bot.user.avatar_url)
         embed.description = "Latency: testing..."
 
