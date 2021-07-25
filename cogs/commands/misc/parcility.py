@@ -11,8 +11,10 @@ import cogs.utils.context as context
 from discord.ext import commands, menus
 from yarl import URL
 
+
 package_url = 'https://api.parcility.co/db/package/'
 search_url = 'https://api.parcility.co/db/search?q='
+
 
 async def package_request(package):
     async with aiohttp.ClientSession() as client:
@@ -40,10 +42,12 @@ async def search_request(search):
             else:
                 return None
 
+
 async def aiter(packages):
     for package in packages:
         p = await package_request(package)
         yield p
+
 
 class TweakMenu(menus.AsyncIteratorPageSource):
     def __init__(self, response, length):
@@ -67,7 +71,29 @@ class TweakMenu(menus.AsyncIteratorPageSource):
         embed.set_footer(icon_url=entry.get('repo').get('icon'), text=discord.utils.escape_markdown(entry.get('Package'))+f" • Page {menu.current_page +1}/{self.page_length}" or "No package")
         embed.timestamp = datetime.now()
         return embed
-    
+
+
+class ReposSource(menus.GroupByPageSource):
+    async def format_page(self, menu, entry):
+        repo_data = entry.items[0]
+        embed = discord.Embed(title=repo_data.get('Label'), color=discord.Color.blue())
+        embed.description = repo_data.get('Description')
+        embed.add_field(name="Packages", value=repo_data.get('package_count'), inline=True)
+        embed.add_field(name="Sections", value=repo_data.get('section_count'), inline=True)
+        embed.add_field(name="URL", value=repo_data.get('url'), inline=False)
+        if repo_data.get('isDefault') is False:
+            embed.add_field(name="Add Repo", value=f'[Click Here](https://sharerepo.stkc.win/?repo={repo_data.get("url")})', inline=True)
+        embed.add_field(name="More Info", value=f'[View on Parcility](https://parcility.co/{repo_data.get("id")})', inline=False)
+        embed.set_thumbnail(url=repo_data.get('Icon'))
+        if repo_data.get('isDefault') == True:
+            embed.set_footer(text='Default Repo')
+        
+        embed.set_footer(
+            text=f"Page {menu.current_page +1} of {self.get_max_pages()}")
+
+        return embed
+
+
 class MenuPages(menus.MenuPages):
     async def update(self, payload):
         if self._can_remove_reactions:
@@ -76,6 +102,7 @@ class MenuPages(menus.MenuPages):
             elif payload.event_type == 'REACTION_REMOVE':
                 return
         await super().update(payload)
+
 
 class Parcility(commands.Cog):
     def __init__(self, bot):
@@ -118,7 +145,7 @@ class Parcility(commands.Cog):
         elif len(response) == 0:
             await ctx.send_error("Sorry, I couldn't find any tweaks with that name.")
             return
-       
+
         menu = MenuPages(source=TweakMenu(aiter(response), len(response)), clear_reactions_after=True)
         await menu.start(ctx)
     
@@ -126,9 +153,8 @@ class Parcility(commands.Cog):
     @permissions.no_general_unless_mod()
     @commands.guild_only()
     async def repo(self,  ctx: context.Context, *, repo):
-        
-        data = await self.repo_request(repo)
-        repourl = data.get('repo')
+        async with ctx.typing():
+            data = await self.repo_request(repo)
 
         if data is None:
             embed = discord.Embed(title="Error", color=discord.Color.red())
@@ -136,27 +162,20 @@ class Parcility(commands.Cog):
             await ctx.message.delete(delay=5)
             await ctx.send(embed=embed, delete_after=5)
             return
-        elif len(data) == 0:
+        
+        if not isinstance(data, list):
+            data = [data]
+        
+        if len(data) == 0:
             embed = discord.Embed(title="Not Found", color=discord.Color.red())
-            embed.description = f'Sorry, I couldn\'t find a repo by that name.'
+            embed.description = f"Sorry, I couldn't find a repo by that name."
             await ctx.message.delete(delay=5)
             await ctx.send(embed=embed, delete_after=5)
             return
-        
-        embed = discord.Embed(title=data.get('Label'), color=discord.Color.blue())
-        embed.description = data.get('Description')
-        embed.add_field(name="Packages", value=data.get('package_count'), inline=True)
-        embed.add_field(name="Sections", value=data.get('section_count'), inline=True)
-        embed.add_field(name="URL", value=data.get('url'), inline=False)
-        if data.get('isDefault') is False:
-            embed.add_field(name="Add Repo", value=f'[Click Here](https://sharerepo.stkc.win/?repo={data.get("url")})', inline=True)
-        embed.add_field(name="More Info", value=f'[View on Parcility](https://parcility.co/{data.get("id")})', inline=False)
-        embed.set_thumbnail(url=data.get('Icon'))
-        if data.get('isDefault') == True:
-            embed.set_footer(text='Default Repo')
-        embed.timestamp = datetime.now()
 
-        await ctx.send(embed=embed)
+        menus = MenuPages(source=ReposSource(
+            data, key=lambda t: 1, per_page=1), clear_reactions_after=True)
+        await menus.start(ctx)
         
     async def repo_request(self, repo):
         async with aiohttp.ClientSession() as client:
@@ -171,8 +190,7 @@ class Parcility(commands.Cog):
                         return None
                 else:
                     return None
-                
-                
+
     @repo.error
     async def info_error(self,  ctx: context.Context, error):
         await ctx.message.delete(delay=5)
