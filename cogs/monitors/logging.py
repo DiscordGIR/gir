@@ -15,55 +15,55 @@ class Logging(commands.Cog):
         self.webhook_dict = defaultdict(lambda: False)
         self.emoji_webhook = defaultdict(lambda: False)
 
-    @commands.Cog.listener()
-    async def on_reaction_add(self, reaction: discord.Reaction, member: discord.Member):
-        if isinstance(member, discord.ClientUser) or member.guild is None:
-            return
-        if member.bot:
-            return
-        if member.guild.id != self.bot.settings.guild_id:
-            return
+    # @commands.Cog.listener()
+    # async def on_reaction_add(self, reaction: discord.Reaction, member: discord.Member):
+    #     if isinstance(member, discord.ClientUser) or member.guild is None:
+    #         return
+    #     if member.bot:
+    #         return
+    #     if member.guild.id != self.bot.settings.guild_id:
+    #         return
 
-        webhook_id = self.bot.settings.guild().emoji_logging_webhook
-        webhook = None
+    #     webhook_id = self.bot.settings.guild().emoji_logging_webhook
+    #     webhook = None
 
-        if webhook_id is not None:
-            webhook = self.webhook_dict[webhook_id]
-            if not webhook:
-                try:
-                    webhook = await self.bot.fetch_webhook(webhook_id)
-                    self.webhook_dict[webhook_id] = webhook
-                except Exception:
-                    pass
+    #     if webhook_id is not None:
+    #         webhook = self.webhook_dict[webhook_id]
+    #         if not webhook:
+    #             try:
+    #                 webhook = await self.bot.fetch_webhook(webhook_id)
+    #                 self.webhook_dict[webhook_id] = webhook
+    #             except Exception:
+    #                 pass
 
-        if webhook_id is None or webhook is None:
-            channel = member.guild.get_channel(self.bot.settings.guild().channel_emoji_log)
-            if channel:
-                webhook = await channel.create_webhook(name="logging emojis")
-                self.webhook_dict[webhook.id] = webhook_id
-                await self.bot.settings.save_emoji_webhook(webhook.id)
-            else:
-                return
+    #     if webhook_id is None or webhook is None:
+    #         channel = member.guild.get_channel(self.bot.settings.guild().channel_emoji_log)
+    #         if channel:
+    #             webhook = await channel.create_webhook(name="logging emojis")
+    #             self.webhook_dict[webhook.id] = webhook_id
+    #             await self.bot.settings.save_emoji_webhook(webhook.id)
+    #         else:
+    #             return
 
-        embed = discord.Embed(title="Member added reaction")
-        embed.color = discord.Color.green()
-        embed.add_field(
-            name="User", value=f'{member} ({member.mention})', inline=True)
-        embed.add_field(
-            name="Reaction", value=reaction.emoji, inline=True)
-        embed.add_field(
-            name="Message", value=f"[Link to message]({reaction.message.jump_url})\nby {reaction.message.author} ({reaction.message.author.id})", inline=False)
-        embed.timestamp = datetime.now()
-        embed.set_footer(text=member.id)
+    #     embed = discord.Embed(title="Member added reaction")
+    #     embed.color = discord.Color.green()
+    #     embed.add_field(
+    #         name="User", value=f'{member} ({member.mention})', inline=True)
+    #     embed.add_field(
+    #         name="Reaction", value=reaction.emoji, inline=True)
+    #     embed.add_field(
+    #         name="Message", value=f"[Link to message]({reaction.message.jump_url})\nby {reaction.message.author} ({reaction.message.author.id})", inline=False)
+    #     embed.timestamp = datetime.now()
+    #     embed.set_footer(text=member.id)
 
-        try:
-            await webhook.send(
-                username=str(self.bot.user.name),
-                avatar_url=self.bot.user.avatar_url,
-                embed=embed
-            )
-        except Exception:
-            pass
+    #     try:
+    #         await webhook.send(
+    #             username=str(self.bot.user.name),
+    #             avatar_url=self.bot.user.avatar_url,
+    #             embed=embed
+    #         )
+    #     except Exception:
+    #         pass
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member) -> None:
