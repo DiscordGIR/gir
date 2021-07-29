@@ -55,7 +55,9 @@ class TweakMenu(menus.AsyncIteratorPageSource):
         self.page_length = length
         
     async def format_page(self, menu, entry):
-        entry = await package_request(entry)
+        if entry is None:
+            return discord.Embed(description="A ✨ Parcility 💖 error ocurred with this entry, please skip to the next one.", color=discord.Color.red())
+
         embed = discord.Embed(title=entry.get('Name'), color=discord.Color.blue())
         embed.description = discord.utils.escape_markdown(entry.get('Description')) or "No description"
         embed.add_field(name="Author", value= discord.utils.escape_markdown(entry.get('Author') or "No author"), inline=True)
@@ -138,7 +140,7 @@ class Parcility(commands.Cog):
         ctx = await self.bot.get_context(message, cls=context.Context)
         async with ctx.typing():
             response = await search_request(search_term)
-        
+
         if response is None:
             await ctx.send_error("An error occurred while searching for that tweak.")
             return
