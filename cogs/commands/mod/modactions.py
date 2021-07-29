@@ -25,6 +25,7 @@ class ModActions(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.ban_list_cache = None
 
     @commands.guild_only()
     @commands.bot_has_guild_permissions(kick_members=True, ban_members=True)
@@ -466,21 +467,28 @@ class ModActions(commands.Cog):
         reason = discord.utils.escape_markdown(reason)
         reason = discord.utils.escape_mentions(reason)
 
+        member_is_external = ctx.guild.get_member(user.id) is None
+        
         # if the ID given is of a user who isn't in the guild, try to fetch the profile
-        if ctx.guild.get_member(user.id) is None:
+        if member_is_external:
             async with ctx.typing():
-                previous_bans = [user for _, user in await ctx.guild.bans()]
-                if user in previous_bans:
+                # previous_bans = [user for _, user in await ctx.guild.bans()]
+                if self.ban_list_cache is None:
+                    self.ban_list_cache = {user.id for _, user in await ctx.guild.bans()}
+                
+                if user.id in self.ban_list_cache:
                     raise commands.BadArgument("That user is already banned!")
-
+        
+        self.ban_list_cache.add(user.id)
         log = await self.add_ban_case(ctx, user, reason)
 
-        try:
-            await user.send(f"You were banned from {ctx.guild.name}", embed=log)
-        except Exception:
-            pass
+        if not member_is_external:
+            try:
+                await user.send(f"You were banned from {ctx.guild.name}", embed=log)
+            except Exception:
+                pass
 
-        if isinstance(user, discord.Member):
+        if not member_is_external:
             await user.ban(reason=reason)
         else:
             # hackban for user not currently in guild
@@ -537,14 +545,18 @@ class ModActions(commands.Cog):
         reason = discord.utils.escape_markdown(reason)
         reason = discord.utils.escape_mentions(reason)
 
-        previous_bans = [user for _, user in await ctx.guild.bans()]
-        if user not in previous_bans:
+        if self.ban_list_cache is None:
+            self.ban_list_cache = {user.id for _, user in await ctx.guild.bans()}
+        
+        if user.id not in self.ban_list_cache:
             raise commands.BadArgument("That user isn't banned!")
 
         try:
             await ctx.guild.unban(discord.Object(id=user.id), reason=reason)
         except discord.NotFound:
             raise commands.BadArgument(f"{user} is not banned.")
+
+        self.ban_list_cache.discard(user.id)
 
         case = Case(
             _id=ctx.settings.guild().case_id,
