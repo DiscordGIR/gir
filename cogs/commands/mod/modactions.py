@@ -469,12 +469,12 @@ class ModActions(commands.Cog):
 
         member_is_external = ctx.guild.get_member(user.id) is None
         
+        if self.ban_list_cache is None:
+            self.ban_list_cache = {user.id for _, user in await ctx.guild.bans()}
         # if the ID given is of a user who isn't in the guild, try to fetch the profile
         if member_is_external:
             async with ctx.typing():
                 # previous_bans = [user for _, user in await ctx.guild.bans()]
-                if self.ban_list_cache is None:
-                    self.ban_list_cache = {user.id for _, user in await ctx.guild.bans()}
                 
                 if user.id in self.ban_list_cache:
                     raise commands.BadArgument("That user is already banned!")
