@@ -1,6 +1,8 @@
 import traceback
 import typing
 
+from discord.embeds import Embed
+
 import cogs.utils.context as context
 import cogs.utils.permission_checks as permissions
 import discord
@@ -35,6 +37,62 @@ class AntiRaid(commands.Cog):
         else:
             await ctx.send_success(description=f"Added `{phrase}` to the raid phrase list!")
     
+    @commands.guild_only()
+    @permissions.admin_and_up()
+    @commands.command(name="batchraid", aliases=["raidbatch"])
+    async def batchraid(self, ctx: context.Context, *, phrases: str) -> None:
+        """Add a list of (newline-separated) phrases to the raid filter.
+
+        Example usage
+        --------------
+        !raid <phrase>
+
+        Parameters
+        ----------
+        phrases : str
+            "Phrases to add, separated with enter"
+        """
+        
+        async with ctx.typing():
+            phrases = list(set(phrases.split("\n")))
+            phrases = [phrase.strip() for phrase in phrases]
+            
+            phrases_contenders = set(phrases)
+            phrases_already_in_db = set([phrase.word for phrase in ctx.settings.guild().raid_phrases])
+            
+            duplicate_count = len(phrases_already_in_db & phrases_contenders) # count how many duplicates we have
+            new_phrases = list(phrases_contenders - phrases_already_in_db)
+            
+        if not new_phrases:
+            raise commands.BadArgument("All the phrases you supplied are already in the database.")
+            
+        phrases_prompt_string = "\n".join([f"**{i+1}**. {phrase}" for i, phrase in enumerate(new_phrases)])
+        if len(phrases_prompt_string) > 3900:
+            phrases_prompt_string = phrases_prompt_string[:3500] + "\n... (and some more)"
+
+        embed = Embed(title="Confirm raidphrase batch", 
+                    color=discord.Color.dark_orange(), 
+                    description=f"{phrases_prompt_string}\n\nShould we add these {len(new_phrases)} phrases?")
+        
+        if duplicate_count > 0:
+            embed.set_footer(text=f"Note: we found {duplicate_count} duplicates in your list.")
+        
+        message = await ctx.send(embed=embed)
+            
+        prompt_data = context.PromptDataReaction(message=message, reactions=['✅', '❌'], timeout=120, delete_after=True)
+        response, _ = await ctx.prompt_reaction(info=prompt_data)
+        
+        if response == '✅':
+            async with ctx.typing():
+                for phrase in new_phrases:
+                    await ctx.settings.add_raid_phrase(phrase)
+
+            await ctx.send_success(f"Added {len(new_phrases)} phrases to the raid filter.", delete_after=5)
+        else:
+            await ctx.send_warning("Cancelled.", delete_after=5)
+
+        await ctx.message.delete(delay=5)
+
     @commands.guild_only()
     @permissions.admin_and_up()
     @commands.command(name="removeraid", aliases=["removeraidphrase"])
@@ -107,6 +165,7 @@ class AntiRaid(commands.Cog):
     @verify.error
     @spammode.error
     @removeraid.error
+    @batchraid.error
     @raid.error
     async def info_error(self, ctx: context.Context,error):
         await ctx.message.delete(delay=5)
