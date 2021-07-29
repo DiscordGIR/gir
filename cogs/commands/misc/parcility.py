@@ -24,7 +24,8 @@ async def package_request(package):
                 if response.get('code') == 200:
                     package["Price"] = response['data'].get("Price")
             else:
-                return None
+                package["Price"] = "No price data"
+                return package
     return package
 
 
@@ -55,8 +56,8 @@ class TweakMenu(menus.AsyncIteratorPageSource):
         self.page_length = length
         
     async def format_page(self, menu, entry):
-        if entry is None:
-            return discord.Embed(description="A ✨ Parcility 💖 error ocurred with this entry, please skip to the next one.", color=discord.Color.red())
+        # if entry is None:
+        #     return discord.Embed(description="A ✨ Parcility 💖 error ocurred with this entry, please skip to the next one.", color=discord.Color.red())
 
         embed = discord.Embed(title=entry.get('Name'), color=discord.Color.blue())
         embed.description = discord.utils.escape_markdown(entry.get('Description')) or "No description"
