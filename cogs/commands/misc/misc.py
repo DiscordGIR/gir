@@ -67,7 +67,7 @@ class Misc(commands.Cog):
         await ctx.message.delete(delay=5)
         await ctx.message.reply(embed=embed, delete_after=10)
 
-    @commands.command(name="jumbo")
+    @commands.command(name="jumbo", aliases=["e"])
     @commands.guild_only()
     async def jumbo(self, ctx: context.Context, emoji: typing.Union[discord.Emoji, discord.PartialEmoji, str]):
         """Post large version of a given emoji
