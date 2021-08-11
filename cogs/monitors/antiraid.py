@@ -156,6 +156,7 @@ class AntiRaidMonitor(commands.Cog):
             return
         if message.guild.id != self.bot.settings.guild_id:
             return
+        message.author = message.guild.get_member(message.author.id)
         if self.bot.settings.permissions.hasAtLeast(message.guild, message.author, 5):
             return
         
