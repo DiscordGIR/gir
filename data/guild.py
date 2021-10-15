@@ -6,6 +6,7 @@ class Guild(mongoengine.Document):
     _id                       = mongoengine.IntField(required=True)
     case_id                   = mongoengine.IntField(min_value=1, required=True)
     reaction_role_mapping     = mongoengine.DictField()
+    role_administrator        = mongoengine.IntField()
     role_birthday             = mongoengine.IntField()
     role_dev                  = mongoengine.IntField()
     role_genius               = mongoengine.IntField()

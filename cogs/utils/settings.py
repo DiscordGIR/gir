@@ -556,7 +556,7 @@ class Permissions:
                 and guild.get_role(the_guild.role_moderator) in m.roles)),
 
             6: (lambda guild, m: self.hasAtLeast(guild, m, 7) or (guild.id == guild_id
-                and m.guild_permissions.manage_guild)),
+                and guild.get_role(the_guild.role_administrator) in m.roles)),
 
             7: (lambda guild, m: self.hasAtLeast(guild, m, 9) or (guild.id == guild_id
                 and m == guild.owner)),
