@@ -145,6 +145,7 @@ class Misc(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name="jailbreak", aliases=['jb'])
+    @permissions.no_general_unless_mod()
     @commands.guild_only()
     async def jailbreak(self, ctx, query):
         async with aiohttp.ClientSession() as client:
@@ -166,6 +167,7 @@ class Misc(commands.Cog):
             await ctx.send(embed=embed, delete_after=15)
 
     @commands.command(name="cij", aliases=['jelbrek'])
+    @permissions.no_general_unless_mod()
     @commands.cooldown(2, 10, commands.BucketType.member)
     @commands.guild_only()
     async def cij(self, ctx: context.Context, *, device: str):
