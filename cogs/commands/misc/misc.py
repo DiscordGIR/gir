@@ -8,6 +8,7 @@ import typing
 from io import BytesIO
 
 import aiohttp
+from yarl import URL
 import cogs.utils.context as context
 import cogs.utils.permission_checks as permissions
 import discord
