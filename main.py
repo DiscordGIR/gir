@@ -293,7 +293,7 @@ class Bot(commands.Bot):
 
 
 bot = Bot(command_prefix=get_prefix,
-                   intents=intents, allowed_mentions=mentions)
+                   intents=intents, allowed_mentions=mentions, case_insensitive=True)
 bot.max_messages = 10000
 
 # Here we load our extensions(cogs) listed above in [initial_extensions].
