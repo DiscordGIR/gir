@@ -144,6 +144,27 @@ class Misc(commands.Cog):
         embed.set_footer(text=f"Requested by {ctx.author}")
         await ctx.send(embed=embed)
 
+    @commands.command(name="jailbreak", aliases=['jb'])
+    @commands.guild_only()
+    async def jailbreak(self, ctx, query):
+        async with aiohttp.ClientSession() as client:
+            async with client.get(URL('https://assets.stkc.win/jailbreaks.json', encoded=True)) as resp:
+                if resp.status == 200:
+                    response = json.loads(await resp.text())
+        try:
+            for object in response[f'{query.lower()}']:
+                embed = discord.Embed(title=object['Name'], color=discord.Color.random())
+                embed.add_field(name="Version", value=object['LatestVersion'], inline=True)
+                embed.add_field(name="Compatible with", value=object['Versions'], inline=True)
+                embed.add_field(name="Type", value=object['Type'], inline=False)
+                embed.add_field(name="Website", value=object['Website'], inline=False)
+                embed.set_thumbnail(url=object['Icon'])   
+                await ctx.send(embed=embed)
+        except:
+            embed = discord.Embed(title=":(\nYour command ran into a problem", color=discord.Color.red())
+            embed.description = "Sorry, I couldn't find any jailbreaks with that name."
+            await ctx.send(embed=embed, delete_after=15)
+
     @commands.command(name="cij", aliases=['jelbrek'])
     @commands.cooldown(2, 10, commands.BucketType.member)
     @commands.guild_only()
@@ -251,6 +272,7 @@ class Misc(commands.Cog):
 
                 return name
 
+    @jailbreak.error
     @cij.error
     @jumbo.error
     @remindme.error
