@@ -170,7 +170,7 @@ class Parcility(commands.Cog):
             data = [data]
         
         if len(data) == 0:
-            embed = discord.Embed(title="Not Found", color=discord.Color.red())
+            embed = discord.Embed(title=":(\nYour command ran into a problem", color=discord.Color.red())
             embed.description = f"Sorry, I couldn't find a repo by that name."
             await ctx.message.delete(delay=5)
             await ctx.send(embed=embed, delete_after=5)
