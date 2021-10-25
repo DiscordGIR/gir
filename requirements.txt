@@ -2,7 +2,9 @@ aiohttp==3.7.4.post0
 async-timeout==3.0.1
 attrs==21.2.0
 chardet==4.0.0
+coloredlogs==15.0.1
 e==1.4.5
+humanfriendly==10.0
 idna==3.3
 multidict==5.2.0
 py-cord==2.0.0a4148+g2bbf0639
