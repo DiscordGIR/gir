@@ -1,0 +1,11 @@
+aiohttp==3.7.4.post0
+async-timeout==3.0.1
+attrs==21.2.0
+chardet==4.0.0
+e==1.4.5
+idna==3.3
+multidict==5.2.0
+py-cord==2.0.0a4148+g2bbf0639
+python-dotenv==0.19.1
+typing-extensions==3.10.0.2
+yarl==1.7.0
