@@ -159,7 +159,7 @@ class Misc(commands.Cog):
                 embed.add_field(name="Compatible with", value=object['Versions'], inline=True)
                 embed.add_field(name="Type", value=object['Type'], inline=False)
                 embed.add_field(name="Website", value=object['Website'], inline=False)
-                object.get('Notes') is not None:
+                if object.get('Notes') is not None:
                     embed.add_field(name="Notes", value=object['Notes'], inline=False)
                 embed.set_thumbnail(url=object['Icon'])   
                 await ctx.send(embed=embed)
