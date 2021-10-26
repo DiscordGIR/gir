@@ -1,8 +1,8 @@
-import os
 from discord.commands.commands import Option
+
+from discord.commands import context, slash_command
 from discord.ext.commands import Cog
 from discord.commands import context, slash_command
-from discord.member import Member
 
 from utils.config import cfg
 

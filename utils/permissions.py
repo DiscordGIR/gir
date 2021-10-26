@@ -1,5 +1,9 @@
-from utils.config import cfg
 import discord
+from model.guild import Guild
+
+from utils.config import cfg
+from utils.database import db
+
 
 class Permissions:
     """A way of calculating a user's permissions.
@@ -26,7 +30,21 @@ class Permissions:
             State of the bot
         """
 
-        the_guild = cfg.guild()
+        the_guild: Guild = db.guild()
+        roles_to_check = [
+            "role_memberplus",
+            "role_memberpro",
+            "role_memberedition",
+            "role_genius",
+            "role_moderator",
+            "role_administrator",
+        ]
+        
+        for role in roles_to_check:
+            try:
+                getattr(the_guild, role)
+            except AttributeError:
+                raise AttributeError(f"Database is not set up properly! Role '{role}' is missing. Please refer to README.md.")
 
         # This dict maps a permission level to a lambda function which, when given the right paramters,
         # will return True or False if a user has that permission level.
@@ -74,7 +92,7 @@ class Permissions:
             10: "Bot owner",
         }
 
-    def hasAtLeast(self, guild: discord.Guild, member: discord.Member, level: int) -> bool:
+    def has(self, guild: discord.Guild, member: discord.Member, level: int) -> bool:
         """Checks whether a user given by `member` has at least the permission level `level`
         in guild `guild`. Using the `self.permissions` dict-lambda thing.
 
