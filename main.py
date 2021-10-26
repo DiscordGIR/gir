@@ -13,6 +13,11 @@ from utils.permissions import permissions
 from utils.logger import logger
 
 initial_extensions = ["cogs.commands.info.stats"]
+intents = discord.Intents.default()
+intents.members = True
+intents.messages = True
+intents.presences = True
+mentions = discord.AllowedMentions(everyone=False, users=True, roles=False)
 
 
 class Bot(commands.Bot):
@@ -26,7 +31,7 @@ class Bot(commands.Bot):
     async def get_application_context(self, interaction: Interaction, *, cls=GIRContext) -> GIRContext:
         return await super().get_application_context(interaction, cls=cls)
 
-bot = Bot()
+bot = Bot(intents=intents, allowed_mentions=mentions)
 
 @bot.event
 async def on_ready():
