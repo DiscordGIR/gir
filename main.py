@@ -5,7 +5,7 @@ from dotenv.main import load_dotenv
 from utils.config import cfg
 from utils.logger import logger
 from model.guild import Guild
-
+from utils.database import db
 
 initial_extensions = ["cog"]
 
@@ -13,8 +13,10 @@ initial_extensions = ["cog"]
 class Bot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # force the config object to be loaded
-        self.guild_id = cfg.guild_id
+
+        # force the config object and database connection to be loaded
+        if cfg and db:
+            logger.info("Presetup phase completed! Connecting to Discord...")
 
 bot = Bot()
 
