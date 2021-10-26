@@ -2,15 +2,17 @@ import os
 
 import discord
 from discord.ext import commands
+from discord.interactions import Interaction
 from dotenv.main import load_dotenv
 
 from model.guild import Guild
 from utils.config import cfg
+from utils.context import GIRContext
 from utils.database import db
 from utils.permissions import permissions
 from utils.logger import logger
 
-initial_extensions = ["cog"]
+initial_extensions = ["cogs.commands.info.stats"]
 
 
 class Bot(commands.Bot):
@@ -20,6 +22,9 @@ class Bot(commands.Bot):
         # force the config object and database connection to be loaded
         if cfg and db and permissions:
             logger.info("Presetup phase completed! Connecting to Discord...")
+
+    async def get_application_context(self, interaction: Interaction, *, cls=GIRContext) -> GIRContext:
+        return await super().get_application_context(interaction, cls=cls)
 
 bot = Bot()
 
