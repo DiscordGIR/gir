@@ -14,20 +14,8 @@ class CogName(commands.Cog):
         self.bot = bot
 
     @whisper()
-    @slash_command(guild_ids=[cfg.guild_id], description="Say")
-    async def say(self, ctx: GIRContext, *, message: Option(str, description="Say something")):
-        """Add a description here.
-
-        Example usage
-        -------------
-        !say hey howdo do!
-
-        Parameters
-        ----------
-        message : str
-            the message to say
-        """
-        
+    @slash_command(guild_ids=[cfg.guild_id], description="Make bot say something")
+    async def say(self, ctx: GIRContext, *, message: Option(str, description="Message to send")):
         await ctx.respond(message, ephemeral=ctx.whisper)
 
 
