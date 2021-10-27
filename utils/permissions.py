@@ -1,5 +1,7 @@
+from typing import List
 import discord
 from model.guild import Guild
+from discord.commands.permissions import Permission
 
 from utils.config import cfg
 from utils.database import db
@@ -46,9 +48,19 @@ class Permissions:
             except AttributeError:
                 raise AttributeError(f"Database is not set up properly! Role '{role}' is missing. Please refer to README.md.")
 
+         
+        self._role_permission_mapping = {
+            1: the_guild.role_memberplus,
+            2: the_guild.role_memberpro,
+            3: the_guild.role_memberedition,
+            4: the_guild.role_genius,
+            5: the_guild.role_moderator,
+            6: the_guild.role_administrator,
+        }
+
         # This dict maps a permission level to a lambda function which, when given the right paramters,
         # will return True or False if a user has that permission level.
-        self.permissions = {
+        self._permissions = {
             0: lambda x, y: True,
 
             1: (lambda guild, m: self.has(guild, m, 2) or (guild.id == cfg.guild_id
@@ -79,7 +91,7 @@ class Permissions:
                  and m.id == cfg.owner_id),
         }
 
-        self.permission_names = {
+        self._permission_names = {
             0: "Everyone and up",
             1: "Member Plus and up",
             2: "Member Pros and up",
@@ -111,9 +123,33 @@ class Permissions:
             True if the user has that level, otherwise False.
         """
 
-        return self.permissions[level](guild, member)
+        return self._permissions[level](guild, member)
+
+    def level_role_list(self, level: int) -> List[int]:
+        if level == 0:
+            return []
+        if self.role_permission_mapping.get(level) is None:
+            raise AttributeError(f"Permission level {level} not found")
+
+        return [Permission(id=self._role_permission_mapping[level], type=1, permission=True)] + self.leevl_role_list(level -1)
+
+
+    def calculate_permissions(self, level: int):
+        if self._permissions.get(level) is None:
+            raise AttributeError(f"Undefined permission level {level}")
+        
+        return_perms = []
+        
+        #calculate role perms
+        return_perms += self.level_role_list(level)
+        
+        # add bot owner
+        return_perms += Permission(id=cfg.owner_id, type=2, permission=True)
+        
+        return return_perms
+        
 
     def level_info(self, level: int) -> str:
-        return self.permission_names[level]
+        return self._permission_names[level]
 
 permissions = Permissions()
