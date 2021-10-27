@@ -12,7 +12,10 @@ from utils.database import db
 from utils.permissions import permissions
 from utils.logger import logger
 
-initial_extensions = ["cogs.commands.info.stats"]
+initial_extensions = [
+        "cogs.commands.info.stats",
+        "cogs.commands.info.devices"
+    ]
 intents = discord.Intents.default()
 intents.members = True
 intents.messages = True
