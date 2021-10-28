@@ -14,7 +14,8 @@ from utils.logger import logger
 
 initial_extensions = [
         "cogs.commands.info.stats",
-        "cogs.commands.info.devices"
+        "cogs.commands.info.devices",
+        "cogs.commands.info.userinfo"
     ]
 intents = discord.Intents.default()
 intents.members = True
