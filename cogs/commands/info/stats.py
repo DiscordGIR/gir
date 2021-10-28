@@ -1,6 +1,5 @@
 import os
 import platform
-from asyncio import sleep
 from datetime import datetime
 from math import floor
 from discord.utils import format_dt
@@ -25,14 +24,6 @@ class Stats(commands.Cog):
     @whisper()
     @slash_command(guild_ids=[cfg.guild_id], description="Pong!")
     async def ping(self, ctx: GIRContext) -> None:
-        """Pong
-
-        Example usage
-        -------------
-        !ping
-
-        """
-
         embed = Embed(
             title="Pong!", color=Color.blurple())
         embed.set_thumbnail(url=self.bot.user.display_avatar)
@@ -41,9 +32,9 @@ class Stats(commands.Cog):
         # measure time between sending a message and time it is posted
         b = datetime.utcnow()
         await ctx.respond(embed=embed, ephemeral=ctx.whisper)
+       
         ping = floor((datetime.utcnow() - b).total_seconds() * 1000)
-        await sleep(1)
-        # embed.description = ""
+        embed.description = ""
         embed.add_field(name="Message Latency", value=f"`{ping}ms`")
         embed.add_field(name="API Latency", value=f"`{floor(self.bot.latency*1000)}ms`")
         await ctx.edit(embed=embed)

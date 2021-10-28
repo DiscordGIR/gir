@@ -41,14 +41,14 @@ class Permissions:
             "role_moderator",
             "role_administrator",
         ]
-        
+
         for role in roles_to_check:
             try:
                 getattr(the_guild, role)
             except AttributeError:
-                raise AttributeError(f"Database is not set up properly! Role '{role}' is missing. Please refer to README.md.")
+                raise AttributeError(
+                    f"Database is not set up properly! Role '{role}' is missing. Please refer to README.md.")
 
-         
         self._role_permission_mapping = {
             1: the_guild.role_memberplus,
             2: the_guild.role_memberpro,
@@ -128,28 +128,25 @@ class Permissions:
     def level_role_list(self, level: int) -> List[int]:
         if level == 0:
             return []
-        if self.role_permission_mapping.get(level) is None:
+        elif level > 6:
+            # bot owner permission
+            return [Permission(id=cfg.owner_id, type=2, permission=True)]
+
+        if self._role_permission_mapping.get(level) is None:
             raise AttributeError(f"Permission level {level} not found")
 
-        return [Permission(id=self._role_permission_mapping[level], type=1, permission=True)] + self.leevl_role_list(level -1)
-
+        # generate role permissions up until Administrator (guild owner always has access!)
+        return [Permission(id=self._role_permission_mapping[_level], type=1, permission=True) for _level in range(level, 7)] \
+            + [Permission(id=cfg.owner_id, type=2, permission=True)]  # bot owner permission
 
     def calculate_permissions(self, level: int):
         if self._permissions.get(level) is None:
             raise AttributeError(f"Undefined permission level {level}")
-        
-        return_perms = []
-        
-        #calculate role perms
-        return_perms += self.level_role_list(level)
-        
-        # add bot owner
-        return_perms += Permission(id=cfg.owner_id, type=2, permission=True)
-        
-        return return_perms
-        
+
+        return self.level_role_list(level)
 
     def level_info(self, level: int) -> str:
         return self._permission_names[level]
+
 
 permissions = Permissions()
