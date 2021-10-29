@@ -162,7 +162,8 @@ class Misc(commands.Cog):
                 embed.add_field(name="Website", value=object['Website'], inline=False)
                 if object.get('Notes') is not None:
                     embed.add_field(name="Notes", value=object['Notes'], inline=False)
-                embed.set_thumbnail(url=object['Icon'])   
+                if object.get('Icon') is not None:
+                    embed.set_thumbnail(url=object['Icon'])   
                 await ctx.send(embed=embed)
         except:
             embed = discord.Embed(title=":(\nYour command ran into a problem", color=discord.Color.red())
