@@ -1,3 +1,4 @@
+from inspect import Traceback
 from io import BytesIO
 
 from data.model.tag import Tag
@@ -6,7 +7,8 @@ from discord import Color, Embed
 from discord.commands import Option, slash_command
 from discord.ext import commands
 from discord.file import File
-from utils.checks import mod_and_up, whisper, genius_or_submod_and_up
+from utils.autocompleters.tags import tags_autocomplete
+from utils.checks import PermissionsFailure, mod_and_up, whisper, genius_or_submod_and_up
 from utils.config import cfg
 from utils.context import GIRContext, PromptData
 from utils.slash_perms import slash_perms
@@ -18,7 +20,7 @@ class Tags(commands.Cog):
         self.bot = bot
 
     @slash_command(guild_ids=[cfg.guild_id], description="Make bot say something")
-    async def tag(self, ctx: GIRContext, name: Option(str, description="Tag name")):
+    async def tag(self, ctx: GIRContext, name: Option(str, description="Tag name", autocomplete=tags_autocomplete)):
         name = name.lower()
         tag = guild_service.get_tag(name)
 
@@ -104,6 +106,31 @@ class Tags(commands.Cog):
 
         await ctx.respond(f"Added new tag!", file=_file or MISSING, embed=await self.prepare_tag_embed(tag))
 
+    @genius_or_submod_and_up()
+    @slash_command(guild_ids=[cfg.guild_id], description="Delete a tag", permissions=slash_perms.genius_or_submod_and_up())
+    async def deltag(self, ctx: GIRContext, name: Option(str, description="Name of tag to delete", autocomplete=tags_autocomplete)):
+        """Delete tag (geniuses only)
+
+        Example usage
+        --------------
+        !deltag <tagname>
+
+        Parameters
+        ----------
+        name : str
+            "Name of tag to delete"
+
+        """
+
+        name = name.lower()
+
+        tag = guild_service.get_tag(name)
+        if tag is None:
+            raise commands.BadArgument("That tag does not exist.")
+
+        guild_service.remove_tag(name)
+        await ctx.send_warning(f"Deleted tag {tag.name}.")
+
     async def prepare_tag_embed(self, tag):
         """Given a tag object, prepare the appropriate embed for it
 
@@ -137,7 +164,7 @@ class Tags(commands.Cog):
     async def info_error(self, ctx: GIRContext, error):
         await ctx.message.delete(delay=5)
         if (isinstance(error, commands.MissingRequiredArgument)
-            or isinstance(error, permissions.PermissionsFailure)
+            or isinstance(error, PermissionsFailure)
             or isinstance(error, commands.BadArgument)
             or isinstance(error, commands.BadUnionArgument)
             or isinstance(error, commands.MissingPermissions)
@@ -145,7 +172,7 @@ class Tags(commands.Cog):
             await ctx.send_error(error)
         else:
             await ctx.send_error("A fatal error occured. Tell <@109705860275539968> about this.")
-            traceback.print_exc()
+            Traceback.print_exc()
 
 def setup(bot):
     bot.add_cog(Tags(bot))

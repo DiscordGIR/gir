@@ -1,7 +1,6 @@
 # syntax=docker/dockerfile:1
 
 FROM python:3.9.7-slim-bullseye 
-WORKDIR /usr/src/app
 
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m venv $VIRTUAL_ENV
@@ -23,5 +22,3 @@ COPY ./requirements.txt .
 COPY . .
 RUN pip install -r requirements.txt
 RUN npm i -g nodemon
-
-# CMD ["nodemon", "--exec", "python", "main.py"]
