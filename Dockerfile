@@ -25,4 +25,3 @@ RUN pip install -r requirements.txt
 RUN npm i -g nodemon
 
 # CMD ["nodemon", "--exec", "python", "main.py"]
-# CMD ["python", "-m" "watchmedo", "shell-command", '--patterns-"*.py"', '--command="python \"${watch_src_path}\""']
