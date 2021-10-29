@@ -9,7 +9,8 @@ class GIRContext(context.ApplicationContext):
 
 
     async def respond_or_edit(self, *args, **kwargs):
-        if self.interaction.response is not None:
+        print(self.interaction.response)
+        if self.interaction.response.is_done():
             del kwargs["ephemeral"]
             await self.edit(*args, **kwargs)
         else:

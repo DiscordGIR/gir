@@ -30,6 +30,8 @@ class UserInfo(commands.Cog):
     @whisper()
     @slash_command(guild_ids=[cfg.guild_id], description="Get info of another user or yourself.")
     async def userinfo(self, ctx: GIRContext, user: Option(Member, description="User to get info of", required=False)) -> None:
+        # TODO when pycord fixes this behavior: handle external members
+        
         if user:
             if not permissions.has(ctx.guild, ctx.author, 6):
                 raise PermissionsFailure("You do not have permission to access another user's userinfo.")
