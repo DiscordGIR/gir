@@ -16,17 +16,6 @@ class Database:
         
         if not Guild.objects(_id=cfg.guild_id):
             raise Exception(f"The database has not been set up for guild {cfg.guild_id}! Please refer to README.md.")
-        
-    def guild(self) -> Guild:
-        """Returns the state of the main guild from the database.
-
-        Returns
-        -------
-        Guild
-            The Guild document object that holds information about the main guild.
-        """
-
-        return Guild.objects(_id=cfg.guild_id).first()
 
 
 db = Database()

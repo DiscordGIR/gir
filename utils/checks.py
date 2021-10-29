@@ -1,6 +1,7 @@
 from discord.errors import NotFound
 from discord.ext import commands
 from discord.member import Member
+from data.services.guild_service import guild_service
 from utils.context import GIRContext
 
 from utils.database import db
@@ -25,7 +26,7 @@ def whisper():
     """If the user is not a moderator and the invoked channel is not #bot-commands, send the response to the command ephemerally
     """
     async def predicate(ctx: GIRContext):
-        bot_chan = db.guild().channel_botspam
+        bot_chan = guild_service.get_guild()
         if not permissions.has(ctx.guild, ctx.author, 5) and ctx.channel.id != bot_chan:
             ctx.whisper = True
         else:
@@ -116,7 +117,7 @@ def genius_and_up():
 
 def submod_or_admin_and_up():
     async def predicate(ctx: GIRContext):
-        db = ctx.bot.settings.guild()
+        db = guild_service.get_guild()
         submod = ctx.guild.get_role(db.role_sub_mod)
         if not submod:
             return
@@ -130,7 +131,7 @@ def submod_or_admin_and_up():
 
 def genius_or_submod_and_up():
     async def predicate(ctx: GIRContext):
-        db = ctx.bot.settings.guild()
+        db = guild_service.get_guild()
         submod = ctx.guild.get_role(db.role_sub_mod)
         if not submod:
             return

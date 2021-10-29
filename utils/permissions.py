@@ -1,10 +1,10 @@
 from typing import List
 import discord
 from data.model.guild import Guild
+from data.services.guild_service import guild_service
 from discord.commands.permissions import Permission
 
 from utils.config import cfg
-from utils.database import db
 
 
 class Permissions:
@@ -32,7 +32,7 @@ class Permissions:
             State of the bot
         """
 
-        the_guild: Guild = db.guild()
+        the_guild: Guild = guild_service.get_guild()
         roles_to_check = [
             "role_memberplus",
             "role_memberpro",
