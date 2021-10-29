@@ -11,6 +11,7 @@ from utils.permissions import permissions
 from utils.checks import PermissionsFailure, whisper
 from utils.config import cfg
 from utils.context import GIRContext
+from data.services.user_service import user_service
 
 class UserInfo(commands.Cog):
     def __init__(self, bot):
@@ -44,10 +45,16 @@ class UserInfo(commands.Cog):
         for role in reversed_roles[:-1]:
             roles += role.mention + " "
             
+        results = user_service.get_user(user.id)
+            
         embed = Embed(title=f"User Information", color=user.color)
         embed.set_author(name=user)
         embed.set_thumbnail(url=user.avatar)
         embed.add_field(name="Username", value=f'{user} ({user.mention})', inline=True)
+        embed.add_field(
+            name="Level", value=results.level if not results.is_clem else "0", inline=True)
+        embed.add_field(
+            name="XP", value=results.xp if not results.is_clem else "0/0", inline=True)
         embed.add_field(name="Roles", value=roles if roles else "None", inline=False)
         embed.add_field(name="Join date", value=f"{format_dt(user.joined_at, style='F')} ({format_dt(user.joined_at, style='R')})", inline = True)
         embed.add_field(name="Account creation date", value=f"{format_dt(user.created_at, style='F')} ({format_dt(user.created_at, style='R')})", inline=True)
