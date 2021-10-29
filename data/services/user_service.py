@@ -23,5 +23,14 @@ class UserService:
             user._id = id
             user.save()
         return user
+    
+    def leaderboard(self) -> list:
+        return User.objects[0:130].only('_id', 'xp').order_by('-xp', '-_id').select_related()
+
+    def leaderboard_rank(self, xp):
+        users = User.objects().only('_id', 'xp')
+        overall = users().count()
+        rank = users(xp__gte=xp).count()
+        return (rank, overall)
 
 user_service = UserService()
