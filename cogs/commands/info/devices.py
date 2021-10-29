@@ -6,9 +6,11 @@ import traceback
 from collections import OrderedDict
 
 import aiohttp
+from discord.colour import Color
 from discord.commands.commands import Option, slash_command
+from discord.embeds import Embed
 from discord.ext import commands
-from utils.checks import PermissionsFailure, ensure_invokee_role_lower_than_bot, always_whisper
+from utils.checks import PermissionsFailure, ensure_invokee_role_lower_than_bot, always_whisper, whisper
 from utils.config import cfg
 from utils.context import GIRContext
 from utils.views.devices import Confirm, FirmwareDropdown
@@ -23,16 +25,6 @@ class Devices(commands.Cog):
         self.devices_remove_re = re.compile(r'\[.+\,.+\]$')
         self.possible_devices = ['iphone', 'ipod', 'ipad', 'homepod', 'apple']
 
-    # @commands.command()
-    # async def test(self, ctx):
-    #     view = discord.ui.View()
-    #     # view.add_item(discord.ui.Button(label='Add to Sileo', emoji="🔗", url="sileo://source/https://repo.packix.com"))
-    #     await ctx.send("test", view=view)
-
-    # @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
-    # @commands.bot_has_guild_permissions(change_nickname=True)
-    # @permissions.bot_channel_only_unless_mod()
-    
     @ensure_invokee_role_lower_than_bot()
     @always_whisper()
     @slash_command(guild_ids=[cfg.guild_id], description="Add device to nickname")
@@ -178,36 +170,31 @@ class Devices(commands.Cog):
 
         return firmwares
 
-    # @commands.guild_only()
-    # @commands.bot_has_guild_permissions(change_nickname=True)
-    # @permissions.bot_channel_only_unless_mod()
-    # @permissions.ensure_invokee_role_lower_than_bot()
-    # @commands.command(name="removedevice")
-    # async def removedevice(self, ctx: GIRContext) -> None:
-    #     """Removes device from your nickname
+    @ensure_invokee_role_lower_than_bot()
+    @always_whisper()
+    @slash_command(guild_ids=[cfg.guild_id], description="Remove device from nickname")
+    async def removedevice(self, ctx: GIRContext) -> None:
+        """Removes device from your nickname
 
-    #     Example usage
-    #     -------------
-    #     !removedevice
+        Example usage
+        -------------
+        !removedevice
 
-    #     """
+        """
 
-    #     if not re.match(self.devices_test, ctx.author.display_name):
-    #         raise commands.BadArgument("You don't have a device nickname set!")
+        if not re.match(self.devices_test, ctx.author.display_name):
+            raise commands.BadArgument("You don't have a device nickname set!")
 
-    #     new_nick = re.sub(self.devices_remove_re, "", ctx.author.display_name).strip()
-    #     if len(new_nick) > 32:
-    #         raise commands.BadArgument("Nickname too long")
+        new_nick = re.sub(self.devices_remove_re, "", ctx.author.display_name).strip()
+        if len(new_nick) > 32:
+            raise commands.BadArgument("Nickname too long")
 
-    #     await ctx.author.edit(nick=new_nick)
-    #     await ctx.message.delete(delay=5)
-    #     await ctx.send_success("Removed device from your nickname!", delete_after=5)
+        await ctx.author.edit(nick=new_nick)
+        await ctx.send_success("Removed device from your nickname!")
 
-    # @commands.guild_only()
-    # @commands.bot_has_guild_permissions(change_nickname=True)
-    # @permissions.bot_channel_only_unless_mod()
-    # @commands.command(name="listdevices")
-    # async def listdevices(self, ctx: GIRContext) -> None:
+    @whisper()
+    @slash_command(guild_ids=[cfg.guild_id], description="List all devices you can set your nickname to")
+    async def listdevices(self, ctx: GIRContext) -> None:
     #     """List all possible devices you can set your nickname to.
 
     #     Example usage
@@ -215,48 +202,47 @@ class Devices(commands.Cog):
     #     !listdevices
     #     """
 
-    #     devices_dict = {
-    #         'iPhone': set(),
-    #         'iPod': set(),
-    #         'iPad': set(),
-    #         'Apple TV': set(),
-    #         'Apple Watch': set(),
-    #         'HomePod': set(),
-    #     }
+        devices_dict = {
+            'iPhone': set(),
+            'iPod': set(),
+            'iPad': set(),
+            'Apple TV': set(),
+            'Apple Watch': set(),
+            'HomePod': set(),
+        }
 
-    #     async with aiohttp.ClientSession() as session:
-    #         async with session.get(self.devices_url) as resp:
-    #             if resp.status == 200:
-    #                 data = await resp.text()
-    #                 devices = json.loads(data)
-    #                 for d in devices:
-    #                     name = re.sub(r'\((.*?)\)', "", d["name"])
-    #                     name = name.replace('[', '')
-    #                     name = name.replace(']', '')
-    #                     name = name.strip()
-    #                     for key in devices_dict.keys():
-    #                         if key in name:
-    #                             devices_dict[key].add(name)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(self.devices_url) as resp:
+                if resp.status == 200:
+                    data = await resp.text()
+                    devices = json.loads(data)
+                    for d in devices:
+                        name = re.sub(r'\((.*?)\)', "", d["name"])
+                        name = name.replace('[', '')
+                        name = name.replace(']', '')
+                        name = name.strip()
+                        for key in devices_dict.keys():
+                            if key in name:
+                                devices_dict[key].add(name)
 
-    #     # stupid ipsw.me api doesn't have these devices
-    #     devices_dict["iPhone"].add("iPhone SE 2")
+        # stupid ipsw.me api doesn't have these devices
+        devices_dict["iPhone"].add("iPhone SE 2")
 
-    #     embed = discord.Embed(title="Devices list")
-    #     embed.color = discord.Color.blurple()
-    #     for key in devices_dict.keys():
-    #         temp = list(devices_dict[key])
-    #         temp.sort()
-    #         embed.add_field(name=key, value=', '.join(
-    #             map(str, temp)), inline=False)
+        embed = Embed(title="Devices list")
+        embed.color = Color.blurple()
+        for key in devices_dict.keys():
+            temp = list(devices_dict[key])
+            temp.sort()
+            embed.add_field(name=key, value=', '.join(
+                map(str, temp)), inline=False)
 
-    #     embed.set_footer(text=f"Requested by {ctx.author}")
+        embed.set_footer(text=f"Requested by {ctx.author}")
 
-    #     await ctx.message.reply(embed=embed)
+        await ctx.respond(embed=embed, ephemeral=ctx.whisper)
 
-    # @test.error
-    # @removedevice.error
+    @removedevice.error
     @adddevice.error
-    # @listdevices.error
+    @listdevices.error
     async def info_error(self,  ctx: GIRContext, error):
         if (isinstance(error, commands.MissingRequiredArgument)
             or isinstance(error, PermissionsFailure)
