@@ -1,16 +1,18 @@
 
+import functools
 import json
 import re
 import traceback
+from collections import OrderedDict
 
 import aiohttp
-
 from discord.commands.commands import Option, slash_command
 from discord.ext import commands
+from utils.checks import PermissionsFailure, ensure_invokee_role_lower_than_bot, always_whisper
 from utils.config import cfg
 from utils.context import GIRContext
 from utils.views.devices import Confirm, FirmwareDropdown
-
+from utils.autocompleters.devices import device_autocomplete
 
 class Devices(commands.Cog):
     def __init__(self, bot):
@@ -30,10 +32,11 @@ class Devices(commands.Cog):
     # @commands.max_concurrency(1, per=commands.BucketType.member, wait=False)
     # @commands.bot_has_guild_permissions(change_nickname=True)
     # @permissions.bot_channel_only_unless_mod()
-    # @permissions.ensure_invokee_role_lower_than_bot()
-    # @commands.command(name="adddevice", aliases=["addevice"])
+    
+    @ensure_invokee_role_lower_than_bot()
+    @always_whisper()
     @slash_command(guild_ids=[cfg.guild_id], description="Add device to nickname")
-    async def adddevice(self, ctx: GIRContext, device: Option(str, description="Name of your device")) -> None:
+    async def adddevice(self, ctx: GIRContext, device: Option(str, description="Name of your device", autocomplete=device_autocomplete)) -> None:
         """Add device name to your nickname, i.e `SlimShadyIAm [iPhone 12, 14.2]`. See !listdevices to see the list of possible devices.
 
         Example usage
@@ -251,23 +254,22 @@ class Devices(commands.Cog):
     #     await ctx.message.reply(embed=embed)
 
     # @test.error
-    # # @removedevice.error
-    # @adddevice.error
-    # # @listdevices.error
-    # async def info_error(self,  ctx: GIRContext, error):
-    #     await ctx.message.delete(delay=5)
-    #     if (isinstance(error, commands.MissingRequiredArgument)
-    #         or isinstance(error, permissions.PermissionsFailure)
-    #         or isinstance(error, commands.BadArgument)
-    #         or isinstance(error, commands.BadUnionArgument)
-    #         or isinstance(error, commands.MissingPermissions)
-    #         or isinstance(error, commands.BotMissingPermissions)
-    #         or isinstance(error, commands.MaxConcurrencyReached)
-    #             or isinstance(error, commands.NoPrivateMessage)):
-    #         await ctx.send_error(error)
-    #     else:
-    #         await ctx.send_error("A fatal error occured. Tell <@109705860275539968> about this.")
-    #         traceback.print_exc()
+    # @removedevice.error
+    @adddevice.error
+    # @listdevices.error
+    async def info_error(self,  ctx: GIRContext, error):
+        if (isinstance(error, commands.MissingRequiredArgument)
+            or isinstance(error, PermissionsFailure)
+            or isinstance(error, commands.BadArgument)
+            or isinstance(error, commands.BadUnionArgument)
+            or isinstance(error, commands.MissingPermissions)
+            or isinstance(error, commands.BotMissingPermissions)
+            or isinstance(error, commands.MaxConcurrencyReached)
+                or isinstance(error, commands.NoPrivateMessage)):
+            await ctx.send_error(error)
+        else:
+            await ctx.send_error("A fatal error occured. Tell <@109705860275539968> about this.")
+            traceback.print_exc()
 
 
 def setup(bot):
