@@ -12,6 +12,15 @@ class PermissionsFailure(commands.BadArgument):
         super().__init__(message)
 
 
+def always_whisper():
+    """Always respond ephemerally
+    """
+    async def predicate(ctx: GIRContext):
+        ctx.whisper = True
+        return True
+    return commands.check(predicate)
+
+
 def whisper():
     """If the user is not a moderator and the invoked channel is not #bot-commands, send the response to the command ephemerally
     """
@@ -23,6 +32,7 @@ def whisper():
             ctx.whisper = False
         return True
     return commands.check(predicate)
+
 
 class ModsAndAboveMember(commands.Converter):
     async def convert(self,  ctx: GIRContext, argument):
