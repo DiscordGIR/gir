@@ -5,7 +5,7 @@ from discord.ext import commands
 from discord.interactions import Interaction
 from dotenv.main import load_dotenv
 
-from model.guild import Guild
+from data.model.guild import Guild
 from utils.config import cfg
 from utils.context import GIRContext
 from utils.database import db

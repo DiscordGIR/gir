@@ -1,6 +1,6 @@
 import mongoengine
-from model.filterword import FilterWord
-from model.tag import Tag
+from data.model.filterword import FilterWord
+from data.model.tag import Tag
 
 class Guild(mongoengine.Document):
     _id                       = mongoengine.IntField(required=True)

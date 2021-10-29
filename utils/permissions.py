@@ -1,6 +1,6 @@
 from typing import List
 import discord
-from model.guild import Guild
+from data.model.guild import Guild
 from discord.commands.permissions import Permission
 
 from utils.config import cfg

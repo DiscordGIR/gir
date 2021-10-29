@@ -1,5 +1,5 @@
 import mongoengine
-from model.case import Case
+from data.model.case import Case
 
 class Cases(mongoengine.Document):
     _id   = mongoengine.IntField(required=True)
