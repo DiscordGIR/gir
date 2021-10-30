@@ -127,6 +127,28 @@ class ModUtils(commands.Cog):
         await ctx.settings.add_case(user.id, case)
 
         await ctx.message.reply(f"{user.mention} was put on clem.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
+    
+    @commands.guild_only()
+    @permissions.admin_and_up()
+    @commands.command(name="freezexp")
+    async def freezexp(self, ctx: context.Context, user: permissions.ModsAndAboveMember) -> None:
+        """Freeze a user's XP (admin only)
+
+        Example usage
+        --------------
+        !freezexp <@user/ID>
+
+        Parameters
+        ----------
+        user : discord.Member
+            "User to freeze"
+        """
+
+        results = await ctx.settings.user(user.id)
+        results.is_xp_frozen = not results.is_xp_frozen
+        results.save()
+
+        await ctx.message.reply(f"{user.mention}'s xp was {'frozen' if results.is_xp_frozen else 'unfrozen'}.", allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False))
 
     @commands.guild_only()
     @permissions.mod_and_up()
@@ -340,6 +362,7 @@ class ModUtils(commands.Cog):
 
         return embed
 
+    @freezexp.error
     @musicban.error
     @birthdayexclude.error
     @removebirthday.error
