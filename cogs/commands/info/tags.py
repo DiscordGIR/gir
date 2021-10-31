@@ -179,6 +179,42 @@ class Tags(commands.Cog):
             file = discord.File(BytesIO(file), filename="image.gif" if tag.image.content_type == "image/gif" else "image.png")
         
         await ctx.message.reply(embed=await self.prepare_tag_embed(tag), file=file, mention_author=False)
+    
+    @commands.guild_only()
+    @permissions.genius_or_submod_and_up()
+    @commands.command(name="rawtag", aliases=['rt'])
+    async def rawtag(self, ctx: context.Context, name: str):
+        """Post raw body of a tag
+        
+        Example usage
+        -------------
+        !rawtag roblox
+
+        Parameters
+        ----------
+        name : str
+            "Name of tag to use"
+        """
+
+        name = name.lower()
+        tag = await ctx.settings.get_tag(name)
+        
+        if tag is None:
+            raise commands.BadArgument("That tag does not exist.")
+        
+        # run cooldown so tag can't be spammed
+        bucket = self.tag_cooldown.get_bucket(tag.name)
+        current = ctx.message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
+        # ratelimit only if the invoker is not a moderator
+        if bucket.update_rate_limit(current) and not (ctx.permissions.hasAtLeast(ctx.guild, ctx.author, 5) or ctx.guild.get_role(ctx.settings.guild().role_sub_mod) in ctx.author.roles):
+            raise commands.BadArgument("That tag is on cooldown.")
+        
+        # if the Tag has an image, add it to the embed
+        file = tag.image.read()
+        if file is not None:
+            file = discord.File(BytesIO(file), filename="image.gif" if tag.image.content_type == "image/gif" else "image.png")
+        
+        await ctx.message.reply(discord.utils.escape_markdown(tag.content), file=file, mention_author=False)
 
     @commands.guild_only()
     @permissions.bot_channel_only_unless_mod()
