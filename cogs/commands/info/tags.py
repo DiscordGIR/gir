@@ -214,7 +214,14 @@ class Tags(commands.Cog):
         if file is not None:
             file = discord.File(BytesIO(file), filename="image.gif" if tag.image.content_type == "image/gif" else "image.png")
         
-        await ctx.message.reply(discord.utils.escape_markdown(tag.content), file=file, mention_author=False)
+        response = discord.utils.escape_markdown(tag.content)
+        parts = [response[i:i+2000] for i in range(0, len(response), 2000)]
+
+        for i, part in enumerate(parts):
+            if i == 0:
+                await ctx.message.reply(part, mention_author=False)
+            else:
+                await ctx.send(part, file=file if i == len(parts) - 1 else None, mention_author=False)
 
     @commands.guild_only()
     @permissions.bot_channel_only_unless_mod()
