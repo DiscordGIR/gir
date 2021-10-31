@@ -286,6 +286,7 @@ class Tags(commands.Cog):
     @edittag.error
     @tag.error
     @taglist.error
+    @rawtag.error
     @deltag.error
     @addtag.error
     async def info_error(self, ctx: context.Context, error):
