@@ -160,6 +160,8 @@ class Misc(commands.Cog):
                 embed.add_field(name="Compatible with", value=object['Versions'], inline=True)
                 embed.add_field(name="Type", value=object['Type'], inline=False)
                 embed.add_field(name="Website", value=object['Website'], inline=False)
+                if object.get('Guide') is not None:
+                    embed.add_field(name="Guide", value=object['Guide'], inline=False)
                 if object.get('Notes') is not None:
                     embed.add_field(name="Notes", value=object['Notes'], inline=False)
                 if object.get('Icon') is not None:
