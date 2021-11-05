@@ -107,7 +107,7 @@ class Filters(commands.Cog):
         await ctx.send_success(title="Added new word to filter!", description=f"This filter {'will' if notify else 'will not'} ping for reports, level {bypass} can bypass it, and the phrase is `{phrase}`")
 
     @commands.guild_only()
-    @permissions.admin_and_up()
+    @permissions.mod_and_up()
     @commands.command(name="filterlist")
     async def filterlist(self, ctx: context.Context):
         """List filtered words (admin only)
