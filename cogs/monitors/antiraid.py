@@ -330,7 +330,7 @@ class AntiRaidMonitor(commands.Cog):
         ctx = await self.bot.get_context(message, cls=context.Context)
         user = message.author
         ctx.message.author = ctx.author = ctx.me
-        await mute(ctx=ctx, user=user, reason="Raid phrase detected")
+        await mute(ctx=ctx, user=user, reason="Possible new raid phrase detected")
         ctx.message.author = ctx.author = user
 
         # report the user to mods
