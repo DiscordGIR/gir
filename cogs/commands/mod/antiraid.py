@@ -14,7 +14,7 @@ class AntiRaid(commands.Cog):
         self.bot = bot
     
     @commands.guild_only()
-    @permissions.admin_and_up()
+    @permissions.mod_and_up()
     @commands.command(name="raid", aliases=["raidphrase"])
     async def raid(self, ctx: context.Context, *, phrase: str) -> None:
         """Add a phrase to the raid filter.
@@ -94,7 +94,7 @@ class AntiRaid(commands.Cog):
         await ctx.message.delete(delay=5)
 
     @commands.guild_only()
-    @permissions.admin_and_up()
+    @permissions.mod_and_up()
     @commands.command(name="removeraid", aliases=["removeraidphrase"])
     async def removeraid(self, ctx: context.Context, *, phrase: str) -> None:
         """Remove a phrase from the raid filter.
