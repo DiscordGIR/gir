@@ -116,6 +116,60 @@ class Report:
                 except Exception:
                     return
 
+    async def report_possible_raid_phrase(self, msg, user, domain):
+        channel = msg.guild.get_channel(self.bot.settings.guild().channel_reports)
+        ping_string = await self.prepare_ping_string(msg)    
+        ping_string = ""
+        
+        embed = await self.prepare_embed(user, msg, word=domain, title=f"Possible new raid phrase detected\n{domain}")
+        embed.set_footer(text="✅ to pardon, 💀 to ban and add new raid phrase")
+        
+        report_msg = await channel.send(ping_string, embed=embed)
+        report_reactions = ['✅', '💀']
+
+        ctx = await self.bot.get_context(report_msg, cls=context.Context)
+        prompt_data = context.PromptDataReaction(report_msg, report_reactions)
+        
+        while True:
+            self.pending_tasks[report_msg.id] = "NOT TERMINATED"
+            reaction, reactor = await ctx.prompt_reaction(prompt_data)
+            if reaction == "TERMINATE":
+                return            
+            
+            if not self.bot.settings.permissions.hasAtLeast(user.guild, user, 5) or reaction not in report_reactions:
+                await report_msg.remove_reaction(reaction, reactor)
+                
+            if reaction == '✅':
+                ctx.author = ctx.message.author = reactor
+                unmute = self.bot.get_command("unmute")
+                if unmute is not None:
+                    try:
+                        await unmute(ctx=ctx, user=user, reason="Reviewed by a moderator.")
+                    except Exception:
+                        pass
+                    await report_msg.delete()
+                else:
+                    await ctx.send_warning("I wasn't able to unmute them.")
+                return
+            elif reaction == '💀':
+                ctx.author = ctx.message.author = reactor
+                ban = self.bot.get_command("ban")
+                if ban is not None:
+                    try:
+                        await ban(ctx=ctx, user=user, reason="Ping spam")
+                    except Exception:
+                        pass
+                    await report_msg.delete()
+                else:
+                    await ctx.send_warning("I wasn't able to ban them.")
+
+                done = await self.bot.settings.add_raid_phrase(domain)
+                if done:
+                    await channel.send(f"{domain} was added to the raid phrase list.", delete_after=5)
+                else:
+                    await channel.send(f"{domain} was already in the raid phrase list.", delete_after=5)
+                return
+
     async def prompt_time(self, ctx):
         prompt_data = context.PromptData(value_name="duration", 
                                         description="Please enter a duration for the mute (i.e 15m).",

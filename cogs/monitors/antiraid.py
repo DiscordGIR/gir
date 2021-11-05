@@ -1,3 +1,4 @@
+import re
 import string
 from asyncio import Lock
 from datetime import datetime, timedelta, timezone
@@ -17,7 +18,7 @@ class RaidType:
     RaidPhrase = 2
     MessageSpam = 3
     JoinSpamOverTime = 4
-
+    RaidPhraseDetection = 5
 
 class AntiRaidMonitor(commands.Cog):
     def __init__(self, bot):
@@ -25,8 +26,8 @@ class AntiRaidMonitor(commands.Cog):
         
         # cooldown to monitor if too many users join in a short period of time (more than 10 within 8 seconds)
         self.join_raid_detection_threshold = commands.CooldownMapping.from_cooldown(rate=10, per=8, type=commands.BucketType.guild)
-        # cooldown to monitor if users are spamming a message (8 within 5 seconds)
-        self.message_spam_detection_threshold = commands.CooldownMapping.from_cooldown(rate=7, per=5.0, type=commands.BucketType.member)
+        # cooldown to monitor if users are spamming a message (8 within 6 seconds)
+        self.message_spam_detection_threshold = commands.CooldownMapping.from_cooldown(rate=7, per=6.0, type=commands.BucketType.member)
         # cooldown to monitor if too many accounts created on the same date are joining within a short period of time 
         # (5 accounts created on the same date joining within 45 minutes of each other)
         self.join_overtime_raid_detection_threshold = commands.CooldownMapping.from_cooldown(rate=4, per=2700, type=MessageTextBucket.custom)
@@ -166,6 +167,24 @@ class AntiRaidMonitor(commands.Cog):
             await self.handle_raid_detection(message, RaidType.RaidPhrase)
         elif await self.message_spam(message):
             await self.handle_raid_detection(message, RaidType.MessageSpam)
+        elif await self.detect_scam_link(message):
+            await self.report_possible_raid_phrase(message)
+
+    async def detect_scam_link(self, message: discord.Message):
+       # check if message contains @everyone or @here
+        if "@everyone" not in message.content and "@here" in message.content:
+            return False
+
+        # use regex to find if message contains url
+        url = re.search(r'(https?://\S+)', message.content)
+        if url is None:
+            return False
+
+        # don't trigger if this user isn't a whitename
+        if self.bot.settings.permissions.hasAtLeast(message.guild, message.author, 1):
+            return False
+
+        return True
 
     async def handle_raid_detection(self, message: discord.Message, raid_type: RaidType):
         current = message.created_at.replace(tzinfo=timezone.utc).timestamp()
@@ -291,6 +310,31 @@ class AntiRaidMonitor(commands.Cog):
                         await self.raid_ban(message.author)
                         return True
         return False
+
+    async def report_possible_raid_phrase(self, message):
+        # use regex to find url from message
+        url = re.search(r'(https?://\S+)', message.content)
+
+        # extract domain from url
+        domain = url.group(1).split("/")[2]
+
+        if domain == "bit.ly":
+            # for bit.ly we don't want to ban the whole domain, just this specific one
+            domain = url.group(1)
+
+        # mute the user
+        mute = self.bot.get_command("mute")
+        if mute is None:
+            return
+
+        ctx = await self.bot.get_context(message, cls=context.Context)
+        user = message.author
+        ctx.message.author = ctx.author = ctx.me
+        await mute(ctx=ctx, user=user, reason="Raid phrase detected")
+        ctx.message.author = ctx.author = user
+
+        # report the user to mods
+        await self.bot.report.report_possible_raid_phrase(message, user, domain)
             
     async def raid_ban(self, user: discord.Member, reason="Raid phrase detected", dm_user=False):
         """Helper function to ban users"""
