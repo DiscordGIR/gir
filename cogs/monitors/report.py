@@ -86,7 +86,7 @@ class Report:
                 ban = self.bot.get_command("ban")
                 if ban is not None:
                     try:
-                        await ban(ctx=ctx, user=user, reason="Ping spam")
+                        await ban(ctx=ctx, user=user, reason="Spam detected")
                     except Exception:
                         pass
                     await report_msg.delete()
@@ -156,7 +156,7 @@ class Report:
                 ban = self.bot.get_command("ban")
                 if ban is not None:
                     try:
-                        await ban(ctx=ctx, user=user, reason="Ping spam")
+                        await ban(ctx=ctx, user=user, reason="Raid phrase detected")
                     except Exception:
                         pass
                     await report_msg.delete()
