@@ -68,7 +68,10 @@ class TweakMenu(menus.AsyncIteratorPageSource):
         if entry.get('repo').get('isDefault') is False:
             embed.add_field(name="Add Repo", value=f"[Click Here](https://sharerepo.stkc.win/?repo={entry.get('repo').get('url')})" or "No repo", inline=True)
         try:
-            embed.add_field(name="More Info", value=f"[View Depiction]({entry.get('Depiction')})", inline=False)
+            if entry.get('Depiction'):
+                embed.add_field(name="More Info", value=f"[View Depiction]({entry.get('Depiction')})", inline=False)
+            else:
+                raise Exception("No depiction found!")
         except:
             embed.add_field(name="More Info", value=f"[View on Parcility](https://parcility.co/package/{entry.get('Package')}/{entry.get('repo').get('slug')})", inline=False)
         pattern = re.compile(r"((http|https)\:\/\/)[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*")
